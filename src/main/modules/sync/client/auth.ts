@@ -6,8 +6,11 @@ import { toMD5 } from '@common/utils/nodejs'
 import { SYNC_CODE } from '@common/constants_sync'
 
 
+const helloMessageRxp = /^Hello~::\^-\^::~v\d+~$/
+const isHelloMessage = (text: unknown) => helloMessageRxp.test(String(text ?? '').trim())
+
 const hello = async(urlInfo: LX.Sync.Client.UrlInfo) => request(`${urlInfo.httpProtocol}//${urlInfo.hostPath}/hello`)
-  .then(({ text }) => text == SYNC_CODE.helloMsg)
+  .then(({ text, code }) => code >= 200 && code < 300 && isHelloMessage(text))
   .catch((err: any) => {
     log.error('[auth] hello', err.message)
     console.log(err)
@@ -16,8 +19,9 @@ const hello = async(urlInfo: LX.Sync.Client.UrlInfo) => request(`${urlInfo.httpP
 
 const getServerId = async(urlInfo: LX.Sync.Client.UrlInfo) => request(`${urlInfo.httpProtocol}//${urlInfo.hostPath}/id`)
   .then(({ text }) => {
-    if (!text.startsWith(SYNC_CODE.idPrefix)) return ''
-    return text.replace(SYNC_CODE.idPrefix, '')
+    const serverInfo = text.trim()
+    if (!serverInfo.startsWith(SYNC_CODE.idPrefix)) return ''
+    return serverInfo.replace(SYNC_CODE.idPrefix, '')
   })
   .catch((err: any) => {
     log.error('[auth] getServerId', err.message)
@@ -73,7 +77,7 @@ const keyAuth = async(urlInfo: LX.Sync.Client.UrlInfo, keyInfo: LX.Sync.ClientKe
       log.error('[auth] keyAuth decryptMsg error', err.message)
       throw new Error(SYNC_CODE.authFailed)
     }
-    if (msg != SYNC_CODE.helloMsg) return Promise.reject(new Error(SYNC_CODE.authFailed))
+    if (!isHelloMessage(msg)) return Promise.reject(new Error(SYNC_CODE.authFailed))
   })
 }
 

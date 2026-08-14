@@ -22,10 +22,10 @@ export const LIST_IDS = {
 export const SYNC_CODE = {
   helloMsg: 'Hello~::^-^::~v4~',
   idPrefix: 'OjppZDo6',
-  authMsg: 'lx-music-desktop auth::',
+  authMsg: 'lx-music auth::',
   msgAuthFailed: 'Auth failed',
   msgBlockedIp: 'Blocked IP',
-  msgConnect: 'lx-music-desktop connect',
+  msgConnect: 'lx-music connect',
 
 
   authFailed: 'Auth failed',

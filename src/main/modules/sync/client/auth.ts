@@ -10,7 +10,7 @@ const helloMessageRxp = /^Hello~::\^-\^::~v\d+~$/
 const isHelloMessage = (text: unknown) => helloMessageRxp.test(String(text ?? '').trim())
 
 const hello = async(urlInfo: LX.Sync.Client.UrlInfo) => request(`${urlInfo.httpProtocol}//${urlInfo.hostPath}/hello`)
-  .then(({ text, code }) => code >= 200 && code < 300 && isHelloMessage(text))
+  .then(({ text, code }) => (code ?? 0) >= 200 && (code ?? 0) < 300 && isHelloMessage(text))
   .catch((err: any) => {
     log.error('[auth] hello', err.message)
     console.log(err)

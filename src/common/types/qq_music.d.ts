@@ -65,6 +65,49 @@ declare global {
       songId?: string | number
       albumId?: string | number
     }
+
+    interface PlaylistSyncTrackInput {
+      id: string
+      source: LX.Source
+      name: string
+      singer: string
+      albumName: string
+      interval: string | null
+      qqSongMid?: string
+      qqSongId?: string | number
+    }
+
+    interface PlaylistSyncPreviewRequest {
+      name: string
+      tracks: PlaylistSyncTrackInput[]
+    }
+
+    interface PlaylistSyncUnmatchedTrack {
+      id: string
+      name: string
+      singer: string
+    }
+
+    interface PlaylistSyncPreview {
+      token: string
+      name: string
+      total: number
+      matched: number
+      duplicates: number
+      unmatched: PlaylistSyncUnmatchedTrack[]
+    }
+
+    interface PlaylistSyncCommitRequest {
+      token: string
+    }
+
+    interface PlaylistSyncResult {
+      playlistId: string
+      name: string
+      added: number
+      duplicates: number
+      unmatched: number
+    }
   }
 }
 

@@ -1,4 +1,5 @@
 import { BrowserWindow, safeStorage, session } from 'electron'
+import { randomUUID } from 'node:crypto'
 import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
 import { mainHandle } from '@common/mainIpc'
 import { request } from '@common/utils/request'
@@ -9,7 +10,29 @@ const MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
 const COOKIE_KEY = 'cookie'
 const QQ_MUSIC_LOGIN_PARTITION = 'qq-music-login'
 const QQ_MUSIC_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile'
+const PLAYLIST_SYNC_PREVIEW_TTL = 10 * 60 * 1000
+const PLAYLIST_SYNC_MAX_TRACKS = 1000
+const PLAYLIST_SYNC_ADD_BATCH_SIZE = 50
 const recentReports = new Map<string, number>()
+
+interface ResolvedPlaylistSyncTrack extends LX.QQMusic.PlaylistSyncUnmatchedTrack {
+  songId: string
+  songMid: string
+  songType: number
+}
+
+interface PendingPlaylistSync {
+  name: string
+  matched: ResolvedPlaylistSyncTrack[]
+  unmatched: LX.QQMusic.PlaylistSyncUnmatchedTrack[]
+  duplicates: number
+  expiresAt: number
+  playlistId?: string
+  addedCount: number
+  executing: boolean
+}
+
+const pendingPlaylistSyncs = new Map<string, PendingPlaylistSync>()
 let loginWindow: BrowserWindow | null = null
 let loginPromise: Promise<LX.QQMusic.LoginResult> | null = null
 let resolveLogin: ((result: LX.QQMusic.LoginResult) => void) | null = null
@@ -95,7 +118,7 @@ const isQQMusicLoginUrl = (url: string) => {
   }
 }
 
-const clearQQMusicLoginSession = () => getQQMusicLoginSession().clearStorageData({ storages: ['cookies'] })
+const clearQQMusicLoginSession = async() => getQQMusicLoginSession().clearStorageData({ storages: ['cookies'] })
 
 const finishQQMusicLogin = (configured: boolean) => {
   if (!loginPromise) return
@@ -231,7 +254,10 @@ const requestMusicu = async(requestBody: Record<string, any>, cookie: string) =>
   const body = response.body
   if (body.code !== 0) throw new Error(`QQ Music outer code ${body.code}`)
   const item = body.req_0
-  if (!item || item.code !== 0) throw new Error(`QQ Music module code ${item?.code ?? -1}`)
+  if (!item || item.code !== 0) {
+    const message = String(item?.message ?? item?.msg ?? '').trim()
+    throw new Error(`QQ Music module code ${item?.code ?? -1}${message ? `: ${message}` : ''}`)
+  }
   return item.data ?? {}
 }
 
@@ -431,17 +457,255 @@ const getNewSongs = async(type: number) => {
   } satisfies LX.QQMusic.NewSongRecommend
 }
 
-const searchSong = async(cookie: string, query: string) => {
+const searchSongs = async(query: string) => {
   const response = await request<Record<string, any>>('https://c.y.qq.com/soso/fcgi-bin/client_search_cp', {
     method: 'GET',
-    query: { format: 'json', p: 1, n: 5, w: query },
+    query: { format: 'json', p: 1, n: 8, w: query },
     headers: { Referer: 'https://y.qq.com/' },
     timeout: 30000,
   })
-  if (response.statusCode !== 200 || response.body?.code !== 0) return null
+  if (response.statusCode !== 200 || response.body?.code !== 0) return []
   const list = response.body?.data?.song?.list
-  if (!Array.isArray(list) || !list.length) return null
-  return list[0]
+  return Array.isArray(list) ? list : []
+}
+
+const searchSong = async(_cookie: string, query: string) => (await searchSongs(query))[0] ?? null
+
+const normalizeMatchText = (value: unknown) => String(value ?? '')
+  .normalize('NFKC')
+  .toLowerCase()
+  .replace(/\b(feat|ft)\.?\s+.*$/i, '')
+  .replace(/[\s\u3000·・,，.。!！?？'"“”‘’:：;；/\\|()[\]{}<>《》【】（）_-]+/g, '')
+
+const parseIntervalSeconds = (interval: string | null | undefined) => {
+  if (!interval) return 0
+  const parts = interval.split(':').map(Number)
+  if (!parts.length || parts.some(value => !Number.isFinite(value) || value < 0)) return 0
+  return parts.reduce((total, value) => total * 60 + value, 0)
+}
+
+const getCandidateSinger = (candidate: Record<string, any>) => Array.isArray(candidate.singer)
+  ? candidate.singer.map(item => String(item?.name ?? '')).filter(Boolean).join('、')
+  : String(candidate.singername ?? candidate.singerName ?? '')
+
+const scorePlaylistCandidate = (track: LX.QQMusic.PlaylistSyncTrackInput, candidate: Record<string, any>) => {
+  const trackName = normalizeMatchText(track.name)
+  const candidateName = normalizeMatchText(candidate.songname ?? candidate.title ?? candidate.name)
+  if (!trackName || !candidateName) return 0
+  const nameScore = trackName == candidateName
+    ? 6
+    : trackName.includes(candidateName) || candidateName.includes(trackName) ? 3 : 0
+  if (!nameScore) return 0
+
+  const trackSinger = normalizeMatchText(track.singer)
+  const candidateSinger = normalizeMatchText(getCandidateSinger(candidate))
+  const singerScore = !trackSinger
+    ? 1
+    : trackSinger == candidateSinger ? 4
+      : trackSinger.includes(candidateSinger) || candidateSinger.includes(trackSinger) ? 2 : 0
+  if (trackSinger && !singerScore) return 0
+
+  const trackAlbum = normalizeMatchText(track.albumName)
+  const candidateAlbum = normalizeMatchText(candidate.albumname ?? candidate.album?.name)
+  const albumScore = trackAlbum && candidateAlbum && trackAlbum == candidateAlbum ? 1 : 0
+  const trackSeconds = parseIntervalSeconds(track.interval)
+  const candidateSeconds = Number(candidate.interval ?? candidate.duration ?? 0)
+  const durationDifference = trackSeconds && candidateSeconds ? Math.abs(trackSeconds - candidateSeconds) : Number.POSITIVE_INFINITY
+  const durationScore = durationDifference <= 3 ? 2 : durationDifference <= 8 ? 1 : 0
+  return nameScore + singerScore + albumScore + durationScore
+}
+
+const toResolvedPlaylistTrack = (track: LX.QQMusic.PlaylistSyncTrackInput, candidate: Record<string, any>): ResolvedPlaylistSyncTrack | null => {
+  const songId = String(candidate.id ?? candidate.songid ?? '')
+  if (!/^\d+$/.test(songId) || songId == '0') return null
+  return {
+    id: track.id,
+    name: track.name,
+    singer: track.singer,
+    songId,
+    songMid: String(candidate.mid ?? candidate.songmid ?? ''),
+    songType: Number(candidate.type ?? candidate.songtype ?? 0) || 0,
+  }
+}
+
+const resolvePlaylistTrack = async(cookie: string, track: LX.QQMusic.PlaylistSyncTrackInput) => {
+  const directSongId = String(track.qqSongId ?? '')
+  if (track.source == 'tx' && /^\d+$/.test(directSongId) && directSongId != '0') {
+    return toResolvedPlaylistTrack(track, { id: directSongId, mid: track.qqSongMid, type: 0 })
+  }
+  if (track.source == 'tx' && track.qqSongMid) {
+    try {
+      const data = await requestMusicu({
+        module: 'music.pf_song_detail_svr',
+        method: 'get_song_detail_yqq',
+        param: { song_type: 0, song_mid: track.qqSongMid },
+      }, cookie)
+      const resolved = toResolvedPlaylistTrack(track, data.track_info ?? {})
+      if (resolved) return resolved
+    } catch {}
+  }
+
+  const candidates = await searchSongs(`${track.name} ${track.singer}`.trim())
+  let bestCandidate: Record<string, any> | null = null
+  let bestScore = 0
+  for (const candidate of candidates) {
+    const score = scorePlaylistCandidate(track, candidate)
+    if (score <= bestScore) continue
+    bestScore = score
+    bestCandidate = candidate
+  }
+  return bestCandidate && bestScore >= 7 ? toResolvedPlaylistTrack(track, bestCandidate) : null
+}
+
+const mapWithConcurrency = async<Input, Output>(items: Input[], concurrency: number, mapper: (item: Input) => Promise<Output>) => {
+  const result = new Array<Output>(items.length)
+  let nextIndex = 0
+  const worker = async() => {
+    while (true) {
+      const index = nextIndex++
+      if (index >= items.length) return
+      result[index] = await mapper(items[index])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker))
+  return result
+}
+
+const cleanupPlaylistSyncs = () => {
+  const now = Date.now()
+  for (const [token, pending] of pendingPlaylistSyncs) {
+    if (!pending.executing && pending.expiresAt <= now) pendingPlaylistSyncs.delete(token)
+  }
+}
+
+const previewPlaylistSync = async(request: LX.QQMusic.PlaylistSyncPreviewRequest) => {
+  const cookie = getRequiredCookie()
+  const name = [...String(request?.name ?? '').trim()].slice(0, 40).join('')
+  const tracks = Array.isArray(request?.tracks) ? request.tracks.slice(0, PLAYLIST_SYNC_MAX_TRACKS) : []
+  if (!name) throw new Error('Playlist name is required')
+  if (!tracks.length) throw new Error('Playlist is empty')
+
+  cleanupPlaylistSyncs()
+  const resolvedTracks = await mapWithConcurrency(tracks, 4, async(track) => {
+    if (!track?.id || !track.name) return null
+    try {
+      return await resolvePlaylistTrack(cookie, track)
+    } catch {
+      return null
+    }
+  })
+  const matched: ResolvedPlaylistSyncTrack[] = []
+  const unmatched: LX.QQMusic.PlaylistSyncUnmatchedTrack[] = []
+  const seenSongs = new Set<string>()
+  let duplicates = 0
+  for (let index = 0; index < tracks.length; index++) {
+    const resolved = resolvedTracks[index]
+    if (!resolved) {
+      unmatched.push({ id: tracks[index].id, name: tracks[index].name, singer: tracks[index].singer })
+      continue
+    }
+    const songKey = `${resolved.songId}:${resolved.songType}`
+    if (seenSongs.has(songKey)) {
+      duplicates++
+      continue
+    }
+    seenSongs.add(songKey)
+    matched.push(resolved)
+  }
+  const token = randomUUID()
+  pendingPlaylistSyncs.set(token, {
+    name,
+    matched,
+    unmatched,
+    duplicates,
+    expiresAt: Date.now() + PLAYLIST_SYNC_PREVIEW_TTL,
+    addedCount: 0,
+    executing: false,
+  })
+  return {
+    token,
+    name,
+    total: tracks.length,
+    matched: matched.length,
+    duplicates,
+    unmatched,
+  } satisfies LX.QQMusic.PlaylistSyncPreview
+}
+
+const getCreatedPlaylistId = (data: Record<string, any>) => {
+  const value = data.dirId ?? data.dirid ?? data.folderId ?? data.id ?? data.dirInfo?.dirId ?? data.dirinfo?.dirid
+  const playlistId = String(value ?? '')
+  return /^\d+$/.test(playlistId) && playlistId != '0' ? playlistId : ''
+}
+
+const createQQMusicPlaylist = async(cookie: string, name: string) => {
+  const data = await requestMusicu({
+    module: 'music.musicasset.PlaylistBaseWrite',
+    method: 'AddPlaylist',
+    param: {
+      dirName: name,
+      bInteractive: false,
+      bCoupleInteractive: false,
+      bFmtUtf8: true,
+      dirShow: 1,
+      dirDesc: '由 LX Flow Music 手动同步',
+    },
+  }, cookie)
+  const playlistId = getCreatedPlaylistId(data)
+  if (!playlistId) throw new Error('QQ Music did not return the created playlist ID')
+  return playlistId
+}
+
+const addQQMusicPlaylistTracks = async(cookie: string, playlistId: string, tracks: ResolvedPlaylistSyncTrack[]) => {
+  if (!tracks.length) return
+  await requestMusicu({
+    module: 'music.musicasset.PlaylistDetailWrite',
+    method: 'AddSonglist',
+    param: {
+      dirId: Number(playlistId),
+      source: 'loginImport',
+      v_songInfo: tracks.map(track => ({
+        songId: Number(track.songId),
+        songType: track.songType,
+        songName: track.name,
+        songUrl: '',
+        singerName: track.singer,
+        trace: '',
+      })),
+    },
+  }, cookie)
+}
+
+const commitPlaylistSync = async(request: LX.QQMusic.PlaylistSyncCommitRequest) => {
+  const cookie = getRequiredCookie()
+  cleanupPlaylistSyncs()
+  const token = String(request?.token ?? '')
+  const pending = pendingPlaylistSyncs.get(token)
+  if (!pending || pending.expiresAt <= Date.now()) throw new Error('Playlist sync preview has expired')
+  if (!pending.matched.length) throw new Error('No matched songs to sync')
+  if (pending.executing) throw new Error('Playlist sync is already running')
+
+  pending.executing = true
+  pending.expiresAt = Date.now() + PLAYLIST_SYNC_PREVIEW_TTL
+  try {
+    pending.playlistId ??= await createQQMusicPlaylist(cookie, pending.name)
+    while (pending.addedCount < pending.matched.length) {
+      const batch = pending.matched.slice(pending.addedCount, pending.addedCount + PLAYLIST_SYNC_ADD_BATCH_SIZE)
+      await addQQMusicPlaylistTracks(cookie, pending.playlistId, batch)
+      pending.addedCount += batch.length
+    }
+    const result = {
+      playlistId: pending.playlistId,
+      name: pending.name,
+      added: pending.addedCount,
+      duplicates: pending.duplicates,
+      unmatched: pending.unmatched.length,
+    } satisfies LX.QQMusic.PlaylistSyncResult
+    pendingPlaylistSyncs.delete(token)
+    return result
+  } finally {
+    pending.executing = false
+  }
 }
 
 const resolveReportSong = async(cookie: string, report: LX.QQMusic.PlayReport) => {
@@ -501,7 +765,7 @@ export default () => {
   mainHandle<LX.QQMusic.Status>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_status, async() => ({
     configured: !!getCookie(),
   }))
-  mainHandle<void, LX.QQMusic.LoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_login, async({ event }) => {
+  mainHandle<undefined, LX.QQMusic.LoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_login, async({ event }) => {
     return openQQMusicLogin(BrowserWindow.fromWebContents(event.sender))
   })
   mainHandle<LX.QQMusic.DailyRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_daily_recommend, getDailyRecommend)
@@ -510,4 +774,6 @@ export default () => {
   mainHandle<LX.QQMusic.PlaylistRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_recommend_playlists, getRecommendPlaylists)
   mainHandle<number, LX.QQMusic.NewSongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_new_songs, async({ params }) => getNewSongs(params))
   mainHandle<LX.QQMusic.PlayReport, { reported: boolean, reason?: string }>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_report_play, async({ params }) => reportPlay(params))
+  mainHandle<LX.QQMusic.PlaylistSyncPreviewRequest, LX.QQMusic.PlaylistSyncPreview>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_playlist_sync_preview, async({ params }) => previewPlaylistSync(params))
+  mainHandle<LX.QQMusic.PlaylistSyncCommitRequest, LX.QQMusic.PlaylistSyncResult>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_playlist_sync_commit, async({ params }) => commitPlaylistSync(params))
 }

@@ -143,6 +143,8 @@ const modules = {
     qq_music_recommend_playlists: 'qq_music_recommend_playlists',
     qq_music_new_songs: 'qq_music_new_songs',
     qq_music_report_play: 'qq_music_report_play',
+    qq_music_playlist_sync_preview: 'qq_music_playlist_sync_preview',
+    qq_music_playlist_sync_commit: 'qq_music_playlist_sync_commit',
 
     open_api_action: 'open_api_action',
     sync_action: 'sync_action',

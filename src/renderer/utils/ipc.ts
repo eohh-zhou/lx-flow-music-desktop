@@ -702,6 +702,14 @@ export const reportQQMusicPlay = async(report: LX.QQMusic.PlayReport) => {
   return rendererInvoke<LX.QQMusic.PlayReport, { reported: boolean, reason?: string }>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_report_play, report)
 }
 
+export const previewQQMusicPlaylistSync = async(request: LX.QQMusic.PlaylistSyncPreviewRequest) => {
+  return rendererInvoke<LX.QQMusic.PlaylistSyncPreviewRequest, LX.QQMusic.PlaylistSyncPreview>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_playlist_sync_preview, request)
+}
+
+export const commitQQMusicPlaylistSync = async(request: LX.QQMusic.PlaylistSyncCommitRequest) => {
+  return rendererInvoke<LX.QQMusic.PlaylistSyncCommitRequest, LX.QQMusic.PlaylistSyncResult>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_playlist_sync_commit, request)
+}
+
 /**
  * 退出应用
  */

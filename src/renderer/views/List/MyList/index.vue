@@ -75,6 +75,7 @@
     <DuplicateMusicModal v-model:visible="isShowDuplicateMusicModal" :list-info="duplicateListInfo" />
     <ListSortModal v-model:visible="isShowListSortModal" :list-info="sortListInfo" />
     <ListUpdateModal v-model:visible="isShowListUpdateModal" />
+    <QQMusicSyncModal v-model:visible="isShowQQMusicSyncModal" :list-info="qqMusicSyncListInfo" />
   </div>
 </template>
 
@@ -85,6 +86,7 @@ import musicSdk from '@renderer/utils/musicSdk'
 import DuplicateMusicModal from './components/DuplicateMusicModal.vue'
 import ListSortModal from './components/ListSortModal.vue'
 import ListUpdateModal from './components/ListUpdateModal.vue'
+import QQMusicSyncModal from './components/QQMusicSyncModal.vue'
 
 import { defaultList, loveList, userLists, fetchingListStatus } from '@renderer/store/list/state'
 import { removeUserList } from '@renderer/store/list/action'
@@ -115,6 +117,7 @@ export default {
     DuplicateMusicModal,
     ListSortModal,
     ListUpdateModal,
+    QQMusicSyncModal,
   },
   props: {
     listId: {
@@ -135,6 +138,12 @@ export default {
     const { isShowListSortModal, sortListInfo, handleSortList } = useSort()
     const { isShowDuplicateMusicModal, duplicateListInfo, handleDuplicateList } = useDuplicate()
     const { handleRename, handleSaveListName, isShowNewList, isNewListLeave, handleCreateList } = useEditList({ dom_lists_list })
+    const isShowQQMusicSyncModal = ref(false)
+    const qqMusicSyncListInfo = ref(defaultList)
+    const handleQQMusicSync = listInfo => {
+      qqMusicSyncListInfo.value = listInfo
+      isShowQQMusicSyncModal.value = true
+    }
     useListScroll({ dom_lists_list })
 
     const handleOpenSourceDetailPage = async(listInfo) => {
@@ -176,6 +185,7 @@ export default {
       handleImportList,
       handleExportList,
       handleUpdateSourceList,
+      handleQQMusicSync,
       handleOpenSourceDetailPage,
       handleSortList,
       handleDuplicateList,
@@ -232,6 +242,8 @@ export default {
       sortListInfo,
       isShowDuplicateMusicModal,
       duplicateListInfo,
+      isShowQQMusicSyncModal,
+      qqMusicSyncListInfo,
       handleSaveListName,
       isShowNewList,
       isNewListLeave,

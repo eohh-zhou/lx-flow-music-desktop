@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   windows-x64:
-    name: Windows x64 installer
+    name: Windows x64 packages
     runs-on: windows-latest
     steps:
       - name: Check out source
@@ -33,9 +33,14 @@ jobs:
             throw "Tag ${{ github.ref_name }} does not match package.json version $version"
           }
 
-      - name: Build and publish updater assets
+      - name: Build and publish Setup installer
         run: |
           npm run build
           npm run publish:win:setup:x64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish portable package
+        run: npm run publish:win:7z:x64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

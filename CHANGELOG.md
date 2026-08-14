@@ -1,5 +1,12 @@
 # lx-music-desktop change log
 
+## [2.12.4] - 2026-08-14
+
+### Changed
+
+- Added both the Windows Setup installer and portable green package to GitHub Releases.
+- Clarified the personal-fork purpose, source project, and added features in the README.
+
 ## [2.12.3] - 2026-08-14
 
 ### Added

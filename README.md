@@ -25,34 +25,38 @@
 [9]: https://img.shields.io/github/license/lyswhut/lx-music-desktop
 [10]: https://github.com/lyswhut/lx-music-desktop/blob/master/LICENSE -->
 
-<p align="center">基于 LX Music 桌面版的个人定制版本，增加 QQ 音乐个性化推荐与独立登录配置。</p>
+<p align="center">基于 LX Music Desktop 的个人使用修改版，专注于 QQ 音乐个性化推荐。</p>
 
-## 说明
+## 个人使用版说明
 
-所用技术栈：
+这是我基于 [LX Music Desktop](https://github.com/lyswhut/lx-music-desktop) 修改维护的个人使用版，并非原项目官方发行版。原项目的版权、许可和署名均保留在本仓库中；本项目同样遵循 Apache License 2.0。
 
-- Electron 40+
-- Vue 3
+原项目：<https://github.com/lyswhut/lx-music-desktop>
 
-已支持的平台：
+## 我增加和调整的功能
 
-- Linux
-- macOS
-- Windows 7 及以上
+- 新增 QQ 音乐每日推荐入口：在左侧导航中可直接打开，不需要手动进入 QQ 音乐的深层歌单页面。
+- 新增四类 QQ 音乐推荐视图：主页推荐、雷达推荐、推荐歌单、推荐新歌。
+- 新增独立的 QQ 音乐设置页：可通过登录窗口获取登录状态，不必手动粘贴 Cookie；登录信息只保存于本机应用数据中。
+- 推荐依据使用 QQ 音乐账号的播放记录和歌单等数据，结合 QQ 音乐的推荐结果。
+- Windows Setup 安装版支持通过 GitHub Releases 在软件内检查、下载和安装后续更新。
 
-*移动版项目地址：https://github.com/lyswhut/lx-music-mobile*
+## 下载与更新
 
-*LX Music 项目发展调整与新项目计划：https://github.com/lyswhut/lx-music-desktop/issues/1912*
+请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。
 
-软件变化请查看[更新日志](https://github.com/eohh-zhou/lx-flow-music-desktop/blob/master/CHANGELOG.md)。
+| 包类型 | 文件名示例 | 适用场景 |
+| --- | --- | --- |
+| Setup 安装版 | `LXFlowMusic-v2.12.4-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
+| 绿色免安装版 | `LXFlowMusic-v2.12.4-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
 
-软件下载请查看 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases)。Windows 用户请使用 Setup 安装版，以支持软件内更新。
+从绿色版迁移到支持自动更新的版本时，只需安装一次 Setup 安装版。
 
-使用常见问题请参阅[桌面版常见问题](https://lyswhut.github.io/lx-music-doc/desktop/faq)。
+## 继承功能与文档
 
-本项目的发布地址为 [**GitHub Releases**](https://github.com/eohh-zhou/lx-flow-music-desktop/releases)。
+本项目使用 Electron 40+ 与 Vue 3。原版功能说明和通用使用文档可参考 [LX Music Desktop 文档](https://lyswhut.github.io/lx-music-doc/desktop/faq)。
 
-为了提高使用门槛，本软件内的默认设置、UI 操作不以新手友好为目标，所以使用前建议先根据你的喜好浏览调整一遍软件设置，阅读一遍[音乐播放列表机制](https://lyswhut.github.io/lx-music-doc/desktop/faq/playlist)及[可用的鼠标、键盘快捷操作](https://lyswhut.github.io/lx-music-doc/desktop/faq/hotkey)。
+软件变化请查看[更新日志](https://github.com/eohh-zhou/lx-flow-music-desktop/blob/main/CHANGELOG.md)。
 
 ### Scheme URL 支持
 

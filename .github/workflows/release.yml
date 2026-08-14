@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build and publish, for example v2.12.4
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -15,6 +21,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Get npm cache directory
         shell: pwsh
@@ -29,8 +37,9 @@ jobs:
         shell: pwsh
         run: |
           $version = node -p "require('./package.json').version"
-          if ('v' + $version -ne '${{ github.ref_name }}') {
-            throw "Tag ${{ github.ref_name }} does not match package.json version $version"
+          $releaseTag = '${{ inputs.tag || github.ref_name }}'
+          if ('v' + $version -ne $releaseTag) {
+            throw "Tag $releaseTag does not match package.json version $version"
           }
 
       - name: Build and publish Setup installer

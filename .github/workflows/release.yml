@@ -42,14 +42,21 @@ jobs:
             throw "Tag $releaseTag does not match package.json version $version"
           }
 
-      - name: Build and publish Setup installer
+      - name: Build Windows packages
         run: |
           npm run build
-          npm run publish:win:setup:x64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm run pack:win:setup:x64
+          npm run pack:win:7z:x64
 
-      - name: Build and publish portable package
-        run: npm run publish:win:7z:x64
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          files: |
+            build/*-Setup.exe
+            build/*-Setup.exe.blockmap
+            build/latest.yml
+            build/*-green.7z
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,41 @@
+name: Release LX Flow Music
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  windows-x64:
+    name: Windows x64 installer
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Get npm cache directory
+        shell: pwsh
+        run: echo "NPM_CACHE=$(npm config get cache)" >> $env:GITHUB_ENV
+
+      - name: Set up Node dependencies
+        env:
+          NPM_CACHE: ${{ env.NPM_CACHE }}
+        uses: ./.github/actions/setup
+
+      - name: Verify release tag
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          if ('v' + $version -ne '${{ github.ref_name }}') {
+            throw "Tag ${{ github.ref_name }} does not match package.json version $version"
+          }
+
+      - name: Build and publish updater assets
+        run: |
+          npm run build
+          npm run publish:win:setup:x64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

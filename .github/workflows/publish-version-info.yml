@@ -1,0 +1,10 @@
+name: Manual Maintenance
+
+on:
+  workflow_dispatch:
+
+jobs:
+  notice:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "LX Flow Music releases are published by release.yml."

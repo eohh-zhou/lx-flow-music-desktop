@@ -1,6 +1,6 @@
 {
   "name": "lx-flow-music-desktop",
-  "version": "2.12.10",
+  "version": "2.12.11",
   "description": "LX Flow Music 桌面版，包含 QQ 音乐个性化推荐功能。",
   "main": "./dist/main.js",
   "scripts": {

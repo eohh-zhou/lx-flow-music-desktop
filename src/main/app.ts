@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { existsSync, mkdirSync, renameSync } from 'fs'
+import { cpSync, existsSync, mkdirSync, renameSync } from 'fs'
 import { app, shell, screen, nativeTheme, dialog } from 'electron'
 import { URL_SCHEME_RXP } from '@common/constants'
 import { getProxy, getTheme, initHotKey, initSetting, isCmdParamEnabled, parseEnvParams } from './utils'
@@ -125,6 +125,7 @@ export const applyElectronEnvParams = () => {
 }
 
 export const setUserDataPath = () => {
+  const defaultUserDataPath = app.getPath('userData')
   // windows平台下如果应用目录下存在 portable 文件夹则将数据存在此文件下
   if (process.platform == 'win32') {
     const portablePath = path.join(path.dirname(app.getPath('exe')), '/portable')
@@ -132,6 +133,16 @@ export const setUserDataPath = () => {
       app.setPath('appData', portablePath)
       const appDataPath = path.join(portablePath, '/userData')
       if (!existsSync(appDataPath)) mkdirSync(appDataPath)
+      // Keep existing playlists and settings when a green build gets its own profile.
+      const portableDataPath = path.join(appDataPath, 'LxDatas')
+      const legacyDataPath = path.join(defaultUserDataPath, 'LxDatas')
+      if (!existsSync(path.join(portableDataPath, 'lx.data.db')) && existsSync(path.join(legacyDataPath, 'lx.data.db'))) {
+        try {
+          cpSync(legacyDataPath, portableDataPath, { recursive: true })
+        } catch (err) {
+          log.error(err)
+        }
+      }
       app.setPath('userData', appDataPath)
     }
   }

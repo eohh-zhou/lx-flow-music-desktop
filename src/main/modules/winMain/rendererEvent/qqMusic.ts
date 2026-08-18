@@ -738,6 +738,9 @@ const collectQQMusicMapValues = (value: unknown, result: string[] = []) => {
 }
 
 const getQQMusicPlaylistSongKeys = async(cookie: string, playlistId: string) => {
+  try {
+    return await getQQMusicPlaylistSongKeysViaMusicu(cookie, playlistId)
+  } catch {}
   const response = await request<Record<string, any> | string>(QQ_MUSIC_PLAYLIST_MAP_URL, {
     method: 'GET',
     query: {
@@ -771,6 +774,58 @@ const getQQMusicTrackKeys = (track: { songId: string, songMid: string }) => [
   track.songId ? `id:${track.songId}` : '',
 ].filter(Boolean)
 
+const getQQMusicPlaylistSongKeysViaMusicu = async(cookie: string, playlistId: string) => {
+  const { uin } = getQQMusicWebAuth(cookie)
+  const requests = [
+    // Normal user playlists use disstid in the current QQ Music client.
+    { disstid: Number(playlistId), dirid: 0, enc_host_uin: uin },
+    // Some older/user-owned folders are addressed by dirid instead.
+    { disstid: 0, dirid: Number(playlistId), enc_host_uin: uin },
+  ]
+  let bestKeys = new Set<string>()
+  let lastError: unknown = null
+  for (const address of requests) {
+    try {
+      const data = await requestMusicu({
+        module: 'music.srfDissInfo.DissInfo',
+        method: 'CgiGetDiss',
+        param: {
+          new_format: 1,
+          ...address,
+          song_begin: 0,
+          song_num: 1000,
+          onlysonglist: 0,
+          need_game_ad: 0,
+          optype: 2,
+          orderlist: 0,
+          tag: 1,
+          userinfo: 1,
+          is_mobile: 1,
+          censor_status: 1,
+          local_time: Math.floor(Date.now() / 1000),
+          update_rtime: 1,
+          ctx: 0,
+          CountdownTime: 0,
+        },
+      }, cookie)
+      if (!Array.isArray(data.songlist)) throw new Error('QQ Music playlist response has no songlist')
+      const keys = new Set<string>()
+      for (const song of data.songlist) {
+        const songId = String(song?.songid ?? song?.id ?? '')
+        const songMid = String(song?.songmid ?? song?.mid ?? '')
+        if (/^\d{5,}$/.test(songId)) keys.add(`id:${songId}`)
+        if (/^[A-Za-z0-9]{10,20}$/.test(songMid)) keys.add(`mid:${songMid}`)
+      }
+      if (keys.size > bestKeys.size) bestKeys = keys
+      if (bestKeys.size) return bestKeys
+    } catch (error) {
+      lastError = error
+    }
+  }
+  if (!bestKeys.size && lastError) throw lastError instanceof Error ? lastError : new Error(String(lastError))
+  return bestKeys
+}
+
 const verifyQQMusicPlaylistTracks = async(cookie: string, playlistId: string, tracks: ResolvedPlaylistSyncTrack[]) => {
   let missing = tracks
   let lastError: unknown = null
@@ -792,6 +847,28 @@ const verifyQQMusicPlaylistTracks = async(cookie: string, playlistId: string, tr
 }
 
 const createQQMusicPlaylist = async(cookie: string, name: string) => {
+  try {
+    const data = await requestMusicu({
+      module: 'music.musicasset.PlaylistBaseWrite',
+      method: 'AddPlaylist',
+      param: {
+        dirName: name,
+        bInteractive: false,
+        bCoupleInteractive: false,
+        bFmtUtf8: true,
+        dirShow: 1,
+        dirDesc: '',
+      },
+    }, cookie)
+    const playlistId = getCreatedPlaylistId(data) ||
+      getCreatedPlaylistId(data.result ?? {}) ||
+      getCreatedPlaylistId(data.playlistBaseResult ?? {})
+    if (playlistId) return playlistId
+    throw new Error('QQ Music did not return the created playlist ID')
+  } catch (error) {
+    // Keep the legacy endpoint as a compatibility fallback for older accounts.
+    if (error instanceof Error && error.message.includes('登录状态已失效')) throw error
+  }
   const { uin, gtk } = getQQMusicWebAuth(cookie)
   const response = await request<Record<string, any> | string>(QQ_MUSIC_CREATE_PLAYLIST_URL, {
     method: 'POST',
@@ -856,6 +933,24 @@ const getQQMusicPlaylistAddParams = (cookie: string, playlistId: string, tracks:
   }
 }
 
+const requestQQMusicPlaylistAddViaMusicu = async(cookie: string, playlistId: string, tracks: ResolvedPlaylistSyncTrack[]) => {
+  const data = await requestMusicu({
+    module: 'music.musicasset.PlaylistDetailWrite',
+    method: 'AddSonglist',
+    param: {
+      dirId: Number(playlistId),
+      source: 'loginImport',
+      v_songInfo: tracks.map(track => ({
+        songId: Number(track.songId),
+        songType: Number(track.songType) || 0,
+        songName: track.name,
+        singerName: track.singer,
+      })),
+    },
+  }, cookie)
+  return { code: 0, data }
+}
+
 const requestQQMusicPlaylistAdd = async(cookie: string, playlistId: string, tracks: ResolvedPlaylistSyncTrack[]) => {
   const { gtk } = getQQMusicWebAuth(cookie)
   const attempts = [
@@ -872,6 +967,13 @@ const requestQQMusicPlaylistAdd = async(cookie: string, playlistId: string, trac
   ]
   let lastData: Record<string, any> = { code: -1 }
   let lastVerificationError: Error | null = null
+  try {
+    const data = await requestQQMusicPlaylistAddViaMusicu(cookie, playlistId, tracks)
+    await verifyQQMusicPlaylistTracks(cookie, playlistId, tracks)
+    return data
+  } catch (error) {
+    lastVerificationError = error instanceof Error ? error : new Error(String(error))
+  }
   for (const attempt of attempts) {
     const response = await request<Record<string, any> | string>(QQ_MUSIC_ADD_TO_PLAYLIST_URL, {
       method: attempt.method,

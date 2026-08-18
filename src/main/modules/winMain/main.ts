@@ -2,7 +2,7 @@ import { BrowserWindow, dialog, session } from 'electron'
 import path from 'node:path'
 import { createTaskBarButtons, getWindowSizeInfo } from './utils'
 import { getPlatform, isLinux, isWin } from '@common/utils'
-import { getProxy, openDevTools as handleOpenDevTools } from '@main/utils'
+import { getProxy, isCmdParamEnabled, openDevTools as handleOpenDevTools } from '@main/utils'
 import { mainSend } from '@common/mainIpc'
 import { sendFocus, sendTaskbarButtonClick } from './rendererEvent'
 import { encodePath } from '@common/utils/electron'
@@ -11,6 +11,12 @@ let browserWindow: Electron.BrowserWindow | null = null
 
 const winEvent = () => {
   if (!browserWindow) return
+
+  const revealMainWindow = () => {
+    if (isCmdParamEnabled(global.envParams.cmdParams.hidden) || !browserWindow || browserWindow.isDestroyed()) return
+    showWindow()
+    setThumbarButtons()
+  }
 
   browserWindow.on('close', event => {
     if (global.lx.isSkipTrayQuit || !global.lx.appSetting['tray.enable']) {
@@ -42,10 +48,11 @@ const winEvent = () => {
   })
 
   browserWindow.once('ready-to-show', () => {
-    if (!global.envParams.cmdParams.hidden) {
-      showWindow()
-      setThumbarButtons()
-    }
+    revealMainWindow()
+    // A second-instance handoff or an update check can hide the window during
+    // the first paint. Restore it once more after the renderer has settled.
+    setTimeout(revealMainWindow, 500)
+    setTimeout(revealMainWindow, 1500)
     global.lx.event_app.main_window_ready_to_show()
   })
 
@@ -86,7 +93,7 @@ export const createWindow = () => {
     maximizable: false,
     fullscreenable: true,
     roundedCorners: global.envParams.cmdParams.dt,
-    show: false,
+    show: !isCmdParamEnabled(global.envParams.cmdParams.hidden),
     webPreferences: {
       session: ses,
       nodeIntegrationInWorker: true,

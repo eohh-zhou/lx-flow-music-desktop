@@ -26,9 +26,12 @@ const init = () => {
 }
 
 initGlobalData()
-initSingleInstanceHandle()
 applyElectronEnvParams()
 setUserDataPath()
+// Resolve the final user-data directory before taking the single-instance lock.
+// This is required for portable builds and prevents an older instance from
+// swallowing a newly launched build into the background.
+initSingleInstanceHandle()
 registerDeeplink(init)
 listenerAppEvent(init)
 

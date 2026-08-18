@@ -9,6 +9,8 @@ import { nativeTheme, powerSaveBlocker } from 'electron'
 import { joinPath } from '@common/utils/nodejs'
 import themes from '@common/theme/index.json'
 
+export const isCmdParamEnabled = (value: unknown) => value === true || value === 'true' || value === 1 || value === '1'
+
 export const parseEnvParams = (argv = process.argv): { cmdParams: LX.CmdParams, deeplink: string | null } => {
   const cmdParams: LX.CmdParams = {}
   let deeplink = null
@@ -24,7 +26,10 @@ export const parseEnvParams = (argv = process.argv): { cmdParams: LX.CmdParams, 
     if (index < 0) {
       cmdParams[param] = true
     } else {
-      cmdParams[param.substring(0, index)] = param.substring(index + 1)
+      const key = param.substring(0, index)
+      const value = param.substring(index + 1)
+      // Boolean command-line flags must not treat the string "false" as enabled.
+      cmdParams[key] = key == 'hidden' ? value == 'true' || value == '1' : value
     }
   }
   return {
@@ -108,7 +113,7 @@ export const mergeSetting = (originSetting: LX.AppSetting, targetSetting?: Parti
 }
 
 const applyInitSetting = (setting: LX.AppSetting) => {
-  if (global.envParams.cmdParams.hidden && !setting['tray.enable']) {
+  if (isCmdParamEnabled(global.envParams.cmdParams.hidden) && !setting['tray.enable']) {
     setting['tray.enable'] = true
   }
 }

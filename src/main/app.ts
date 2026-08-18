@@ -2,7 +2,7 @@ import path from 'node:path'
 import { existsSync, mkdirSync, renameSync } from 'fs'
 import { app, shell, screen, nativeTheme, dialog } from 'electron'
 import { URL_SCHEME_RXP } from '@common/constants'
-import { getProxy, getTheme, initHotKey, initSetting, parseEnvParams } from './utils'
+import { getProxy, getTheme, initHotKey, initSetting, isCmdParamEnabled, parseEnvParams } from './utils'
 import { navigationUrlWhiteList } from '@common/config'
 import defaultSetting from '@common/defaultSetting'
 import { isExistWindow as isExistMainWindow, showWindow as showMainWindow } from './modules/winMain'
@@ -95,7 +95,7 @@ export const initSingleInstanceHandle = () => {
         global.lx.event_app.deeplink(global.envParams.deeplink)
         return
       }
-      if (envParams.cmdParams.hidden !== true) {
+      if (!isCmdParamEnabled(envParams.cmdParams.hidden)) {
         showMainWindow()
       }
     } else {

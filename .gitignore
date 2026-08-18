@@ -75,3 +75,6 @@ src/**/*-internal.js
 # Local reverse-engineering and music-source reference files
 *.apk
 /lx-music-source-paid-*.js
+
+# Temporary APK reverse-engineering workspace
+$tmp/

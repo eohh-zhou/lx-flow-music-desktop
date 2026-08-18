@@ -133,7 +133,7 @@ export default {
     const dom_lists_list = ref(null)
     const rightClickItemIndex = ref(-10)
 
-    const { handleImportList, handleExportList, handleExportQQMusicList } = useShare()
+    const { handleImportList, handleExportList, handleCopyQQMusicList, handleExportQQMusicList } = useShare()
     const { isShowListUpdateModal, handleUpdateSourceList } = useListUpdate()
     const { isShowListSortModal, sortListInfo, handleSortList } = useSort()
     const { isShowDuplicateMusicModal, duplicateListInfo, handleDuplicateList } = useDuplicate()
@@ -184,6 +184,7 @@ export default {
 
       handleImportList,
       handleExportList,
+      handleCopyQQMusicList,
       handleExportQQMusicList,
       handleUpdateSourceList,
       handleQQMusicSync,

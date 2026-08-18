@@ -13,6 +13,7 @@ export default ({
   handleOpenSourceDetailPage,
   handleImportList,
   handleExportList,
+  handleCopyQQMusicList,
   handleExportQQMusicList,
   handleUpdateSourceList,
   handleQQMusicSync,
@@ -70,6 +71,11 @@ export default ({
       {
         name: t('lists__export_to_qq_music'),
         action: 'qq_export',
+        disabled: !menuControl.qq_export,
+      },
+      {
+        name: t('lists__copy_to_qq_music'),
+        action: 'qq_copy',
         disabled: !menuControl.qq_export,
       },
       {
@@ -195,6 +201,9 @@ export default ({
         break
       case 'qq_export':
         handleExportQQMusicList(listInfo)
+        break
+      case 'qq_copy':
+        handleCopyQQMusicList(listInfo)
         break
       case 'remove':
         handleRemove(listInfo)

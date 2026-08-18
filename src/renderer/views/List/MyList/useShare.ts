@@ -1,4 +1,5 @@
 import { toRaw } from '@common/utils/vueTools'
+import { clipboardWriteText } from '@common/utils/electron'
 import { openSaveDir, showSelectDialog } from '@renderer/utils/ipc'
 import { useI18n } from '@renderer/plugins/i18n'
 import { filterFileName, toNewMusicInfo, fixNewMusicInfoQuality, filterMusicList } from '@renderer/utils'
@@ -11,6 +12,16 @@ import { dialog } from '@renderer/plugins/Dialog'
 export default () => {
   const t = useI18n()
   const showImportTip = useImportTip()
+
+  const formatQQMusicImportText = (list: LX.Music.MusicInfo[]) => list
+    .map(m => `${m.name} - ${m.singer}`)
+    .join('\n')
+
+  const handleCopyQQMusicList = async(listInfo: LX.List.MyListInfo) => {
+    if (!listInfo) return
+    const list = await getListMusics(listInfo.id)
+    clipboardWriteText(formatQQMusicImportText(toRaw(list)))
+  }
 
   const handleExportList = (listInfo: LX.List.MyListInfo) => {
     if (!listInfo) return
@@ -116,6 +127,7 @@ export default () => {
 
   return {
     handleExportList,
+    handleCopyQQMusicList,
     handleExportQQMusicList,
     handleImportList,
   }

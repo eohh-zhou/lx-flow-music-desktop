@@ -147,6 +147,8 @@
   "lists__dislike_music_tip": "你真的不喜歡「{name}」嗎？",
   "lists__duplicate": "重複歌曲",
   "lists__export": "匯出",
+  "lists__export_to_qq_music": "匯出到 QQ音樂",
+  "lists__export_to_qq_music_desc": "選取 QQ音樂清單文字儲存位置",
   "lists__export_part_desc": "選取清單檔案儲存位置",
   "lists__import": "匯入",
   "lists__import_part_button_cancel": "不要啊",

@@ -13,6 +13,7 @@ export default ({
   handleOpenSourceDetailPage,
   handleImportList,
   handleExportList,
+  handleExportQQMusicList,
   handleUpdateSourceList,
   handleQQMusicSync,
   handleRemove,
@@ -27,6 +28,7 @@ export default ({
     export: true,
     sync: false,
     qq_sync: true,
+    qq_export: true,
     remove: true,
   })
   const t = useI18n()
@@ -64,6 +66,11 @@ export default ({
         name: t('lists__sync_to_qq_music'),
         action: 'qq_sync',
         disabled: !menuControl.qq_sync,
+      },
+      {
+        name: t('lists__export_to_qq_music'),
+        action: 'qq_export',
+        disabled: !menuControl.qq_export,
       },
       {
         name: t('lists__source_detail'),
@@ -185,6 +192,9 @@ export default ({
         break
       case 'qq_sync':
         handleQQMusicSync(listInfo)
+        break
+      case 'qq_export':
+        handleExportQQMusicList(listInfo)
         break
       case 'remove':
         handleRemove(listInfo)

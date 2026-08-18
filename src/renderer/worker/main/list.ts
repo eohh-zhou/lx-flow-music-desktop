@@ -338,6 +338,18 @@ export const exportPlayListToText = async(savePath: string, lists: Array<LX.List
 }
 
 /**
+ * Export a playlist in the plain-text format accepted by QQ Music's manual import.
+ * One song per line keeps the parser from treating album names as part of the artist.
+ */
+export const exportPlayListToQQMusic = async(savePath: string, list: LX.Music.MusicInfo[]) => {
+  const iconv = (await import('iconv-lite')).default
+  const content = list
+    .map(m => `${m.name} - ${m.singer}`)
+    .join('\n')
+  await saveStrToFile(savePath, iconv.encode(content, 'utf8', { addBOM: true }))
+}
+
+/**
  * 导出列表到csv文件
  * @param savePath 保存路径
  * @param lists 列表数据

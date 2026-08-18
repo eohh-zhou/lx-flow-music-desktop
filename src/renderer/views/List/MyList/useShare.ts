@@ -25,6 +25,18 @@ export default () => {
       })
     })
   }
+  const handleExportQQMusicList = (listInfo: LX.List.MyListInfo) => {
+    if (!listInfo) return
+    void openSaveDir({
+      title: t('lists__export_to_qq_music_desc'),
+      defaultPath: `qq_music_${filterFileName(listInfo.name)}.txt`,
+      filters: [{ name: 'Text', extensions: ['txt'] }],
+    }).then(async result => {
+      if (result.canceled || !result.filePath) return
+      const list = await getListMusics(listInfo.id)
+      await window.lx.worker.main.exportPlayListToQQMusic(result.filePath, toRaw(list))
+    })
+  }
   const handleImportList = (listInfo: LX.List.MyListInfo, index: number) => {
     void showSelectDialog({
       title: t('lists__import_part_desc'),
@@ -104,6 +116,7 @@ export default () => {
 
   return {
     handleExportList,
+    handleExportQQMusicList,
     handleImportList,
   }
 }

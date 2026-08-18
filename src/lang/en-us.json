@@ -147,6 +147,8 @@
   "lists__dislike_music_tip": "Do you really dislike \"{name}\"?",
   "lists__duplicate": "Duplicate Songs",
   "lists__export": "Export",
+  "lists__export_to_qq_music": "Export to QQ Music",
+  "lists__export_to_qq_music_desc": "Choose where to save the QQ Music playlist text",
   "lists__export_part_desc": "Choose where to save the list file",
   "lists__import": "Import",
   "lists__import_part_button_cancel": "No",

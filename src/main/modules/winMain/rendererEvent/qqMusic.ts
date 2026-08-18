@@ -16,7 +16,7 @@ const QQ_MUSIC_LOGIN_PARTITION = 'qq-music-login'
 const QQ_MUSIC_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile'
 const PLAYLIST_SYNC_PREVIEW_TTL = 10 * 60 * 1000
 const PLAYLIST_SYNC_MAX_TRACKS = 1000
-const PLAYLIST_SYNC_ADD_BATCH_SIZE = 50
+const PLAYLIST_SYNC_ADD_BATCH_SIZE = 20
 const recentReports = new Map<string, number>()
 
 interface ResolvedPlaylistSyncTrack extends LX.QQMusic.PlaylistSyncUnmatchedTrack {
@@ -907,9 +907,10 @@ const createQQMusicPlaylist = async(cookie: string, name: string) => {
   return playlistId
 }
 
-const getQQMusicPlaylistAddParams = (cookie: string, playlistId: string, tracks: ResolvedPlaylistSyncTrack[], gtk: number) => {
+const getQQMusicPlaylistAddParams = (cookie: string, playlistId: string, tracks: ResolvedPlaylistSyncTrack[], gtk: number, useLegacyType = false) => {
   const { uin } = getQQMusicWebAuth(cookie)
   const songMids = tracks.map(track => track.songMid).filter(Boolean)
+  const songIds = tracks.map(track => track.songId).filter(Boolean)
   return {
     loginUin: uin,
     hostUin: 0,
@@ -922,8 +923,11 @@ const getQQMusicPlaylistAddParams = (cookie: string, playlistId: string, tracks:
     g_tk: gtk,
     g_tk_new_20200303: gtk,
     uin,
+    // QQ Music's legacy endpoint accepts both identifiers. Sending only
+    // midlist can return code 0 while silently adding no songs.
+    songidlist: songIds.join(','),
     midlist: songMids.join(','),
-    typelist: songMids.map(() => 13).join(','),
+    typelist: tracks.map(track => String(useLegacyType ? 13 : Number(track.songType) || 0)).join(','),
     dirid: playlistId,
     addtype: '',
     formsender: 4,
@@ -943,6 +947,7 @@ const requestQQMusicPlaylistAddViaMusicu = async(cookie: string, playlistId: str
       v_songInfo: tracks.map(track => ({
         songId: Number(track.songId),
         songType: Number(track.songType) || 0,
+        songMid: track.songMid,
         songName: track.name,
         singerName: track.singer,
       })),
@@ -955,6 +960,7 @@ const requestQQMusicPlaylistAdd = async(cookie: string, playlistId: string, trac
   const { gtk } = getQQMusicWebAuth(cookie)
   const attempts = [
     { method: 'GET' as const, query: getQQMusicPlaylistAddParams(cookie, playlistId, tracks, gtk) },
+    { method: 'GET' as const, query: getQQMusicPlaylistAddParams(cookie, playlistId, tracks, gtk, true) },
     { method: 'GET' as const, query: getQQMusicPlaylistAddParams(cookie, playlistId, tracks, 5381) },
     {
       method: 'POST' as const,
@@ -1009,7 +1015,16 @@ const addQQMusicPlaylistTracks = async(
   if (!tracks.length) return
   const songMids = tracks.map(track => track.songMid).filter(Boolean)
   if (songMids.length != tracks.length) throw new Error('添加歌曲到 QQ 音乐歌单失败：部分歌曲缺少 QQ Music MID')
-  const data = await requestQQMusicPlaylistAdd(cookie, playlistId, tracks)
+  let data: Record<string, any>
+  try {
+    data = await requestQQMusicPlaylistAdd(cookie, playlistId, tracks)
+  } catch (error) {
+    if (tracks.length <= 1) throw error
+    const midpoint = Math.ceil(tracks.length / 2)
+    await addQQMusicPlaylistTracks(cookie, playlistId, tracks.slice(0, midpoint), onBatchAdded)
+    await addQQMusicPlaylistTracks(cookie, playlistId, tracks.slice(midpoint), onBatchAdded)
+    return
+  }
   if (Number(data?.code ?? -1) == 403 && tracks.length > 1) {
     const midpoint = Math.ceil(tracks.length / 2)
     await addQQMusicPlaylistTracks(cookie, playlistId, tracks.slice(0, midpoint), onBatchAdded)

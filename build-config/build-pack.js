@@ -186,6 +186,12 @@ const createTarget = {
         }
       case 'green':
         winOptions.artifactName = `\${productName}-v\${version}-win_${arch}-green.\${ext}`
+        winOptions.extraFiles = [
+          {
+            from: './build-config/portable',
+            to: 'portable',
+          },
+        ]
         return {
           buildOptions: { win: ['7z'] },
           options: winOptions,
@@ -198,6 +204,12 @@ const createTarget = {
         }
       case 'win7_green':
         winOptions.artifactName = `\${productName}-v\${version}-win7_${arch}-green.\${ext}`
+        winOptions.extraFiles = [
+          {
+            from: './build-config/portable',
+            to: 'portable',
+          },
+        ]
         return {
           buildOptions: { win: ['7z'] },
           options: winOptions,

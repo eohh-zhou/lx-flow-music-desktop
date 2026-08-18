@@ -9,6 +9,8 @@ import getStore from '@main/utils/store'
 const MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
 const QQ_MUSIC_CREATE_PLAYLIST_URL = 'https://c.y.qq.com/splcloud/fcgi-bin/create_playlist.fcg'
 const QQ_MUSIC_ADD_TO_PLAYLIST_URL = 'https://c.y.qq.com/splcloud/fcgi-bin/fcg_music_add2songdir.fcg'
+const QQ_MUSIC_USER_PLAYLISTS_URL = 'https://c.y.qq.com/rsc/fcgi-bin/fcg_user_created_diss'
+const QQ_MUSIC_PLAYLIST_MAP_URL = 'https://c.y.qq.com/splcloud/fcgi-bin/fcg_musiclist_getmyfav.fcg'
 const COOKIE_KEY = 'cookie'
 const QQ_MUSIC_LOGIN_PARTITION = 'qq-music-login'
 const QQ_MUSIC_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile'
@@ -670,6 +672,125 @@ const getCreatedPlaylistId = (data: Record<string, any>) => {
   return /^\d+$/.test(playlistId) && playlistId != '0' ? playlistId : ''
 }
 
+interface QQMusicPlaylistSummary {
+  id: string
+  name: string
+}
+
+const getQQMusicPlaylistSummaries = async(cookie: string) => {
+  const { uin } = getQQMusicWebAuth(cookie)
+  if (uin == '0') throw new Error('QQ 音乐登录状态缺少账号标识，请重新登录')
+  const response = await request<Record<string, any> | string>(QQ_MUSIC_USER_PLAYLISTS_URL, {
+    method: 'GET',
+    query: {
+      hostUin: 0,
+      hostuin: uin,
+      sin: 0,
+      size: 200,
+      g_tk: 5381,
+      loginUin: 0,
+      format: 'json',
+      inCharset: 'utf8',
+      outCharset: 'utf-8',
+      notice: 0,
+      platform: 'yqq.json',
+      needNewCode: 0,
+    },
+    headers: {
+      ...getQQMusicWebHeaders(cookie),
+      Referer: 'https://y.qq.com/n/ryqq/profile',
+    },
+    timeout: 30000,
+  })
+  if (response.statusCode !== 200) throw new Error(`获取 QQ 音乐歌单失败：HTTP ${response.statusCode}`)
+  const data = parseQQMusicLegacyBody(response.body)
+  const code = Number(data?.code ?? -1)
+  if (code == 4000) return []
+  if (code != 0) throw getQQMusicLegacyError('获取 QQ 音乐歌单', data ?? {})
+  const disslist = data.data?.disslist ?? data.disslist ?? []
+  if (!Array.isArray(disslist)) return []
+  return disslist.map((item: Record<string, any>) => ({
+    id: String(item.dirid ?? item.dissid ?? item.id ?? ''),
+    name: String(item.diss_name ?? item.dissname ?? item.name ?? ''),
+  } satisfies QQMusicPlaylistSummary)).filter(item => /^\d+$/.test(item.id) && item.id != '0' && item.name)
+}
+
+const findQQMusicPlaylist = async(cookie: string, name: string) => {
+  const playlists = await getQQMusicPlaylistSummaries(cookie)
+  return playlists.find(item => item.name == name) ?? null
+}
+
+const collectQQMusicMapValues = (value: unknown, result: string[] = []) => {
+  if (value == null) return result
+  if (Array.isArray(value)) {
+    for (const item of value) collectQQMusicMapValues(item, result)
+    return result
+  }
+  if (typeof value == 'object') {
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      result.push(key)
+      collectQQMusicMapValues(item, result)
+    }
+    return result
+  }
+  for (const item of String(value).split(',')) result.push(item.trim())
+  return result
+}
+
+const getQQMusicPlaylistSongKeys = async(cookie: string, playlistId: string) => {
+  const response = await request<Record<string, any> | string>(QQ_MUSIC_PLAYLIST_MAP_URL, {
+    method: 'GET',
+    query: {
+      dirid: playlistId,
+      dirinfo: 1,
+      g_tk: 5381,
+      format: 'json',
+    },
+    headers: {
+      ...getQQMusicWebHeaders(cookie),
+      Referer: 'https://y.qq.com/n/ryqq/playlist',
+    },
+    timeout: 30000,
+  })
+  if (response.statusCode !== 200) throw new Error(`读取 QQ 音乐歌单失败：HTTP ${response.statusCode}`)
+  const data = parseQQMusicLegacyBody(response.body)
+  const code = Number(data?.code ?? -1)
+  if (code != 0) throw getQQMusicLegacyError('读取 QQ 音乐歌单', data ?? {})
+  const keys = new Set<string>()
+  for (const value of collectQQMusicMapValues(data.mapmid)) {
+    if (/^[A-Za-z0-9]{10,20}$/.test(value)) keys.add(`mid:${value}`)
+  }
+  for (const value of collectQQMusicMapValues(data.map)) {
+    if (/^\d{5,}$/.test(value)) keys.add(`id:${value}`)
+  }
+  return keys
+}
+
+const getQQMusicTrackKeys = (track: { songId: string, songMid: string }) => [
+  track.songMid ? `mid:${track.songMid}` : '',
+  track.songId ? `id:${track.songId}` : '',
+].filter(Boolean)
+
+const verifyQQMusicPlaylistTracks = async(cookie: string, playlistId: string, tracks: ResolvedPlaylistSyncTrack[]) => {
+  let missing = tracks
+  let lastError: unknown = null
+  for (let attempt = 0; attempt < 5 && missing.length; attempt++) {
+    try {
+      const actualKeys = await getQQMusicPlaylistSongKeys(cookie, playlistId)
+      missing = tracks.filter(track => !getQQMusicTrackKeys(track).some(key => actualKeys.has(key)))
+      if (!missing.length) return
+    } catch (error) {
+      lastError = error
+    }
+    if (missing.length && attempt < 4) await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+  }
+  if (lastError && missing.length == tracks.length) {
+    throw lastError instanceof Error ? lastError : new Error(String(lastError))
+  }
+  const sample = missing.slice(0, 3).map(track => `${track.name} - ${track.singer}`).join('、')
+  throw new Error(`QQ 音乐歌单复核失败：接口返回成功，但仍缺少 ${missing.length} 首歌曲${sample ? `（例如：${sample}）` : ''}`)
+}
+
 const createQQMusicPlaylist = async(cookie: string, name: string) => {
   const { uin, gtk } = getQQMusicWebAuth(cookie)
   const response = await request<Record<string, any> | string>(QQ_MUSIC_CREATE_PLAYLIST_URL, {
@@ -698,7 +819,11 @@ const createQQMusicPlaylist = async(cookie: string, name: string) => {
   if (response.statusCode !== 200) throw new Error(`创建 QQ 音乐歌单失败：HTTP ${response.statusCode}`)
   const data = parseQQMusicLegacyBody(response.body)
   const code = Number(data?.code ?? -1)
-  if (code == 21) throw new Error(`创建 QQ 音乐歌单失败：已存在同名歌单“${name}”，请先重命名本地歌单`)
+  if (code == 21) {
+    const existingPlaylist = await findQQMusicPlaylist(cookie, name)
+    if (existingPlaylist) return existingPlaylist.id
+    throw new Error(`创建 QQ 音乐歌单失败：已存在同名歌单“${name}”，但无法读取该歌单`)
+  }
   if (code != 0) throw getQQMusicLegacyError('创建 QQ 音乐歌单', data ?? {})
   const playlistId = getCreatedPlaylistId(data)
   if (!playlistId) throw new Error('QQ Music did not return the created playlist ID')
@@ -746,6 +871,7 @@ const requestQQMusicPlaylistAdd = async(cookie: string, playlistId: string, trac
     },
   ]
   let lastData: Record<string, any> = { code: -1 }
+  let lastVerificationError: Error | null = null
   for (const attempt of attempts) {
     const response = await request<Record<string, any> | string>(QQ_MUSIC_ADD_TO_PLAYLIST_URL, {
       method: attempt.method,
@@ -757,9 +883,18 @@ const requestQQMusicPlaylistAdd = async(cookie: string, playlistId: string, trac
     const data = parseQQMusicLegacyBody(response.body)
     lastData = data
     const code = Number(data?.code ?? -1)
-    if (code == 0) return data
+    if (code == 0) {
+      try {
+        await verifyQQMusicPlaylistTracks(cookie, playlistId, tracks)
+        return data
+      } catch (error) {
+        lastVerificationError = error instanceof Error ? error : new Error(String(error))
+        continue
+      }
+    }
     if (code != 403) throw getQQMusicLegacyError('添加歌曲到 QQ 音乐歌单', data ?? {})
   }
+  if (lastVerificationError) throw lastVerificationError
   return lastData
 }
 
@@ -767,7 +902,7 @@ const addQQMusicPlaylistTracks = async(
   cookie: string,
   playlistId: string,
   tracks: ResolvedPlaylistSyncTrack[],
-  onBatchAdded: (count: number) => void,
+  onBatchAdded: (tracks: ResolvedPlaylistSyncTrack[]) => Promise<void>,
 ) => {
   if (!tracks.length) return
   const songMids = tracks.map(track => track.songMid).filter(Boolean)
@@ -780,7 +915,7 @@ const addQQMusicPlaylistTracks = async(
     return
   }
   if (Number(data?.code ?? -1) != 0) throw getQQMusicLegacyError('添加歌曲到 QQ 音乐歌单', data ?? {})
-  onBatchAdded(tracks.length)
+  await onBatchAdded(tracks)
 }
 
 const commitPlaylistSync = async(request: LX.QQMusic.PlaylistSyncCommitRequest) => {
@@ -795,16 +930,28 @@ const commitPlaylistSync = async(request: LX.QQMusic.PlaylistSyncCommitRequest) 
   pending.executing = true
   pending.expiresAt = Date.now() + PLAYLIST_SYNC_PREVIEW_TTL
   try {
+    const expectedTracks = pending.matched.slice()
     if (!pending.playlistId) {
-      pending.playlistId = await createQQMusicPlaylist(cookie, pending.name)
-      await new Promise(resolve => setTimeout(resolve, 800))
+      const existingPlaylist = await findQQMusicPlaylist(cookie, pending.name)
+      if (existingPlaylist) {
+        pending.playlistId = existingPlaylist.id
+        const existingKeys = await getQQMusicPlaylistSongKeys(cookie, existingPlaylist.id)
+        const missingTracks = pending.matched.filter(track => !getQQMusicTrackKeys(track).some(key => existingKeys.has(key)))
+        pending.duplicates += pending.matched.length - missingTracks.length
+        pending.matched = missingTracks
+        pending.addedCount = 0
+      } else {
+        pending.playlistId = await createQQMusicPlaylist(cookie, pending.name)
+        await new Promise(resolve => setTimeout(resolve, 800))
+      }
     }
     while (pending.addedCount < pending.matched.length) {
       const batch = pending.matched.slice(pending.addedCount, pending.addedCount + PLAYLIST_SYNC_ADD_BATCH_SIZE)
-      await addQQMusicPlaylistTracks(cookie, pending.playlistId, batch, count => {
-        pending.addedCount += count
+      await addQQMusicPlaylistTracks(cookie, pending.playlistId, batch, async addedTracks => {
+        pending.addedCount += addedTracks.length
       })
     }
+    await verifyQQMusicPlaylistTracks(cookie, pending.playlistId, expectedTracks)
     const result = {
       playlistId: pending.playlistId,
       name: pending.name,

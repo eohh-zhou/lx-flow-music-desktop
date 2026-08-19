@@ -1,5 +1,4 @@
 import { toRaw } from '@common/utils/vueTools'
-import { clipboardWriteText } from '@common/utils/electron'
 import { openSaveDir, showSelectDialog } from '@renderer/utils/ipc'
 import { useI18n } from '@renderer/plugins/i18n'
 import { filterFileName, toNewMusicInfo, fixNewMusicInfoQuality, filterMusicList } from '@renderer/utils'
@@ -13,16 +12,6 @@ export default () => {
   const t = useI18n()
   const showImportTip = useImportTip()
 
-  const formatQQMusicImportText = (list: LX.Music.MusicInfo[]) => list
-    .map(m => `${m.name} - ${m.singer}`)
-    .join('\n')
-
-  const handleCopyQQMusicList = async(listInfo: LX.List.MyListInfo) => {
-    if (!listInfo) return
-    const list = await getListMusics(listInfo.id)
-    clipboardWriteText(formatQQMusicImportText(toRaw(list)))
-  }
-
   const handleExportList = (listInfo: LX.List.MyListInfo) => {
     if (!listInfo) return
     void openSaveDir({
@@ -34,18 +23,6 @@ export default () => {
         type: 'playListPart_v2',
         data: { ...toRaw(listInfo), list: toRaw(await getListMusics(listInfo.id)) },
       })
-    })
-  }
-  const handleExportQQMusicList = (listInfo: LX.List.MyListInfo) => {
-    if (!listInfo) return
-    void openSaveDir({
-      title: t('lists__export_to_qq_music_desc'),
-      defaultPath: `qq_music_${filterFileName(listInfo.name)}.txt`,
-      filters: [{ name: 'Text', extensions: ['txt'] }],
-    }).then(async result => {
-      if (result.canceled || !result.filePath) return
-      const list = await getListMusics(listInfo.id)
-      await window.lx.worker.main.exportPlayListToQQMusic(result.filePath, toRaw(list))
     })
   }
   const handleImportList = (listInfo: LX.List.MyListInfo, index: number) => {
@@ -127,8 +104,6 @@ export default () => {
 
   return {
     handleExportList,
-    handleCopyQQMusicList,
-    handleExportQQMusicList,
     handleImportList,
   }
 }

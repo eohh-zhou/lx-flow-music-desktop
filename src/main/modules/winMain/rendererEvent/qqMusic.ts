@@ -1166,8 +1166,11 @@ const commitPlaylistSync = async(request: LX.QQMusic.PlaylistSyncCommitRequest) 
       tid: pending.playlistTid ?? '',
       name: pending.name,
     }
-    while (pending.addedCount < pending.matched.length) {
-      const batch = pending.matched.slice(pending.addedCount, pending.addedCount + PLAYLIST_SYNC_ADD_BATCH_SIZE)
+    // QQ Music inserts each submitted track at the head of the playlist.
+    // Reverse the queue so the remote playlist keeps the local playlist order.
+    const tracksToAdd = pending.matched.slice().reverse()
+    while (pending.addedCount < tracksToAdd.length) {
+      const batch = tracksToAdd.slice(pending.addedCount, pending.addedCount + PLAYLIST_SYNC_ADD_BATCH_SIZE)
       await addQQMusicPlaylistTracks(cookie, playlist, batch, async addedTracks => {
         pending.addedCount += addedTracks.length
       })

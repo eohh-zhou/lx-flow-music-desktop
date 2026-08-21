@@ -250,6 +250,8 @@ const requestMusicu = async(requestBody: Record<string, any>, cookie: string) =>
     json: { comm: buildComm(cookie), req_0: requestBody },
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
       Referer: 'https://y.qq.com/',
       Origin: 'https://y.qq.com',
       Cookie: cookie,
@@ -509,20 +511,26 @@ const getRadarTracks = async(radioId: number) => {
 const getRecommendPlaylists = async() => {
   const cookie = getRequiredCookie()
   const data = await requestMusicu({
-    module: 'playlist.HotRecommendServer',
-    method: 'get_hot_recommend',
-    param: { async: 1, cmd: 2 },
+    module: 'music.playlist.PlaylistSquare',
+    method: 'GetRecommendFeed',
+    param: { From: 0, Size: 20 },
   }, cookie)
-  const list = Array.isArray(data.v_hot)
-    ? data.v_hot.map((item: Record<string, any>) => ({
-      id: String(item.content_id ?? ''),
-      name: String(item.title ?? ''),
-      author: String(item.username ?? ''),
-      img: normalizeImageUrl(item.cover),
-      desc: String(item.rcmdcontent ?? item.rcmdtemplate ?? ''),
-      playCount: Number(item.listen_num ?? 0),
-    })).filter((item: LX.QQMusic.PlaylistItem) => item.id && item.name)
-    : []
+  const rawList = [data.List, data.content, data.v_playlist, data.playlist, data.disslist]
+    .find(value => Array.isArray(value) && value.length) ?? []
+  const list = rawList.map((item: Record<string, any>) => {
+    const playlist = item.Playlist ?? item.playlist ?? item
+    const basic = playlist.basic ?? playlist
+    const cover = basic.cover ?? {}
+    const creator = basic.creator ?? {}
+    return {
+      id: String(basic.tid ?? basic.dirid ?? basic.id ?? ''),
+      name: String(basic.title ?? basic.name ?? ''),
+      author: String(creator.nick ?? creator.name ?? basic.username ?? ''),
+      img: normalizeImageUrl(cover.medium_url ?? cover.big_url ?? cover.default_url ?? cover.small_url ?? basic.cover),
+      desc: String(basic.desc ?? basic.description ?? ''),
+      playCount: Number(basic.play_cnt ?? basic.listen_num ?? basic.play_count ?? 0),
+    }
+  }).filter((item: LX.QQMusic.PlaylistItem) => item.id && item.name)
   return { list } satisfies LX.QQMusic.PlaylistRecommend
 }
 

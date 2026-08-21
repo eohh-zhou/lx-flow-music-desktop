@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from '@common/utils/vueTools'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from '@common/utils/vueTools'
 import { useRouter } from '@common/utils/vueRouter'
 import { useI18n } from '@root/lang'
 import { formatPlayCount, toNewMusicInfo } from '@renderer/utils'
@@ -117,7 +117,14 @@ const radarGroups = ref<LX.QQMusic.RadioGroup[]>([])
 const playlists = ref<LX.QQMusic.PlaylistItem[]>([])
 const newSongs = ref<LX.Music.MusicInfoOnline[]>([])
 const loadedTabs = new Set<RecommendTab>()
+let loadedDay = ''
+let dailyRefreshTimer: ReturnType<typeof setInterval> | null = null
 let requestId = 0
+
+const getDayKey = () => {
+  const now = new Date()
+  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
+}
 
 const tabs = computed(() => [
   { id: 'home', label: t('qq_music_home') },
@@ -186,10 +193,17 @@ const setNewSongs = (result: LX.QQMusic.NewSongRecommend) => {
     .filter((song): song is LX.Music.MusicInfoOnline => song.source != 'local')
 }
 
+const markTabLoaded = (tab: RecommendTab, dayKey: string) => {
+  loadedTabs.add(tab)
+  loadedDay = dayKey
+}
+
 const loadActiveTab = async(force = false) => {
   if (!configured.value) return
   const tab = activeTab.value
-  if (!force && loadedTabs.has(tab)) return
+  const dayKey = getDayKey()
+  if (loadedDay != dayKey) loadedTabs.clear()
+  if (!force && loadedTabs.has(tab) && loadedDay == dayKey) return
   const currentRequestId = ++requestId
   loading.value = true
   error.value = ''
@@ -201,6 +215,7 @@ const loadActiveTab = async(force = false) => {
         getQQMusicRecommendPlaylists(),
         getQQMusicNewSongs(),
       ])
+      if (requestId != currentRequestId) return
       daily.value = dailyResult
       radarGroups.value = radarResult.groups
       playlists.value = playlistResult.list
@@ -209,13 +224,19 @@ const loadActiveTab = async(force = false) => {
       loadedTabs.add('playlists')
       loadedTabs.add('newSongs')
     } else if (tab == 'radar') {
-      radarGroups.value = (await getQQMusicRadarList()).groups
+      const result = await getQQMusicRadarList()
+      if (requestId != currentRequestId) return
+      radarGroups.value = result.groups
     } else if (tab == 'playlists') {
-      playlists.value = (await getQQMusicRecommendPlaylists()).list
+      const result = await getQQMusicRecommendPlaylists()
+      if (requestId != currentRequestId) return
+      playlists.value = result.list
     } else {
-      setNewSongs(await getQQMusicNewSongs())
+      const result = await getQQMusicNewSongs()
+      if (requestId != currentRequestId) return
+      setNewSongs(result)
     }
-    loadedTabs.add(tab)
+    markTabLoaded(tab, dayKey)
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err)
   } finally {
@@ -265,6 +286,16 @@ onMounted(async() => {
     statusChecked.value = true
   }
   if (configured.value) await loadActiveTab()
+  dailyRefreshTimer = setInterval(() => {
+    if (!configured.value || !loadedDay || loadedDay == getDayKey()) return
+    loadedTabs.clear()
+    void loadActiveTab(true)
+  }, 60 * 1000)
+})
+
+onBeforeUnmount(() => {
+  if (dailyRefreshTimer) clearInterval(dailyRefreshTimer)
+  dailyRefreshTimer = null
 })
 </script>
 

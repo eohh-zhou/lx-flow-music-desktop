@@ -423,22 +423,10 @@ const getDailyRecommend = async() => {
     module: 'music.srfDissInfo.DissInfo',
     method: 'CgiGetDiss',
     param: {
-      new_format: 1,
-      disstid: 0,
-      enc_host_uin: uin,
       dirid: 202,
-      onlysonglist: 0,
-      need_game_ad: 1,
-      optype: 2,
-      orderlist: 0,
-      tag: 1,
-      userinfo: 1,
-      is_mobile: 1,
-      censor_status: 1,
+      uinAttached: true,
+      enc_host_uin: uin,
       local_time: Math.floor(Date.now() / 1000),
-      update_rtime: 1,
-      ctx: 0,
-      CountdownTime: 0,
     },
   }, cookie)
   const songs = Array.isArray(data.songlist)
@@ -486,7 +474,7 @@ const getRadarTracks = async(radioId: number) => {
   const cookie = getRequiredCookie()
   if (!Number.isInteger(radioId) || radioId <= 0) throw new Error('Invalid QQ Music radio ID')
   const data = await requestMusicu({
-    module: 'mb_track_radio_svr',
+    module: 'music.radioProxy.MbTrackRadioSvr',
     method: 'get_radio_track',
     param: {
       id: radioId,

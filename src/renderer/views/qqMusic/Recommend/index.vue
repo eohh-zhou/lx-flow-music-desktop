@@ -125,6 +125,11 @@ const getDayKey = () => {
   const now = new Date()
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
 }
+const refreshIfStale = () => {
+  if (!configured.value || !loadedDay || loadedDay == getDayKey()) return
+  loadedTabs.clear()
+  void loadActiveTab(true)
+}
 
 const tabs = computed(() => [
   { id: 'home', label: t('qq_music_home') },
@@ -286,16 +291,16 @@ onMounted(async() => {
     statusChecked.value = true
   }
   if (configured.value) await loadActiveTab()
-  dailyRefreshTimer = setInterval(() => {
-    if (!configured.value || !loadedDay || loadedDay == getDayKey()) return
-    loadedTabs.clear()
-    void loadActiveTab(true)
-  }, 60 * 1000)
+  dailyRefreshTimer = setInterval(refreshIfStale, 60 * 1000)
+  window.addEventListener('focus', refreshIfStale)
+  document.addEventListener('visibilitychange', refreshIfStale)
 })
 
 onBeforeUnmount(() => {
   if (dailyRefreshTimer) clearInterval(dailyRefreshTimer)
   dailyRefreshTimer = null
+  window.removeEventListener('focus', refreshIfStale)
+  document.removeEventListener('visibilitychange', refreshIfStale)
 })
 </script>
 

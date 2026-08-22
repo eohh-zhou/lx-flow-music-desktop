@@ -222,13 +222,13 @@ const getRequiredCookie = () => {
   return cookie
 }
 
-const buildComm = (cookie: string) => {
+const buildComm = (cookie: string, personalized = false) => {
   const cookies = parseCookies(cookie)
   const skey = cookies.get('p_skey') ?? cookies.get('skey') ?? ''
   const authst = cookies.get('qqmusic_key') ?? cookies.get('qm_keyst') ?? ''
   const loginType = cookies.get('tmeLoginType')
   const comm: Record<string, any> = {
-    ct: 24,
+    ct: personalized && authst ? 19 : 24,
     cv: 0,
     format: 'json',
     inCharset: 'utf-8',
@@ -244,10 +244,10 @@ const buildComm = (cookie: string) => {
   return comm
 }
 
-const requestMusicu = async(requestBody: Record<string, any>, cookie: string) => {
+const requestMusicu = async(requestBody: Record<string, any>, cookie: string, personalized = false) => {
   const response = await request<Record<string, any>>(MUSICU_URL, {
     method: 'POST',
-    json: { comm: buildComm(cookie), req_0: requestBody },
+    json: { comm: buildComm(cookie, personalized), req_0: requestBody },
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
@@ -470,11 +470,45 @@ const getRadarList = async() => {
   return { groups } satisfies LX.QQMusic.RadarRecommend
 }
 
+const getRadioTracks = (data: Record<string, any>) => {
+  const rawTracks = [data.tracks, data.track, data.songList, data.vec_song]
+    .find(value => Array.isArray(value)) ?? []
+  return rawTracks
+    .map((item: Record<string, any>) => toOldSongInfo(item.Track ?? item))
+    .filter((item: ReturnType<typeof toOldSongInfo>) => item.songmid)
+}
 const getRadarTracks = async(radioId: number) => {
   const cookie = getRequiredCookie()
   if (!Number.isInteger(radioId) || radioId <= 0) throw new Error('Invalid QQ Music radio ID')
+
+  if (radioId == 99) {
+    const songMap = new Map<string, ReturnType<typeof toOldSongInfo>>()
+    let firstBatch: Record<string, any> = {}
+    for (let batch = 0; batch < 4 && songMap.size < 20; batch++) {
+      const data = await requestMusicu({
+        module: 'music.radioProxy.MbTrackRadioSvr',
+        method: 'get_radio_track',
+        param: {},
+      }, cookie, true)
+      if (!batch) firstBatch = data
+      const songs = getRadioTracks(data)
+      if (!songs.length) break
+      for (const song of songs) songMap.set(song.songmid, song)
+    }
+    const songs = Array.from(songMap.values()).slice(0, 20)
+    return {
+      info: {
+        name: String(firstBatch.name ?? '猜你喜欢'),
+        desc: '基于 QQ 音乐账号画像动态生成',
+        img: normalizeImageUrl(firstBatch.bg_pic_url ?? songs[0]?.img),
+      },
+      list: songs,
+      total: songs.length,
+    } satisfies LX.QQMusic.DailyRecommend
+  }
+
   const data = await requestMusicu({
-    module: 'music.radioProxy.MbTrackRadioSvr',
+    module: 'mb_track_radio_svr',
     method: 'get_radio_track',
     param: {
       id: radioId,
@@ -482,9 +516,7 @@ const getRadarTracks = async(radioId: number) => {
       num: 30,
     },
   }, cookie)
-  const songs = Array.isArray(data.tracks)
-    ? data.tracks.map(toOldSongInfo).filter((item: ReturnType<typeof toOldSongInfo>) => item.songmid)
-    : []
+  const songs = getRadioTracks(data)
   return {
     info: {
       name: String(data.name ?? '雷达推荐'),

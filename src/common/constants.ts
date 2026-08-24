@@ -16,6 +16,7 @@ export const STORE_NAMES = {
   THEME: 'theme',
   SOUND_EFFECT: 'sound_effect',
   QQ_MUSIC: 'qq_music',
+  NETEASE_MUSIC: 'netease_music',
 } as const
 
 export const APP_EVENT_NAMES = {

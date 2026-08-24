@@ -56,6 +56,14 @@ export default {
           size,
           name: 'QQMusicRecommend',
           enable: appSetting['qqMusic.enabled'],
+        }, {
+          to: '/neteaseMusic/recommend',
+          tips: t('netease_music'),
+          icon: '#icon-audio-wave',
+          iconSize: '0 0 24 24',
+          size,
+          name: 'NeteaseMusicRecommend',
+          enable: appSetting['neteaseMusic.enabled'],
         },
         {
           to: '/leaderboard',
@@ -96,9 +104,12 @@ export default {
       ].filter(m => m.enable)
     })
     const isQQMusicDetail = () => route.name == 'SongListDetail' && route.query.fromName == 'QQMusicRecommend'
+    const isNeteaseMusicDetail = () => route.name == 'SongListDetail' && route.query.fromName == 'NeteaseMusicRecommend'
     const isMenuActive = (name: string) => isQQMusicDetail()
       ? name == 'QQMusicRecommend'
-      : route.meta.name == name
+      : isNeteaseMusicDetail()
+        ? name == 'NeteaseMusicRecommend'
+        : route.meta.name == name
     return {
       appSetting,
       menus,

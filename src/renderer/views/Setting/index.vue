@@ -67,6 +67,7 @@ import SettingOdc from './components/SettingOdc.vue'
 import SettingBackup from './components/SettingBackup.vue'
 import SettingOther from './components/SettingOther.vue'
 import SettingQQMusic from './components/SettingQQMusic.vue'
+import SettingNeteaseMusic from './components/SettingNeteaseMusic.vue'
 import SettingUpdate from './components/SettingUpdate.vue'
 import SettingAbout from './components/SettingAbout.vue'
 
@@ -88,6 +89,7 @@ export default {
     SettingBackup,
     SettingOther,
     SettingQQMusic,
+    SettingNeteaseMusic,
     SettingUpdate,
     SettingAbout,
   },
@@ -113,6 +115,7 @@ export default {
         { id: 'SettingOdc', title: t('setting__odc') },
         { id: 'SettingBackup', title: t('setting__backup') },
         { id: 'SettingQQMusic', title: t('qq_music_setting') },
+        { id: 'SettingNeteaseMusic', title: t('netease_music_setting') },
         { id: 'SettingOther', title: t('setting__other') },
         { id: 'SettingUpdate', title: t('setting__update') },
         { id: 'SettingAbout', title: t('setting__about') },

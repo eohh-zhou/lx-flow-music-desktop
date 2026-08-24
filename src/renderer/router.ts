@@ -29,6 +29,13 @@ const router = createRouter({
       meta: {
         name: 'QQMusicRecommend',
       },
+    }, {
+      path: '/neteaseMusic/recommend',
+      name: 'NeteaseMusicRecommend',
+      component: require('./views/neteaseMusic/Recommend/index.vue').default,
+      meta: {
+        name: 'NeteaseMusicRecommend',
+      },
     },
     {
       path: '/songList/detail',

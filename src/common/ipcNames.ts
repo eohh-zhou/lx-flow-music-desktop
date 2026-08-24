@@ -145,6 +145,13 @@ const modules = {
     qq_music_report_play: 'qq_music_report_play',
     qq_music_playlist_sync_preview: 'qq_music_playlist_sync_preview',
     qq_music_playlist_sync_commit: 'qq_music_playlist_sync_commit',
+    netease_music_set_cookie: 'netease_music_set_cookie',
+    netease_music_status: 'netease_music_status',
+    netease_music_login: 'netease_music_login',
+    netease_music_daily_recommend: 'netease_music_daily_recommend',
+    netease_music_personal_fm: 'netease_music_personal_fm',
+    netease_music_recommend_playlists: 'netease_music_recommend_playlists',
+    netease_music_new_songs: 'netease_music_new_songs',
 
     open_api_action: 'open_api_action',
     sync_action: 'sync_action',

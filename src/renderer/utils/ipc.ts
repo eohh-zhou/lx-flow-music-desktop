@@ -709,6 +709,33 @@ export const previewQQMusicPlaylistSync = async(request: LX.QQMusic.PlaylistSync
 export const commitQQMusicPlaylistSync = async(request: LX.QQMusic.PlaylistSyncCommitRequest) => {
   return rendererInvoke<LX.QQMusic.PlaylistSyncCommitRequest, LX.QQMusic.PlaylistSyncResult>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_playlist_sync_commit, request)
 }
+export const setNeteaseMusicCookie = async(cookie: string) => {
+  await rendererInvoke<string, boolean>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_set_cookie, cookie)
+}
+
+export const getNeteaseMusicStatus = async() => {
+  return rendererInvoke<LX.NeteaseMusic.Status>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_status)
+}
+
+export const loginNeteaseMusic = async() => {
+  return rendererInvoke<LX.NeteaseMusic.LoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_login)
+}
+
+export const getNeteaseMusicDailyRecommend = async() => {
+  return rendererInvoke<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_daily_recommend)
+}
+
+export const getNeteaseMusicPersonalFM = async() => {
+  return rendererInvoke<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_personal_fm)
+}
+
+export const getNeteaseMusicRecommendPlaylists = async() => {
+  return rendererInvoke<LX.NeteaseMusic.PlaylistRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_recommend_playlists)
+}
+
+export const getNeteaseMusicNewSongs = async() => {
+  return rendererInvoke<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_new_songs)
+}
 
 /**
  * 退出应用

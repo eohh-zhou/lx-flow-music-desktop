@@ -88,6 +88,9 @@ declare global {
        */
       'qqMusic.enabled': boolean
 
+      /** Whether NetEase Cloud Music recommendations are enabled */
+      'neteaseMusic.enabled': boolean
+
       /**
        * 启动时自动播放歌曲
        */

@@ -23,6 +23,7 @@ const defaultSetting: LX.AppSetting = {
   'common.tryAutoUpdate': true,
   'common.showChangeLog': true,
   'qqMusic.enabled': true,
+  'neteaseMusic.enabled': true,
 
   'player.startupAutoPlay': false,
   'player.togglePlayMethod': 'listLoop',

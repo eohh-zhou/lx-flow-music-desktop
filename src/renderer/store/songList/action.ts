@@ -19,6 +19,9 @@ import type {
 
 const cache = new Map<string, any>()
 
+// QQ Music recommendation lists are generated dynamically and must not use the generic detail cache.
+const isDynamicQQRecommendation = (id: string, source: LX.OnlineSource) => source == 'tx' && (id == 'daily30' || id.startsWith('qqradio_') || id.startsWith('qqnew_'))
+
 export const setTags = (tagInfo: TagInfo, source: LX.OnlineSource) => {
   tags[source] = markRaw(tagInfo)
 }
@@ -130,7 +133,7 @@ export const getAndSetList = async(source: LX.OnlineSource, tabId: string, sortI
  */
 export const getListDetail = async(id: string, source: LX.OnlineSource, page: number, isRefresh = false): Promise<ListDetailInfo> => {
   let key = `sdetail__${source}__${id}__${page}`
-  if (!isRefresh && cache.has(key)) return cache.get(key)
+  if (!isRefresh && !isDynamicQQRecommendation(id, source) && cache.has(key)) return cache.get(key)
 
   return musicSdk[source]?.songList.getListDetail(id, page).then((result: ListDetailInfo) => {
     result.list = markRawList(deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]))
@@ -151,8 +154,9 @@ export const getListDetailAll = async(id: string, source: LX.OnlineSource, isRef
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   const loadData = (id: string, page: number): Promise<ListDetailInfo> => {
     let key = `sdetail__${source}__${id}__${page}`
-    if (isRefresh && cache.has(key)) cache.delete(key)
-    return cache.has(key)
+    const dynamicRecommendation = isDynamicQQRecommendation(id, source)
+    if ((isRefresh || dynamicRecommendation) && cache.has(key)) cache.delete(key)
+    return !dynamicRecommendation && cache.has(key)
       ? Promise.resolve(cache.get(key))
       : musicSdk[source]?.songList.getListDetail(id, page).then((result: ListDetailInfo) => {
         result.list = markRawList(deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]))
@@ -187,7 +191,7 @@ export const getListDetailAll = async(id: string, source: LX.OnlineSource, isRef
 export const getAndSetListDetail = async(id: string, source: LX.OnlineSource, page: number, isRefresh = false) => {
   let key = `sdetail__${source}__${id}__${page}`
 
-  if (!isRefresh && listDetailInfo.key == key && listDetailInfo.list.length) return
+  if (!isRefresh && !isDynamicQQRecommendation(id, source) && listDetailInfo.key == key && listDetailInfo.list.length) return
 
   listDetailInfo.key = key
   listDetailInfo.noItemLabel = window.i18n.t('list__loading')

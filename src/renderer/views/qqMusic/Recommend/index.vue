@@ -117,7 +117,9 @@ const radarGroups = ref<LX.QQMusic.RadioGroup[]>([])
 const playlists = ref<LX.QQMusic.PlaylistItem[]>([])
 const newSongs = ref<LX.Music.MusicInfoOnline[]>([])
 const loadedTabs = new Set<RecommendTab>()
+const QQ_RECOMMEND_REFRESH_INTERVAL = 30 * 60 * 1000
 let loadedDay = ''
+let loadedAt = 0
 let dailyRefreshTimer: ReturnType<typeof setInterval> | null = null
 let requestId = 0
 
@@ -126,7 +128,10 @@ const getDayKey = () => {
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
 }
 const refreshIfStale = () => {
-  if (!configured.value || !loadedDay || loadedDay == getDayKey()) return
+  if (!configured.value || !loadedDay || loading.value) return
+  const dayChanged = loadedDay != getDayKey()
+  const intervalElapsed = loadedAt > 0 && Date.now() - loadedAt >= QQ_RECOMMEND_REFRESH_INTERVAL
+  if (!dayChanged && !intervalElapsed) return
   loadedTabs.clear()
   void loadActiveTab(true)
 }
@@ -201,6 +206,7 @@ const setNewSongs = (result: LX.QQMusic.NewSongRecommend) => {
 const markTabLoaded = (tab: RecommendTab, dayKey: string) => {
   loadedTabs.add(tab)
   loadedDay = dayKey
+  loadedAt = Date.now()
 }
 
 const loadActiveTab = async(force = false) => {

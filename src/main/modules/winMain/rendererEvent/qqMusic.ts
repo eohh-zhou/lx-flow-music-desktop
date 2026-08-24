@@ -264,6 +264,9 @@ const requestMusicu = async(requestBody: Record<string, any>, cookie: string, pe
   const item = body.req_0
   if (!item || item.code !== 0) {
     const message = String(item?.message ?? item?.msg ?? '').trim()
+    if (Number(item?.code) == 1000) {
+      throw new Error('QQ 音乐登录状态已失效，请在设置的 QQ 音乐登录页重新登录')
+    }
     throw new Error(`QQ Music module code ${item?.code ?? -1}${message ? `: ${message}` : ''}`)
   }
   return item.data ?? {}
@@ -1241,29 +1244,62 @@ const resolveReportSong = async(cookie: string, report: LX.QQMusic.PlayReport) =
   }
 }
 
+const getRecentSongId = (item: Record<string, any>) => String(item.track?.id ?? item.songInfo?.id ?? '')
+
+const getRecentListenCount = async(cookie: string, songId: string) => {
+  const data = await requestMusicu({
+    module: 'music.musicasset.PlayRecentlyRead',
+    method: 'GetPlayRecentlyInfo',
+    param: {
+      type: 2,
+      updateTime: 0,
+      requestCnt: 100,
+    },
+  }, cookie)
+  if (data.code != null && Number(data.code) != 0) {
+    throw new Error(`QQ 音乐近期播放读取失败：code ${data.code}`)
+  }
+  const songs = Array.isArray(data.data?.songList) ? data.data.songList as Array<Record<string, any>> : []
+  const item = songs.find(candidate => getRecentSongId(candidate) == songId)
+  const count = Number(item?.listenCnt ?? 0)
+  return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0
+}
+
 const reportPlay = async(report: LX.QQMusic.PlayReport) => {
   const cookie = getCookie()
   if (!cookie) return { reported: false, reason: 'not-configured' }
   const key = report.songmid ?? `${report.name}\u0000${report.singer}`
   const now = Date.now()
   if (now - (recentReports.get(key) ?? 0) < 30000) return { reported: false, reason: 'deduplicated' }
-  const song = await resolveReportSong(cookie, report)
-  if (!song) return { reported: false, reason: 'song-not-resolved' }
-  await requestMusicu({
-    module: 'music.musicasset.PlayRecentlyWrite',
-    method: 'ReportPlayRecentlyInfo',
-    param: {
-      data: [{
-        id: song.id,
-        type: 2,
-        lastTime: Math.floor(now / 1000),
-        listenCnt: 1,
-        auxillaryID: song.albumId,
-      }],
-    },
-  }, cookie)
   recentReports.set(key, now)
-  return { reported: true }
+  try {
+    const song = await resolveReportSong(cookie, report)
+    if (!song) {
+      recentReports.delete(key)
+      return { reported: false, reason: 'song-not-resolved' }
+    }
+    const listenCnt = await getRecentListenCount(cookie, song.id) + 1
+    const data = await requestMusicu({
+      module: 'music.musicasset.PlayRecentlyWrite',
+      method: 'ReportPlayRecentlyInfo',
+      param: {
+        data: [{
+          id: song.id,
+          type: 2,
+          lastTime: Math.floor(now / 1000),
+          listenCnt,
+          auxillaryID: song.albumId,
+        }],
+      },
+    }, cookie)
+    if (data.code != null && Number(data.code) != 0) {
+      throw new Error(`QQ 音乐近期播放写入失败：code ${data.code}`)
+    }
+    return { reported: true }
+  } catch (error) {
+    recentReports.delete(key)
+    throw error
+  }
 }
 
 export default () => {

@@ -158,6 +158,16 @@ const getRequiredCookie = () => {
   return cookie
 }
 
+const parseNeteaseResponseBody = (body: unknown): Record<string, any> => {
+  if (body && typeof body == 'object' && !Buffer.isBuffer(body)) return body as Record<string, any>
+  const text = Buffer.isBuffer(body) ? body.toString('utf8') : String(body ?? '')
+  try {
+    const parsed = JSON.parse(text) as unknown
+    if (parsed && typeof parsed == 'object') return parsed as Record<string, any>
+  } catch {}
+  throw new Error('网易云音乐响应格式异常')
+}
+
 const requestNetease = async(path: string, params: Record<string, any> = {}) => {
   const cookie = getRequiredCookie()
   const cookies = parseCookies(cookie)
@@ -179,9 +189,9 @@ const requestNetease = async(path: string, params: Record<string, any> = {}) => 
     timeout: 30000,
   })
   if (response.statusCode != 200) throw new Error(`网易云音乐 HTTP ${response.statusCode}`)
-  const body = response.body
-  if (!body || Number(body.code ?? -1) != 200) {
-    throw new Error(`网易云音乐接口返回 code ${body?.code ?? -1}`)
+  const body = parseNeteaseResponseBody(response.body)
+  if (Number(body.code ?? -1) != 200) {
+    throw new Error(`网易云音乐接口返回 code ${body.code ?? -1}`)
   }
   return body
 }

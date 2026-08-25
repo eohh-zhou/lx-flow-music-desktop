@@ -737,6 +737,14 @@ export const getNeteaseMusicNewSongs = async() => {
   return rendererInvoke<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_new_songs)
 }
 
+export const previewNeteaseMusicPlaylistSync = async(request: LX.NeteaseMusic.PlaylistSyncPreviewRequest) => {
+  return rendererInvoke<LX.NeteaseMusic.PlaylistSyncPreviewRequest, LX.NeteaseMusic.PlaylistSyncPreview>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_playlist_sync_preview, request)
+}
+
+export const commitNeteaseMusicPlaylistSync = async(request: LX.NeteaseMusic.PlaylistSyncCommitRequest) => {
+  return rendererInvoke<LX.NeteaseMusic.PlaylistSyncCommitRequest, LX.NeteaseMusic.PlaylistSyncResult>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_playlist_sync_commit, request)
+}
+
 /**
  * 退出应用
  */

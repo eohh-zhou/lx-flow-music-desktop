@@ -1,4 +1,5 @@
 import { BrowserWindow, safeStorage, session } from 'electron'
+import { randomUUID } from 'node:crypto'
 import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
 import { mainHandle } from '@common/mainIpc'
 import { request } from '@common/utils/request'
@@ -11,6 +12,32 @@ const NETEASE_LOGIN_URL = 'https://music.163.com/'
 const NETEASE_API_URL = 'https://music.163.com'
 const COOKIE_KEY = 'cookie'
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
+const PLAYLIST_SYNC_PREVIEW_TTL = 10 * 60 * 1000
+const PLAYLIST_SYNC_MAX_TRACKS = 1000
+const PLAYLIST_SYNC_ADD_BATCH_SIZE = 100
+
+interface ResolvedPlaylistSyncTrack extends LX.NeteaseMusic.PlaylistSyncUnmatchedTrack {
+  songId: string
+}
+
+interface PendingPlaylistSync {
+  name: string
+  matched: ResolvedPlaylistSyncTrack[]
+  unmatched: LX.NeteaseMusic.PlaylistSyncUnmatchedTrack[]
+  duplicates: number
+  expiresAt: number
+  playlistId?: string
+  addedCount: number
+  executing: boolean
+}
+
+interface NeteasePlaylistSummary {
+  id: string
+  name: string
+  trackCount: number
+}
+
+const pendingPlaylistSyncs = new Map<string, PendingPlaylistSync>()
 
 let loginWindow: BrowserWindow | null = null
 let loginPromise: Promise<LX.NeteaseMusic.LoginResult> | null = null
@@ -66,7 +93,7 @@ const getNeteaseCookieHeader = async() => {
 }
 const hasNeteaseLoginCookie = (cookie: string) => {
   const cookies = parseCookies(cookie)
-  return !!(cookies.get('MUSIC_U') || cookies.get('MUSIC_A'))
+  return !!cookies.get('MUSIC_U') || !!cookies.get('MUSIC_A')
 }
 const isNeteaseLoginUrl = (url: string) => {
   try {
@@ -288,6 +315,353 @@ const getNewSongs = async() => {
   } satisfies LX.NeteaseMusic.SongRecommend
 }
 
+const normalizePlaylistMatchText = (value: unknown) => String(value ?? '')
+  .normalize('NFKC')
+  .toLowerCase()
+  .replace(/\b(feat|ft)\.?\s+.*$/i, '')
+  .replace(/[\s\u3000·・,，.。!！?？'"“”‘’:：;；/\\|()[\]{}<>《》【】（）_-]+/g, '')
+
+const parsePlaylistIntervalSeconds = (interval: string | null | undefined) => {
+  if (!interval) return 0
+  const parts = interval.split(':').map(Number)
+  if (!parts.length || parts.some(value => !Number.isFinite(value) || value < 0)) return 0
+  return parts.reduce((total, value) => total * 60 + value, 0)
+}
+
+const getNeteaseCandidateSinger = (candidate: Record<string, any>) => {
+  const singers = candidate.ar ?? candidate.artists ?? []
+  return Array.isArray(singers) ? singers.map(item => String(item?.name ?? '')).filter(Boolean).join('、') : ''
+}
+
+const scorePlaylistCandidate = (track: LX.NeteaseMusic.PlaylistSyncTrackInput, candidate: Record<string, any>) => {
+  const trackName = normalizePlaylistMatchText(track.name)
+  const candidateName = normalizePlaylistMatchText(candidate.name)
+  if (!trackName || !candidateName) return 0
+  const nameScore = trackName == candidateName
+    ? 6
+    : trackName.includes(candidateName) || candidateName.includes(trackName) ? 3 : 0
+  if (!nameScore) return 0
+
+  const trackSinger = normalizePlaylistMatchText(track.singer)
+  const candidateSinger = normalizePlaylistMatchText(getNeteaseCandidateSinger(candidate))
+  const singerScore = !trackSinger
+    ? 1
+    : !candidateSinger ? 0
+        : trackSinger == candidateSinger ? 4
+          : trackSinger.includes(candidateSinger) || candidateSinger.includes(trackSinger) ? 2 : 0
+  if (trackSinger && !singerScore) return 0
+
+  const trackAlbum = normalizePlaylistMatchText(track.albumName)
+  const candidateAlbum = normalizePlaylistMatchText(candidate.al?.name ?? candidate.album?.name)
+  const albumScore = trackAlbum && candidateAlbum && trackAlbum == candidateAlbum ? 1 : 0
+  const trackSeconds = parsePlaylistIntervalSeconds(track.interval)
+  const candidateSeconds = Math.round(Number(candidate.dt ?? candidate.duration ?? 0) / 1000)
+  const durationDifference = trackSeconds && candidateSeconds ? Math.abs(trackSeconds - candidateSeconds) : Number.POSITIVE_INFINITY
+  const durationScore = durationDifference <= 3 ? 2 : durationDifference <= 8 ? 1 : 0
+  return nameScore + singerScore + albumScore + durationScore
+}
+
+const toResolvedPlaylistTrack = (track: LX.NeteaseMusic.PlaylistSyncTrackInput, songId: unknown): ResolvedPlaylistSyncTrack | null => {
+  const resolvedSongId = String(songId ?? '')
+  if (!/^\d+$/.test(resolvedSongId) || resolvedSongId == '0') return null
+  return { id: track.id, name: track.name, singer: track.singer, songId: resolvedSongId }
+}
+
+const resolvePlaylistTrack = async(track: LX.NeteaseMusic.PlaylistSyncTrackInput) => {
+  if (track.source == 'wy' && track.neteaseSongId) {
+    const resolved = toResolvedPlaylistTrack(track, track.neteaseSongId)
+    if (resolved) return resolved
+  }
+  const body = await requestNetease('/weapi/cloudsearch/get/web', {
+    s: `${track.name} ${track.singer}`.trim(),
+    type: 1,
+    limit: 10,
+    offset: 0,
+    total: true,
+  })
+  const candidates = Array.isArray(body.result?.songs) ? body.result.songs as Array<Record<string, any>> : []
+  let bestCandidate: Record<string, any> | null = null
+  let bestScore = 0
+  for (const candidate of candidates) {
+    const score = scorePlaylistCandidate(track, candidate)
+    if (score <= bestScore) continue
+    bestScore = score
+    bestCandidate = candidate
+  }
+  return bestCandidate && bestScore >= 7 ? toResolvedPlaylistTrack(track, bestCandidate.id) : null
+}
+
+const mapWithConcurrency = async<Input, Output>(items: Input[], concurrency: number, mapper: (item: Input) => Promise<Output>) => {
+  const result = new Array<Output>(items.length)
+  let nextIndex = 0
+  const worker = async() => {
+    while (true) {
+      const index = nextIndex++
+      if (index >= items.length) return
+      result[index] = await mapper(items[index])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker))
+  return result
+}
+
+const cleanupPlaylistSyncs = () => {
+  const now = Date.now()
+  for (const [token, pending] of pendingPlaylistSyncs) {
+    if (!pending.executing && pending.expiresAt <= now) pendingPlaylistSyncs.delete(token)
+  }
+}
+
+const previewPlaylistSync = async(request: LX.NeteaseMusic.PlaylistSyncPreviewRequest) => {
+  getRequiredCookie()
+  const name = [...String(request?.name ?? '').trim()].slice(0, 40).join('')
+  const tracks = Array.isArray(request?.tracks) ? request.tracks.slice(0, PLAYLIST_SYNC_MAX_TRACKS) : []
+  if (!name) throw new Error('歌单名称不能为空')
+  if (!tracks.length) throw new Error('歌单中没有歌曲')
+
+  cleanupPlaylistSyncs()
+  const resolvedTracks = await mapWithConcurrency(tracks, 4, async(track) => {
+    if (!track?.id || !track.name) return null
+    try {
+      return await resolvePlaylistTrack(track)
+    } catch {
+      return null
+    }
+  })
+  const matched: ResolvedPlaylistSyncTrack[] = []
+  const unmatched: LX.NeteaseMusic.PlaylistSyncUnmatchedTrack[] = []
+  const seenSongs = new Set<string>()
+  let duplicates = 0
+  for (let index = 0; index < tracks.length; index++) {
+    const resolved = resolvedTracks[index]
+    if (!resolved) {
+      unmatched.push({ id: tracks[index].id, name: tracks[index].name, singer: tracks[index].singer })
+      continue
+    }
+    if (seenSongs.has(resolved.songId)) {
+      duplicates++
+      continue
+    }
+    seenSongs.add(resolved.songId)
+    matched.push(resolved)
+  }
+  const token = randomUUID()
+  pendingPlaylistSyncs.set(token, {
+    name,
+    matched,
+    unmatched,
+    duplicates,
+    expiresAt: Date.now() + PLAYLIST_SYNC_PREVIEW_TTL,
+    addedCount: 0,
+    executing: false,
+  })
+  return {
+    token,
+    name,
+    total: tracks.length,
+    matched: matched.length,
+    duplicates,
+    unmatched,
+  } satisfies LX.NeteaseMusic.PlaylistSyncPreview
+}
+
+const getNeteaseAccountUid = async() => {
+  const body = await requestNetease('/weapi/w/nuser/account/get')
+  const uid = String(body.profile?.userId ?? body.account?.id ?? '')
+  if (!/^\d+$/.test(uid) || uid == '0') throw new Error('网易云音乐登录状态缺少账号标识，请重新登录')
+  return uid
+}
+
+const getNeteasePlaylistSummaries = async() => {
+  const uid = await getNeteaseAccountUid()
+  const body = await requestNetease('/weapi/user/playlist', {
+    uid: Number(uid),
+    limit: 1000,
+    offset: 0,
+    includeVideo: true,
+  })
+  const playlists = Array.isArray(body.playlist) ? body.playlist as Array<Record<string, any>> : []
+  return playlists.map(item => ({
+    id: String(item.id ?? ''),
+    name: String(item.name ?? ''),
+    trackCount: Number(item.trackCount ?? 0),
+    ownerId: String(item.userId ?? item.creator?.userId ?? ''),
+    subscribed: item.subscribed === true,
+    specialType: Number(item.specialType ?? 0),
+  })).filter(item => /^\d+$/.test(item.id) && item.id != '0' && item.name && item.ownerId == uid && !item.subscribed && item.specialType == 0)
+    .map(({ id, name, trackCount }) => ({ id, name, trackCount } satisfies NeteasePlaylistSummary))
+}
+
+const findNeteasePlaylist = async(name: string) => {
+  const playlists = await getNeteasePlaylistSummaries()
+  return playlists.find(item => item.name == name) ?? null
+}
+
+const resolveNeteasePlaylist = async(playlistId: string, name: string) => {
+  let lastPlaylists: NeteasePlaylistSummary[] = []
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (attempt) await new Promise(resolve => setTimeout(resolve, attempt * 500))
+    lastPlaylists = await getNeteasePlaylistSummaries()
+    const playlist = lastPlaylists.find(item => item.id == playlistId) ?? lastPlaylists.find(item => item.name == name)
+    if (playlist) return playlist
+  }
+  return { id: playlistId, name, trackCount: 0 }
+}
+
+const createNeteasePlaylist = async(name: string) => {
+  try {
+    const body = await requestNetease('/weapi/playlist/create', { name, privacy: 0 })
+    const playlistId = String(body.playlist?.id ?? body.id ?? '')
+    if (/^\d+$/.test(playlistId) && playlistId != '0') return playlistId
+    throw new Error('网易云音乐未返回新建歌单 ID')
+  } catch (error) {
+    const existing = await findNeteasePlaylist(name)
+    if (existing) return existing.id
+    throw error
+  }
+}
+
+const getNeteasePlaylistSongIds = async(playlist: NeteasePlaylistSummary) => {
+  const body = await requestNetease('/weapi/v6/playlist/detail', {
+    id: Number(playlist.id),
+    n: 100000,
+    s: 8,
+  })
+  const trackIds = Array.isArray(body.playlist?.trackIds) ? body.playlist.trackIds : []
+  const songs = trackIds.length ? trackIds : Array.isArray(body.playlist?.tracks) ? body.playlist.tracks : []
+  return songs.map((item: Record<string, any>) => String(item?.id ?? item ?? ''))
+    .filter((id: string) => /^\d+$/.test(id) && id != '0')
+}
+
+const verifyNeteasePlaylistTracks = async(playlist: NeteasePlaylistSummary, tracks: ResolvedPlaylistSyncTrack[]) => {
+  let missing = tracks
+  let orderMatches = false
+  let lastError: unknown = null
+  const expectedIds = tracks.map(track => track.songId)
+  const expectedIdSet = new Set(expectedIds)
+  for (let attempt = 0; attempt < 5 && (missing.length || !orderMatches); attempt++) {
+    try {
+      const actualIds: string[] = await getNeteasePlaylistSongIds(playlist)
+      const actualIdSet = new Set(actualIds)
+      missing = tracks.filter(track => !actualIdSet.has(track.songId))
+      orderMatches = actualIds.filter(id => expectedIdSet.has(id)).join(',') == expectedIds.join(',')
+      if (!missing.length && orderMatches) return
+    } catch (error) {
+      lastError = error
+    }
+    if (attempt < 4) await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+  }
+  if (lastError && missing.length == tracks.length) throw lastError instanceof Error ? lastError : new Error(String(lastError))
+  if (!missing.length && !orderMatches) throw new Error('网易云音乐歌单顺序复核失败：歌曲已添加，但顺序与本地歌单不一致')
+  const sample = missing.slice(0, 3).map(track => `${track.name} - ${track.singer}`).join('、')
+  throw new Error(`网易云音乐歌单复核失败：仍缺少 ${missing.length} 首歌曲${sample ? `（例如：${sample}）` : ''}`)
+}
+
+const requestNeteasePlaylistAdd = async(playlist: NeteasePlaylistSummary, tracks: ResolvedPlaylistSyncTrack[]) => {
+  const ids = tracks.map(track => Number(track.songId))
+  await requestNetease('/weapi/playlist/manipulate/tracks', {
+    op: 'add',
+    pid: Number(playlist.id),
+    trackIds: JSON.stringify(ids),
+    tracks: JSON.stringify(ids),
+    imme: 'true',
+  })
+}
+
+const addNeteasePlaylistTracks = async(
+  playlist: NeteasePlaylistSummary,
+  tracks: ResolvedPlaylistSyncTrack[],
+  onBatchAdded: (tracks: ResolvedPlaylistSyncTrack[]) => void,
+) => {
+  if (!tracks.length) return
+  try {
+    await requestNeteasePlaylistAdd(playlist, tracks)
+  } catch (error) {
+    if (tracks.length <= 1) throw error
+    const midpoint = Math.ceil(tracks.length / 2)
+    await addNeteasePlaylistTracks(playlist, tracks.slice(0, midpoint), onBatchAdded)
+    await addNeteasePlaylistTracks(playlist, tracks.slice(midpoint), onBatchAdded)
+    return
+  }
+  onBatchAdded(tracks)
+}
+
+const updateNeteasePlaylistOrder = async(playlist: NeteasePlaylistSummary, tracks: ResolvedPlaylistSyncTrack[]) => {
+  const expectedIds = tracks.map(track => track.songId)
+  const expectedIdSet = new Set(expectedIds)
+  let currentIds: string[] = []
+  for (let attempt = 0; attempt < 5; attempt++) {
+    currentIds = await getNeteasePlaylistSongIds(playlist)
+    if (expectedIds.every(id => currentIds.includes(id))) break
+    if (attempt < 4) await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+  }
+  const missingIds = expectedIds.filter(id => !currentIds.includes(id))
+  if (missingIds.length) throw new Error(`网易云音乐歌单排序失败：仍有 ${missingIds.length} 首歌曲尚未写入`)
+  const desiredIds = [
+    ...expectedIds,
+    ...currentIds.filter(id => !expectedIdSet.has(id)),
+  ]
+  if (desiredIds.join(',') == currentIds.join(',')) return
+  await requestNetease('/weapi/playlist/manipulate/tracks', {
+    op: 'update',
+    pid: Number(playlist.id),
+    trackIds: JSON.stringify(desiredIds),
+  })
+}
+
+const commitPlaylistSync = async(request: LX.NeteaseMusic.PlaylistSyncCommitRequest) => {
+  getRequiredCookie()
+  cleanupPlaylistSyncs()
+  const token = String(request?.token ?? '')
+  const pending = pendingPlaylistSyncs.get(token)
+  if (!pending || pending.expiresAt <= Date.now()) throw new Error('歌单同步预览已过期，请重新匹配')
+  if (!pending.matched.length) throw new Error('没有可同步的已匹配歌曲')
+  if (pending.executing) throw new Error('歌单同步正在进行中')
+
+  pending.executing = true
+  pending.expiresAt = Date.now() + PLAYLIST_SYNC_PREVIEW_TTL
+  try {
+    const expectedTracks = pending.matched.slice()
+    if (!pending.playlistId) {
+      const existingPlaylist = await findNeteasePlaylist(pending.name)
+      if (existingPlaylist) {
+        pending.playlistId = existingPlaylist.id
+        const existingIds = new Set(await getNeteasePlaylistSongIds(existingPlaylist))
+        const missingTracks = pending.matched.filter(track => !existingIds.has(track.songId))
+        pending.duplicates += pending.matched.length - missingTracks.length
+        pending.matched = missingTracks
+      } else {
+        const playlistId = await createNeteasePlaylist(pending.name)
+        await new Promise(resolve => setTimeout(resolve, 800))
+        const playlist = await resolveNeteasePlaylist(playlistId, pending.name)
+        pending.playlistId = playlist.id
+      }
+    }
+    const playlist = await resolveNeteasePlaylist(pending.playlistId, pending.name)
+    const currentIds = new Set(await getNeteasePlaylistSongIds(playlist))
+    const tracksToAdd = pending.matched.filter(track => !currentIds.has(track.songId))
+    pending.addedCount = pending.matched.length - tracksToAdd.length
+    for (let index = 0; index < tracksToAdd.length; index += PLAYLIST_SYNC_ADD_BATCH_SIZE) {
+      const batch = tracksToAdd.slice(index, index + PLAYLIST_SYNC_ADD_BATCH_SIZE)
+      await addNeteasePlaylistTracks(playlist, batch, addedTracks => {
+        pending.addedCount += addedTracks.length
+      })
+    }
+    await updateNeteasePlaylistOrder(playlist, expectedTracks)
+    await verifyNeteasePlaylistTracks(playlist, expectedTracks)
+    const result = {
+      playlistId: playlist.id,
+      name: pending.name,
+      added: pending.addedCount,
+      duplicates: pending.duplicates,
+      unmatched: pending.unmatched.length,
+    } satisfies LX.NeteaseMusic.PlaylistSyncResult
+    pendingPlaylistSyncs.delete(token)
+    return result
+  } finally {
+    pending.executing = false
+  }
+}
 export default () => {
   mainHandle<string, boolean>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_set_cookie, async({ params: cookie }) => {
     saveCookie(cookie)
@@ -300,4 +674,6 @@ export default () => {
   mainHandle<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_personal_fm, getPersonalFM)
   mainHandle<LX.NeteaseMusic.PlaylistRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_recommend_playlists, getRecommendPlaylists)
   mainHandle<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_new_songs, getNewSongs)
+  mainHandle<LX.NeteaseMusic.PlaylistSyncPreviewRequest, LX.NeteaseMusic.PlaylistSyncPreview>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_playlist_sync_preview, async({ params }) => previewPlaylistSync(params))
+  mainHandle<LX.NeteaseMusic.PlaylistSyncCommitRequest, LX.NeteaseMusic.PlaylistSyncResult>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_playlist_sync_commit, async({ params }) => commitPlaylistSync(params))
 }

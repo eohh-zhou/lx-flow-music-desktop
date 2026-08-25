@@ -76,6 +76,7 @@
     <ListSortModal v-model:visible="isShowListSortModal" :list-info="sortListInfo" />
     <ListUpdateModal v-model:visible="isShowListUpdateModal" />
     <QQMusicSyncModal v-model:visible="isShowQQMusicSyncModal" :list-info="qqMusicSyncListInfo" />
+    <NeteaseMusicSyncModal v-model:visible="isShowNeteaseMusicSyncModal" :list-info="neteaseMusicSyncListInfo" />
   </div>
 </template>
 
@@ -87,6 +88,7 @@ import DuplicateMusicModal from './components/DuplicateMusicModal.vue'
 import ListSortModal from './components/ListSortModal.vue'
 import ListUpdateModal from './components/ListUpdateModal.vue'
 import QQMusicSyncModal from './components/QQMusicSyncModal.vue'
+import NeteaseMusicSyncModal from './components/NeteaseMusicSyncModal.vue'
 
 import { defaultList, loveList, userLists, fetchingListStatus } from '@renderer/store/list/state'
 import { removeUserList } from '@renderer/store/list/action'
@@ -118,6 +120,7 @@ export default {
     ListSortModal,
     ListUpdateModal,
     QQMusicSyncModal,
+    NeteaseMusicSyncModal,
   },
   props: {
     listId: {
@@ -143,6 +146,12 @@ export default {
     const handleQQMusicSync = listInfo => {
       qqMusicSyncListInfo.value = listInfo
       isShowQQMusicSyncModal.value = true
+    }
+    const isShowNeteaseMusicSyncModal = ref(false)
+    const neteaseMusicSyncListInfo = ref(defaultList)
+    const handleNeteaseMusicSync = listInfo => {
+      neteaseMusicSyncListInfo.value = listInfo
+      isShowNeteaseMusicSyncModal.value = true
     }
     useListScroll({ dom_lists_list })
 
@@ -186,6 +195,7 @@ export default {
       handleExportList,
       handleUpdateSourceList,
       handleQQMusicSync,
+      handleNeteaseMusicSync,
       handleOpenSourceDetailPage,
       handleSortList,
       handleDuplicateList,
@@ -244,6 +254,8 @@ export default {
       duplicateListInfo,
       isShowQQMusicSyncModal,
       qqMusicSyncListInfo,
+      isShowNeteaseMusicSyncModal,
+      neteaseMusicSyncListInfo,
       handleSaveListName,
       isShowNewList,
       isNewListLeave,

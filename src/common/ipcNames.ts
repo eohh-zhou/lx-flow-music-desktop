@@ -152,6 +152,8 @@ const modules = {
     netease_music_personal_fm: 'netease_music_personal_fm',
     netease_music_recommend_playlists: 'netease_music_recommend_playlists',
     netease_music_new_songs: 'netease_music_new_songs',
+    netease_music_playlist_sync_preview: 'netease_music_playlist_sync_preview',
+    netease_music_playlist_sync_commit: 'netease_music_playlist_sync_commit',
 
     open_api_action: 'open_api_action',
     sync_action: 'sync_action',

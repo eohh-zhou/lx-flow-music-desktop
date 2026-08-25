@@ -15,6 +15,7 @@ export default ({
   handleExportList,
   handleUpdateSourceList,
   handleQQMusicSync,
+  handleNeteaseMusicSync,
   handleRemove,
 }) => {
   const menuControl = reactive({
@@ -27,6 +28,7 @@ export default ({
     export: true,
     sync: false,
     qq_sync: true,
+    netease_sync: true,
     remove: true,
   })
   const t = useI18n()
@@ -64,6 +66,11 @@ export default ({
         name: t('lists__sync_to_qq_music'),
         action: 'qq_sync',
         disabled: !menuControl.qq_sync,
+      },
+      {
+        name: t('lists__sync_to_netease_music'),
+        action: 'netease_sync',
+        disabled: !menuControl.netease_sync,
       },
       {
         name: t('lists__source_detail'),
@@ -185,6 +192,9 @@ export default ({
         break
       case 'qq_sync':
         handleQQMusicSync(listInfo)
+        break
+      case 'netease_sync':
+        handleNeteaseMusicSync(listInfo)
         break
       case 'remove':
         handleRemove(listInfo)

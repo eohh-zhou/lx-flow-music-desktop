@@ -1,5 +1,13 @@
 # lx-music-desktop change log
 
+## [2.12.28] - 2026-08-26
+
+### Added
+
+- Added “My Playlists” views for QQ Music and NetEase Cloud Music accounts.
+- Displayed both created and collected playlists, with authenticated in-app playlist details and playback.
+
+
 ## [2.12.4] - 2026-08-14
 
 ### Changed

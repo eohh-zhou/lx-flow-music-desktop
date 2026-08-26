@@ -48,6 +48,34 @@ declare global {
       list: PlaylistItem[]
     }
 
+    interface AccountPlaylistItem extends PlaylistItem {
+      dirId: string
+      tid: string
+      trackCount: number
+      subscribed: boolean
+    }
+
+    interface AccountPlaylists {
+      list: AccountPlaylistItem[]
+    }
+
+    interface AccountPlaylistDetailRequest {
+      dirId: string
+      tid: string
+    }
+
+    interface AccountPlaylistDetail {
+      info: {
+        name: string
+        desc: string
+        img: string
+        author: string
+        playCount: number
+      }
+      list: Array<Record<string, any>>
+      total: number
+    }
+
     interface NewSongRecommend {
       type: number
       name: string

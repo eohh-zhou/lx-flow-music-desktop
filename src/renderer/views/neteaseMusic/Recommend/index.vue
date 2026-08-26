@@ -13,7 +13,8 @@
         <ul :class="$style.homeList"><li v-for="item in homeItems" :key="item.id"><button type="button" :class="$style.homeItem" @click="activeTab = item.tab"><span :class="$style.cover"><img v-if="item.img" :src="item.img" loading="lazy" decoding="async"><svg-icon v-else name="music" /></span><span :class="$style.homeText"><strong>{{ item.name }}</strong><small>{{ item.desc }}</small></span><svg-icon :class="$style.arrow" name="angle-right-solid" /></button></li></ul>
       </div>
       <material-online-list v-else-if="activeTab == 'daily' || activeTab == 'personalFm' || activeTab == 'newSongs'" :page="1" :limit="Math.max(activeSongs.length, 1)" :total="activeSongs.length" :list="activeSongs" :no-item="activeSongs.length ? '' : $t('no_item')" @play-list="playActiveSongs" />
-      <song-list v-else :list-info="playlistListInfo" />
+      <song-list v-else-if="activeTab == 'playlists'" :list-info="playlistListInfo" />
+      <song-list v-else :list-info="accountPlaylistListInfo" />
     </main>
   </div>
 </template>
@@ -23,12 +24,12 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from '@common/utils/
 import { useRouter } from '@common/utils/vueRouter'
 import { useI18n } from '@root/lang'
 import { formatPlayCount, toNewMusicInfo } from '@renderer/utils'
-import { getNeteaseMusicDailyRecommend, getNeteaseMusicNewSongs, getNeteaseMusicPersonalFM, getNeteaseMusicRecommendPlaylists, getNeteaseMusicStatus } from '@renderer/utils/ipc'
+import { getNeteaseMusicAccountPlaylists, getNeteaseMusicDailyRecommend, getNeteaseMusicNewSongs, getNeteaseMusicPersonalFM, getNeteaseMusicRecommendPlaylists, getNeteaseMusicStatus } from '@renderer/utils/ipc'
 import { playSongListDetail } from '@renderer/views/songList/Detail/action'
 import type { ListInfo } from '@renderer/store/songList/state'
 import SongList from '@renderer/views/songList/List/components/SongList.vue'
 
-type RecommendTab = 'home' | 'daily' | 'personalFm' | 'playlists' | 'newSongs'
+type RecommendTab = 'home' | 'myPlaylists' | 'daily' | 'personalFm' | 'playlists' | 'newSongs'
 interface HomeItem { id: string, name: string, desc: string, img: string, tab: RecommendTab }
 const router = useRouter()
 const t = useI18n()
@@ -40,6 +41,7 @@ const error = ref('')
 const daily = ref<LX.NeteaseMusic.SongRecommend | null>(null)
 const personalFm = ref<LX.NeteaseMusic.SongRecommend | null>(null)
 const playlists = ref<LX.NeteaseMusic.PlaylistItem[]>([])
+const accountPlaylists = ref<LX.NeteaseMusic.AccountPlaylistItem[]>([])
 const newSongs = ref<LX.Music.MusicInfoOnline[]>([])
 const loadedTabs = new Set<RecommendTab>()
 let loadedDay = ''
@@ -48,11 +50,12 @@ let requestId = 0
 const getDayKey = () => { const now = new Date(); return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}` }
 const refreshIfStale = () => { if (!configured.value || !loadedDay || loadedDay == getDayKey()) return; loadedTabs.clear(); void loadActiveTab(true) }
 const tabs = computed(() => [
-  { id: 'home', label: t('netease_music_home') }, { id: 'daily', label: t('netease_music_daily') },
+  { id: 'home', label: t('netease_music_home') }, { id: 'myPlaylists', label: t('netease_music_my_playlists') }, { id: 'daily', label: t('netease_music_daily') },
   { id: 'personalFm', label: t('netease_music_fm') }, { id: 'playlists', label: t('netease_music_playlist') },
   { id: 'newSongs', label: t('netease_music_new_song') },
 ])
 const homeItems = computed<HomeItem[]>(() => [
+  { id: 'myPlaylists', name: t('netease_music_my_playlists'), desc: t('netease_music_home_my_playlists_desc'), img: accountPlaylists.value[0]?.img ?? '', tab: 'myPlaylists' },
   { id: 'daily', name: daily.value?.info.name ?? t('netease_music_daily'), desc: t('netease_music_home_daily_desc'), img: daily.value?.info.img ?? '', tab: 'daily' },
   { id: 'fm', name: personalFm.value?.info.name ?? t('netease_music_fm'), desc: t('netease_music_home_fm_desc'), img: personalFm.value?.info.img ?? '', tab: 'personalFm' },
   { id: 'playlists', name: t('netease_music_home_playlist_name'), desc: t('netease_music_home_playlist_desc'), img: playlists.value[0]?.img ?? '', tab: 'playlists' },
@@ -70,6 +73,27 @@ const playlistListInfo = computed<ListInfo>(() => ({
   tagId: '',
   sortId: '',
 }))
+const accountPlaylistListInfo = computed<ListInfo>(() => ({
+  list: accountPlaylists.value.map(item => ({
+    play_count: item.playCount ? formatPlayCount(item.playCount) : '',
+    id: `neteaseaccount_${item.id}`,
+    author: `${t(item.subscribed ? 'netease_music_playlist_collected' : 'netease_music_playlist_created')}${item.author ? ` · ${item.author}` : ''}`,
+    name: item.name,
+    img: item.img,
+    desc: item.desc,
+    source: 'wy',
+    total: String(item.trackCount),
+  })),
+  total: accountPlaylists.value.length,
+  page: 1,
+  limit: Math.max(accountPlaylists.value.length, 1),
+  key: 'netease_music_account_playlists',
+  noItemLabel: accountPlaylists.value.length ? '' : t('no_item'),
+  source: 'wy',
+  tagId: '',
+  sortId: '',
+}))
+
 const markLoaded = (tab: RecommendTab, dayKey: string) => { loadedTabs.add(tab); loadedDay = dayKey }
 const setNewSongs = (result: LX.NeteaseMusic.SongRecommend) => { newSongs.value = result.list.map(song => toNewMusicInfo(song)).filter(song => song.source != 'local') }
 const loadActiveTab = async(force = false) => {
@@ -83,10 +107,12 @@ const loadActiveTab = async(force = false) => {
   error.value = ''
   try {
     if (tab == 'home') {
-      const [dailyResult, fmResult, playlistResult, newSongResult] = await Promise.all([getNeteaseMusicDailyRecommend(), getNeteaseMusicPersonalFM(), getNeteaseMusicRecommendPlaylists(), getNeteaseMusicNewSongs()])
+      const [dailyResult, fmResult, playlistResult, accountPlaylistResult, newSongResult] = await Promise.all([getNeteaseMusicDailyRecommend(), getNeteaseMusicPersonalFM(), getNeteaseMusicRecommendPlaylists(), getNeteaseMusicAccountPlaylists(), getNeteaseMusicNewSongs()])
       if (requestId != currentRequestId) return
-      daily.value = dailyResult; personalFm.value = fmResult; playlists.value = playlistResult.list; setNewSongs(newSongResult)
-      for (const item of ['daily', 'personalFm', 'playlists', 'newSongs'] as RecommendTab[]) loadedTabs.add(item)
+      daily.value = dailyResult; personalFm.value = fmResult; playlists.value = playlistResult.list; accountPlaylists.value = accountPlaylistResult.list; setNewSongs(newSongResult)
+      for (const item of ['myPlaylists', 'daily', 'personalFm', 'playlists', 'newSongs'] as RecommendTab[]) loadedTabs.add(item)
+    } else if (tab == 'myPlaylists') {
+      accountPlaylists.value = (await getNeteaseMusicAccountPlaylists()).list
     } else if (tab == 'daily') daily.value = await getNeteaseMusicDailyRecommend()
     else if (tab == 'personalFm') personalFm.value = await getNeteaseMusicPersonalFM()
     else if (tab == 'playlists') playlists.value = (await getNeteaseMusicRecommendPlaylists()).list

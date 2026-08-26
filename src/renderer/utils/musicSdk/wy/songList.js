@@ -9,6 +9,7 @@ import { formatPlayTime, sizeFormate, dateFormat, formatPlayCount } from '../../
 import musicDetailApi from './musicDetail'
 import { eapiRequest } from './utils/index'
 import { formatSingerName } from '../utils'
+import { getNeteaseMusicAccountPlaylistDetail } from '@renderer/utils/ipc'
 
 export default {
   _requestObj_tags: null,
@@ -31,6 +32,24 @@ export default {
   regExps: {
     listDetailLink: /^.+(?:\?|&)id=(\d+)(?:&.*$|#.*$|$)/,
     listDetailLink2: /^.+\/playlist\/(\d+)\/\d+\/.+$/,
+  },
+
+  async getAccountPlaylist(id) {
+    const result = await getNeteaseMusicAccountPlaylistDetail({ id: String(id) })
+    return {
+      list: result.list,
+      page: 1,
+      limit: Math.max(result.list.length, 1),
+      total: result.total,
+      source: 'wy',
+      info: {
+        name: result.info.name,
+        img: result.info.img,
+        desc: result.info.desc,
+        author: result.info.author,
+        play_count: result.info.playCount ? String(result.info.playCount) : '',
+      },
+    }
   },
 
   async handleParseId(link, retryNum = 0) {
@@ -66,6 +85,7 @@ export default {
     return { id, cookie }
   },
   async getListDetail(rawId, page, tryNum = 0) { // 获取歌曲列表内的音乐
+    if (String(rawId).startsWith('neteaseaccount_')) return this.getAccountPlaylist(String(rawId).slice('neteaseaccount_'.length))
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
 
     const { id, cookie } = await this.getListId(rawId)

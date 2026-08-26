@@ -19,8 +19,9 @@ import type {
 
 const cache = new Map<string, any>()
 
-// QQ Music recommendation lists are generated dynamically and must not use the generic detail cache.
-const isDynamicQQRecommendation = (id: string, source: LX.OnlineSource) => source == 'tx' && (id == 'daily30' || id.startsWith('qqradio_') || id.startsWith('qqnew_'))
+// Personalized recommendations and authenticated account playlists must not use the generic detail cache.
+const isDynamicQQRecommendation = (id: string, source: LX.OnlineSource) =>
+  (source == 'tx' && (id == 'daily30' || id.startsWith('qqradio_') || id.startsWith('qqnew_') || id.startsWith('qqaccount_'))) || (source == 'wy' && id.startsWith('neteaseaccount_'))
 
 export const setTags = (tagInfo: TagInfo, source: LX.OnlineSource) => {
   tags[source] = markRaw(tagInfo)

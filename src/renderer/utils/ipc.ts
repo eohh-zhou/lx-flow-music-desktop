@@ -694,6 +694,14 @@ export const getQQMusicRecommendPlaylists = async() => {
   return rendererInvoke<LX.QQMusic.PlaylistRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_recommend_playlists)
 }
 
+export const getQQMusicAccountPlaylists = async() => {
+  return rendererInvoke<LX.QQMusic.AccountPlaylists>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_account_playlists)
+}
+
+export const getQQMusicAccountPlaylistDetail = async(request: LX.QQMusic.AccountPlaylistDetailRequest) => {
+  return rendererInvoke<LX.QQMusic.AccountPlaylistDetailRequest, LX.QQMusic.AccountPlaylistDetail>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_account_playlist_detail, request)
+}
+
 export const getQQMusicNewSongs = async(type: number = 5) => {
   return rendererInvoke<number, LX.QQMusic.NewSongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_new_songs, type)
 }
@@ -731,6 +739,14 @@ export const getNeteaseMusicPersonalFM = async() => {
 
 export const getNeteaseMusicRecommendPlaylists = async() => {
   return rendererInvoke<LX.NeteaseMusic.PlaylistRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_recommend_playlists)
+}
+
+export const getNeteaseMusicAccountPlaylists = async() => {
+  return rendererInvoke<LX.NeteaseMusic.AccountPlaylists>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_account_playlists)
+}
+
+export const getNeteaseMusicAccountPlaylistDetail = async(request: LX.NeteaseMusic.AccountPlaylistDetailRequest) => {
+  return rendererInvoke<LX.NeteaseMusic.AccountPlaylistDetailRequest, LX.NeteaseMusic.AccountPlaylistDetail>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_account_playlist_detail, request)
 }
 
 export const getNeteaseMusicNewSongs = async() => {

@@ -315,6 +315,81 @@ const getNewSongs = async() => {
   } satisfies LX.NeteaseMusic.SongRecommend
 }
 
+const getNeteaseMusicAccountPlaylists = async() => {
+  const uid = await getNeteaseAccountUid()
+  const body = await requestNetease('/weapi/user/playlist', {
+    uid: Number(uid),
+    limit: 1000,
+    offset: 0,
+    includeVideo: true,
+  })
+  const playlists = Array.isArray(body.playlist) ? body.playlist as Array<Record<string, any>> : []
+  const list = playlists.map((item): LX.NeteaseMusic.AccountPlaylistItem => {
+    const creator = item.creator && typeof item.creator == 'object' ? item.creator : {}
+    const ownerId = String(item.userId ?? creator.userId ?? '')
+    return {
+      id: String(item.id ?? ''),
+      name: String(item.name ?? ''),
+      author: String(creator.nickname ?? creator.name ?? '网易云音乐'),
+      img: String(item.coverImgUrl ?? item.picUrl ?? ''),
+      desc: String(item.description ?? item.copywriter ?? ''),
+      playCount: Number(item.playCount ?? item.playcount ?? 0),
+      trackCount: Number(item.trackCount ?? 0),
+      subscribed: item.subscribed === true || (!!ownerId && ownerId != uid),
+      specialType: Number(item.specialType ?? 0),
+    }
+  }).filter(item => /^\d+$/.test(item.id) && item.id != '0' && item.name)
+  return { list } satisfies LX.NeteaseMusic.AccountPlaylists
+}
+
+const getNeteaseMusicAccountPlaylistDetail = async(requestInfo: LX.NeteaseMusic.AccountPlaylistDetailRequest) => {
+  const id = String(requestInfo?.id ?? '')
+  if (!/^\d+$/.test(id) || id == '0') throw new Error('网易云音乐歌单 ID 无效')
+
+  const body = await requestNetease('/weapi/v6/playlist/detail', {
+    id: Number(id),
+    n: 100000,
+    s: 8,
+  })
+  const playlist = body.playlist ?? {}
+  const trackIds: string[] = Array.isArray(playlist.trackIds)
+    ? playlist.trackIds.map((item: Record<string, any>) => String(item?.id ?? item ?? '')).filter((songId: string) => /^\d+$/.test(songId) && songId != '0')
+    : []
+  const songs: Array<Record<string, any>> = Array.isArray(playlist.tracks) ? [...playlist.tracks] : []
+  const privileges: Array<Record<string, any>> = Array.isArray(body.privileges) ? [...body.privileges] : []
+
+  if (trackIds.length > songs.length) {
+    for (let offset = 0; offset < trackIds.length; offset += 500) {
+      const batchIds = trackIds.slice(offset, offset + 500)
+      const detail = await requestNetease('/weapi/v3/song/detail', {
+        c: JSON.stringify(batchIds.map(songId => ({ id: Number(songId) }))),
+        ids: JSON.stringify(batchIds.map(Number)),
+      })
+      if (Array.isArray(detail.songs)) songs.push(...detail.songs)
+      if (Array.isArray(detail.privileges)) privileges.push(...detail.privileges)
+    }
+  }
+
+  const songMap = new Map(songs.map(song => [String(song.id ?? song.songId ?? ''), song]))
+  const privilegeMap = new Map(privileges.map(privilege => [String(privilege.id ?? ''), privilege]))
+  const orderedSongs = trackIds.length
+    ? trackIds.map(songId => songMap.get(songId)).filter((song): song is Record<string, any> => !!song)
+    : songs
+  const list = orderedSongs.map(song => toOldSong(song, privilegeMap.get(String(song.id ?? song.songId ?? '')) ?? {})).filter(Boolean) as Array<Record<string, any>>
+  const creator = playlist.creator && typeof playlist.creator == 'object' ? playlist.creator : {}
+  return {
+    info: {
+      name: String(playlist.name ?? '网易云音乐歌单'),
+      desc: String(playlist.description ?? ''),
+      img: String(playlist.coverImgUrl ?? list[0]?.img ?? ''),
+      author: String(creator.nickname ?? creator.name ?? '网易云音乐'),
+      playCount: Number(playlist.playCount ?? 0),
+    },
+    list,
+    total: Number(playlist.trackCount ?? (trackIds.length || list.length)),
+  } satisfies LX.NeteaseMusic.AccountPlaylistDetail
+}
+
 const normalizePlaylistMatchText = (value: unknown) => String(value ?? '')
   .normalize('NFKC')
   .toLowerCase()
@@ -673,6 +748,8 @@ export default () => {
   mainHandle<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_daily_recommend, getDailyRecommend)
   mainHandle<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_personal_fm, getPersonalFM)
   mainHandle<LX.NeteaseMusic.PlaylistRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_recommend_playlists, getRecommendPlaylists)
+  mainHandle<LX.NeteaseMusic.AccountPlaylists>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_account_playlists, getNeteaseMusicAccountPlaylists)
+  mainHandle<LX.NeteaseMusic.AccountPlaylistDetailRequest, LX.NeteaseMusic.AccountPlaylistDetail>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_account_playlist_detail, async({ params }) => getNeteaseMusicAccountPlaylistDetail(params))
   mainHandle<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_new_songs, getNewSongs)
   mainHandle<LX.NeteaseMusic.PlaylistSyncPreviewRequest, LX.NeteaseMusic.PlaylistSyncPreview>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_playlist_sync_preview, async({ params }) => previewPlaylistSync(params))
   mainHandle<LX.NeteaseMusic.PlaylistSyncCommitRequest, LX.NeteaseMusic.PlaylistSyncResult>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_playlist_sync_commit, async({ params }) => commitPlaylistSync(params))

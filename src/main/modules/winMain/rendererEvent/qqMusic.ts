@@ -10,6 +10,7 @@ const MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
 const QQ_MUSIC_CREATE_PLAYLIST_URL = 'https://c.y.qq.com/splcloud/fcgi-bin/create_playlist.fcg'
 const QQ_MUSIC_ADD_TO_PLAYLIST_URL = 'https://c.y.qq.com/splcloud/fcgi-bin/fcg_music_add2songdir.fcg'
 const QQ_MUSIC_USER_PLAYLISTS_URL = 'https://c.y.qq.com/rsc/fcgi-bin/fcg_user_created_diss'
+const QQ_MUSIC_COLLECTED_PLAYLISTS_URL = 'https://c.y.qq.com/fav/fcgi-bin/fcg_get_profile_order_asset.fcg'
 const QQ_MUSIC_PLAYLIST_MAP_URL = 'https://c.y.qq.com/splcloud/fcgi-bin/fcg_musiclist_getmyfav.fcg'
 const QQ_MUSIC_PLAYLIST_DETAIL_URL = 'https://c.y.qq.com/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
 const COOKIE_KEY = 'cookie'
@@ -575,6 +576,201 @@ const getNewSongs = async(type: number) => {
     list: songs,
     total: songs.length,
   } satisfies LX.QQMusic.NewSongRecommend
+}
+const getQQMusicAccountPlaylists = async() => {
+  const cookie = getRequiredCookie()
+  const { uin } = getQQMusicWebAuth(cookie)
+  if (uin == '0') throw new Error('QQ 音乐登录状态缺少账号标识，请重新登录')
+
+  const createdRequest = request<Record<string, any> | string>(QQ_MUSIC_USER_PLAYLISTS_URL, {
+    method: 'GET',
+    query: {
+      hostUin: 0,
+      hostuin: uin,
+      sin: 0,
+      size: 200,
+      g_tk: 5381,
+      loginUin: uin,
+      format: 'json',
+      inCharset: 'utf8',
+      outCharset: 'utf-8',
+      notice: 0,
+      platform: 'yqq.json',
+      needNewCode: 0,
+    },
+    headers: {
+      ...getQQMusicWebHeaders(cookie),
+      Referer: 'https://y.qq.com/portal/profile.html',
+    },
+    timeout: 30000,
+  })
+  const collectedRequest = request<Record<string, any> | string>(QQ_MUSIC_COLLECTED_PLAYLISTS_URL, {
+    method: 'GET',
+    query: {
+      ct: 20,
+      cid: 205360956,
+      userid: uin,
+      reqtype: 3,
+      sin: 0,
+      ein: 199,
+      format: 'json',
+    },
+    headers: {
+      ...getQQMusicWebHeaders(cookie),
+      Referer: 'https://y.qq.com/portal/profile.html',
+    },
+    timeout: 30000,
+  })
+  const [createdResponse, collectedResponse] = await Promise.allSettled([createdRequest, collectedRequest])
+  if (createdResponse.status == 'rejected' && collectedResponse.status == 'rejected') {
+    throw createdResponse.reason instanceof Error ? createdResponse.reason : new Error(String(createdResponse.reason))
+  }
+
+  const parsePlaylistResponse = (result: PromiseSettledResult<Awaited<typeof createdRequest>>, field: 'disslist' | 'cdlist') => {
+    if (result.status == 'rejected' || result.value.statusCode != 200) return []
+    const body = parseQQMusicLegacyBody(result.value.body)
+    if (Number(body.code ?? 0) == 4000) return []
+    const list = body.data?.[field] ?? body[field] ?? []
+    return Array.isArray(list) ? list as Array<Record<string, any>> : []
+  }
+  const mapPlaylist = (item: Record<string, any>, subscribed: boolean): LX.QQMusic.AccountPlaylistItem => {
+    const creator = item.creator && typeof item.creator == 'object' ? item.creator : {}
+    const dirId = String(item.dirid ?? item.dissid ?? item.id ?? '')
+    const tid = String(item.tid ?? item.dissid ?? item.id ?? '')
+    return {
+      id: tid && tid != '0' ? tid : dirId,
+      dirId,
+      tid,
+      name: String(item.diss_name ?? item.dissname ?? item.name ?? item.title ?? ''),
+      author: String(item.hostname ?? item.nick ?? creator.nick ?? creator.name ?? 'QQ 音乐'),
+      img: normalizeImageUrl(item.diss_cover ?? item.logo ?? item.picurl ?? item.cover),
+      desc: String(item.desc ?? item.description ?? item.introduction ?? ''),
+      playCount: Number(item.listen_num ?? item.visitnum ?? item.play_count ?? 0),
+      trackCount: Number(item.song_cnt ?? item.songnum ?? item.total_song_num ?? item.song_count ?? 0),
+      subscribed,
+    }
+  }
+
+  const created = parsePlaylistResponse(createdResponse, 'disslist').map(item => mapPlaylist(item, false))
+  const collected = parsePlaylistResponse(collectedResponse, 'cdlist').map(item => mapPlaylist(item, true))
+  const seen = new Set<string>()
+  const list = created.concat(collected).filter(item => {
+    const key = item.tid && item.tid != '0' ? item.tid : `dir:${item.dirId}`
+    const label = `${item.name} ${item.author}`.toLowerCase()
+    if ((!/^\d+$/.test(item.dirId) && !/^\d+$/.test(item.tid)) || !item.name || seen.has(key)) return false
+    if (/qzone|空间|背景音乐/i.test(label)) return false
+    seen.add(key)
+    return true
+  }).sort((a, b) => Number(/我喜欢|我的喜欢|喜欢的音乐/i.test(b.name)) - Number(/我喜欢|我的喜欢|喜欢的音乐/i.test(a.name)))
+  return { list } satisfies LX.QQMusic.AccountPlaylists
+}
+
+const getQQMusicAccountPlaylistDetail = async(requestInfo: LX.QQMusic.AccountPlaylistDetailRequest) => {
+  const cookie = getRequiredCookie()
+  const { uin } = getQQMusicWebAuth(cookie)
+  const dirId = /^\d+$/.test(String(requestInfo?.dirId ?? '')) ? String(requestInfo.dirId) : ''
+  const tid = /^\d+$/.test(String(requestInfo?.tid ?? '')) ? String(requestInfo.tid) : ''
+  if (!dirId && !tid) throw new Error('QQ 音乐歌单 ID 无效')
+
+  const addresses = [
+    ...(tid && tid != '0' ? [{ disstid: Number(tid), dirid: 0 }] : []),
+    ...(dirId && dirId != '0' ? [{ disstid: 0, dirid: Number(dirId) }] : []),
+  ]
+  let bestData: Record<string, any> | null = null
+  let bestSongs: Array<Record<string, any>> = []
+  let lastError: unknown = null
+  for (const address of addresses) {
+    try {
+      const data = await requestMusicu({
+        module: 'music.srfDissInfo.DissInfo',
+        method: 'CgiGetDiss',
+        param: {
+          new_format: 1,
+          ...address,
+          uinAttached: true,
+          enc_host_uin: uin,
+          song_begin: 0,
+          song_num: 1000,
+          onlysonglist: 0,
+          need_game_ad: 0,
+          optype: 2,
+          orderlist: 0,
+          tag: 1,
+          userinfo: 1,
+          is_mobile: 1,
+          local_time: Math.floor(Date.now() / 1000),
+        },
+      }, cookie)
+      const rawSongs = Array.isArray(data.songlist) ? data.songlist : []
+      const songs = rawSongs
+        .map((item: Record<string, any>) => toOldSongInfo(item.songInfo ?? item.songinfo ?? item))
+        .filter((item: ReturnType<typeof toOldSongInfo>) => item.songmid)
+      if (!bestData || songs.length > bestSongs.length) {
+        bestData = data
+        bestSongs = songs
+      }
+      if (songs.length) break
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  if (bestData) {
+    const info = bestData.dirinfo ?? bestData.dissinfo ?? {}
+    return {
+      info: {
+        name: String(info.dissname ?? info.title ?? info.name ?? 'QQ 音乐歌单'),
+        desc: String(info.desc ?? info.description ?? ''),
+        img: normalizeImageUrl(info.picurl ?? info.logo ?? info.diss_cover ?? bestSongs[0]?.img),
+        author: String(info.nickname ?? info.nick ?? info.hostname ?? 'QQ 音乐'),
+        playCount: Number(info.visitnum ?? info.listen_num ?? info.play_count ?? 0),
+      },
+      list: bestSongs,
+      total: Number(bestData.total_song_num ?? bestSongs.length),
+    } satisfies LX.QQMusic.AccountPlaylistDetail
+  }
+
+  const playlistId = tid && tid != '0' ? tid : dirId
+  try {
+    const response = await request<Record<string, any> | string>(QQ_MUSIC_PLAYLIST_DETAIL_URL, {
+      method: 'GET',
+      query: {
+        type: 1,
+        json: 1,
+        utf8: 1,
+        onlysong: 0,
+        new_format: 1,
+        disstid: playlistId,
+        loginUin: uin,
+        format: 'json',
+      },
+      headers: {
+        ...getQQMusicWebHeaders(cookie),
+        Referer: 'https://y.qq.com/n/yqq/playlist',
+      },
+      timeout: 30000,
+    })
+    if (response.statusCode != 200) throw new Error(`读取 QQ 音乐歌单失败：HTTP ${response.statusCode}`)
+    const body = parseQQMusicLegacyBody(response.body)
+    if (Number(body.code ?? 0) != 0) throw getQQMusicLegacyError('读取 QQ 音乐歌单', body)
+    const detail = body.cdlist?.[0] ?? {}
+    const songs = Array.isArray(detail.songlist)
+      ? detail.songlist.map(toOldSongInfo).filter((item: ReturnType<typeof toOldSongInfo>) => item.songmid)
+      : []
+    return {
+      info: {
+        name: String(detail.dissname ?? detail.name ?? 'QQ 音乐歌单'),
+        desc: String(detail.desc ?? detail.description ?? ''),
+        img: normalizeImageUrl(detail.logo ?? detail.diss_cover ?? songs[0]?.img),
+        author: String(detail.nickname ?? detail.nick ?? 'QQ 音乐'),
+        playCount: Number(detail.visitnum ?? detail.listen_num ?? 0),
+      },
+      list: songs,
+      total: Number(detail.songnum ?? songs.length),
+    } satisfies LX.QQMusic.AccountPlaylistDetail
+  } catch (error) {
+    throw lastError instanceof Error ? lastError : error
+  }
 }
 
 const searchSongs = async(query: string) => {
@@ -1318,6 +1514,8 @@ export default () => {
   mainHandle<LX.QQMusic.RadarRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_radar_list, getRadarList)
   mainHandle<number, LX.QQMusic.DailyRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_radar_tracks, async({ params }) => getRadarTracks(params))
   mainHandle<LX.QQMusic.PlaylistRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_recommend_playlists, getRecommendPlaylists)
+  mainHandle<LX.QQMusic.AccountPlaylists>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_account_playlists, getQQMusicAccountPlaylists)
+  mainHandle<LX.QQMusic.AccountPlaylistDetailRequest, LX.QQMusic.AccountPlaylistDetail>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_account_playlist_detail, async({ params }) => getQQMusicAccountPlaylistDetail(params))
   mainHandle<number, LX.QQMusic.NewSongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_new_songs, async({ params }) => getNewSongs(params))
   mainHandle<LX.QQMusic.PlayReport, { reported: boolean, reason?: string }>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_report_play, async({ params }) => reportPlay(params))
   mainHandle<LX.QQMusic.PlaylistSyncPreviewRequest, LX.QQMusic.PlaylistSyncPreview>(WIN_MAIN_RENDERER_EVENT_NAME.qq_music_playlist_sync_preview, async({ params }) => previewPlaylistSync(params))

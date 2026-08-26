@@ -1,7 +1,12 @@
 import { httpFetch } from '../../request'
 import { decodeName, formatPlayTime, sizeFormate, dateFormat, formatPlayCount } from '../../index'
 import { formatSingerName } from '../utils'
-import { getQQMusicDailyRecommend, getQQMusicNewSongs, getQQMusicRadarTracks } from '@renderer/utils/ipc'
+import {
+  getQQMusicAccountPlaylistDetail,
+  getQQMusicDailyRecommend,
+  getQQMusicNewSongs,
+  getQQMusicRadarTracks,
+} from '@renderer/utils/ipc'
 
 export default {
   _requestObj_tags: null,
@@ -61,6 +66,25 @@ export default {
   },
   getListDetailUrl(id) {
     return `https://c.y.qq.com/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg?type=1&json=1&utf8=1&onlysong=0&new_format=1&disstid=${id}&loginUin=0&hostUin=0&format=json&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq.json&needNewCode=0`
+  },
+
+  async getAccountPlaylist(rawId) {
+    const [dirId = '', tid = ''] = String(rawId).split('_')
+    const result = await getQQMusicAccountPlaylistDetail({ dirId, tid })
+    return {
+      list: result.list,
+      page: 1,
+      limit: Math.max(result.list.length, 1),
+      total: result.total,
+      source: 'tx',
+      info: {
+        name: result.info.name,
+        img: result.info.img,
+        desc: result.info.desc,
+        author: result.info.author,
+        play_count: result.info.playCount ? String(result.info.playCount) : '',
+      },
+    }
   },
 
   async getDailyRecommend() {
@@ -235,6 +259,7 @@ export default {
   },
   // 获取歌曲列表内的音乐
   async getListDetail(id, tryNum = 0) {
+    if (String(id).startsWith('qqaccount_')) return this.getAccountPlaylist(String(id).slice('qqaccount_'.length))
     if (String(id) === 'daily30') return this.getDailyRecommend()
     if (String(id).startsWith('qqradio_')) return this.getRadarRecommend(String(id).slice(8))
     if (String(id).startsWith('qqnew_')) return this.getNewSongRecommend(String(id).slice(6))

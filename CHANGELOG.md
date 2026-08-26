@@ -1,5 +1,13 @@
 # lx-music-desktop change log
 
+## [2.12.30] - 2026-08-26
+
+### Changed
+
+- Updated the About page to link to the LX Flow Music source repository, Releases, issues, and license.
+- Clearly credited LX Music Desktop as the upstream project and changed the displayed signature to eohh.
+
+
 ## [2.12.29] - 2026-08-26
 
 ### Fixed

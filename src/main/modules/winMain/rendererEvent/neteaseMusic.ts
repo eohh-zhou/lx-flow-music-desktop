@@ -16,6 +16,9 @@ const PLAYLIST_SYNC_PREVIEW_TTL = 10 * 60 * 1000
 const PLAYLIST_SYNC_MAX_TRACKS = 1000
 const PLAYLIST_SYNC_ADD_BATCH_SIZE = 100
 
+const PLAYLIST_SYNC_RETRY_BATCH_SIZE = 20
+const PLAYLIST_SYNC_RETRY_ATTEMPTS = 3
+
 interface ResolvedPlaylistSyncTrack extends LX.NeteaseMusic.PlaylistSyncUnmatchedTrack {
   songId: string
 }
@@ -27,7 +30,6 @@ interface PendingPlaylistSync {
   duplicates: number
   expiresAt: number
   playlistId?: string
-  addedCount: number
   executing: boolean
 }
 
@@ -527,7 +529,6 @@ const previewPlaylistSync = async(request: LX.NeteaseMusic.PlaylistSyncPreviewRe
     unmatched,
     duplicates,
     expiresAt: Date.now() + PLAYLIST_SYNC_PREVIEW_TTL,
-    addedCount: 0,
     executing: false,
   })
   return {
@@ -646,19 +647,37 @@ const requestNeteasePlaylistAdd = async(playlist: NeteasePlaylistSummary, tracks
 const addNeteasePlaylistTracks = async(
   playlist: NeteasePlaylistSummary,
   tracks: ResolvedPlaylistSyncTrack[],
-  onBatchAdded: (tracks: ResolvedPlaylistSyncTrack[]) => void,
-) => {
-  if (!tracks.length) return
+): Promise<ResolvedPlaylistSyncTrack[]> => {
+  if (!tracks.length) return []
   try {
     await requestNeteasePlaylistAdd(playlist, tracks)
-  } catch (error) {
-    if (tracks.length <= 1) throw error
+  } catch {
+    if (tracks.length <= 1) return tracks
     const midpoint = Math.ceil(tracks.length / 2)
-    await addNeteasePlaylistTracks(playlist, tracks.slice(0, midpoint), onBatchAdded)
-    await addNeteasePlaylistTracks(playlist, tracks.slice(midpoint), onBatchAdded)
-    return
+    return [
+      ...await addNeteasePlaylistTracks(playlist, tracks.slice(0, midpoint)),
+      ...await addNeteasePlaylistTracks(playlist, tracks.slice(midpoint)),
+    ]
   }
-  onBatchAdded(tracks)
+  return []
+}
+
+const getMissingNeteasePlaylistTracks = async(playlist: NeteasePlaylistSummary, tracks: ResolvedPlaylistSyncTrack[]) => {
+  const actualIds = new Set(await getNeteasePlaylistSongIds(playlist))
+  return tracks.filter(track => !actualIds.has(track.songId))
+}
+
+const reconcileNeteasePlaylistTracks = async(playlist: NeteasePlaylistSummary, tracks: ResolvedPlaylistSyncTrack[]) => {
+  let missing = await getMissingNeteasePlaylistTracks(playlist, tracks)
+  for (let attempt = 0; attempt < PLAYLIST_SYNC_RETRY_ATTEMPTS && missing.length; attempt++) {
+    const batchSize = attempt == PLAYLIST_SYNC_RETRY_ATTEMPTS - 1 ? 1 : PLAYLIST_SYNC_RETRY_BATCH_SIZE
+    for (let index = 0; index < missing.length; index += batchSize) {
+      await addNeteasePlaylistTracks(playlist, missing.slice(index, index + batchSize))
+    }
+    await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+    missing = await getMissingNeteasePlaylistTracks(playlist, tracks)
+  }
+  return missing
 }
 
 const updateNeteasePlaylistOrder = async(playlist: NeteasePlaylistSummary, tracks: ResolvedPlaylistSyncTrack[]) => {
@@ -704,7 +723,6 @@ const commitPlaylistSync = async(request: LX.NeteaseMusic.PlaylistSyncCommitRequ
         const existingIds = new Set(await getNeteasePlaylistSongIds(existingPlaylist))
         const missingTracks = pending.matched.filter(track => !existingIds.has(track.songId))
         pending.duplicates += pending.matched.length - missingTracks.length
-        pending.matched = missingTracks
       } else {
         const playlistId = await createNeteasePlaylist(pending.name)
         await new Promise(resolve => setTimeout(resolve, 800))
@@ -713,23 +731,26 @@ const commitPlaylistSync = async(request: LX.NeteaseMusic.PlaylistSyncCommitRequ
       }
     }
     const playlist = await resolveNeteasePlaylist(pending.playlistId, pending.name)
-    const currentIds = new Set(await getNeteasePlaylistSongIds(playlist))
-    const tracksToAdd = pending.matched.filter(track => !currentIds.has(track.songId))
-    pending.addedCount = pending.matched.length - tracksToAdd.length
+    const initialIds = new Set(await getNeteasePlaylistSongIds(playlist))
+    const tracksToAdd = pending.matched.filter(track => !initialIds.has(track.songId))
     for (let index = 0; index < tracksToAdd.length; index += PLAYLIST_SYNC_ADD_BATCH_SIZE) {
       const batch = tracksToAdd.slice(index, index + PLAYLIST_SYNC_ADD_BATCH_SIZE)
-      await addNeteasePlaylistTracks(playlist, batch, addedTracks => {
-        pending.addedCount += addedTracks.length
-      })
+      await addNeteasePlaylistTracks(playlist, batch)
     }
-    await updateNeteasePlaylistOrder(playlist, expectedTracks)
-    await verifyNeteasePlaylistTracks(playlist, expectedTracks)
+    const skippedTracks = await reconcileNeteasePlaylistTracks(playlist, expectedTracks)
+    const skippedIds = new Set(skippedTracks.map(track => track.songId))
+    const syncedTracks = expectedTracks.filter(track => !skippedIds.has(track.songId))
+    if (!syncedTracks.length) throw new Error('网易云音乐拒绝写入全部已匹配歌曲，请稍后重试')
+    await updateNeteasePlaylistOrder(playlist, syncedTracks)
+    await verifyNeteasePlaylistTracks(playlist, syncedTracks)
+    const finalIds = new Set(await getNeteasePlaylistSongIds(playlist))
     const result = {
       playlistId: playlist.id,
       name: pending.name,
-      added: pending.addedCount,
+      added: syncedTracks.filter(track => !initialIds.has(track.songId) && finalIds.has(track.songId)).length,
       duplicates: pending.duplicates,
-      unmatched: pending.unmatched.length,
+      unmatched: pending.unmatched.length + skippedTracks.length,
+      skipped: skippedTracks.length,
     } satisfies LX.NeteaseMusic.PlaylistSyncResult
     pendingPlaylistSyncs.delete(token)
     return result

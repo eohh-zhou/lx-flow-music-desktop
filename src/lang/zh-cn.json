@@ -590,6 +590,7 @@
   "netease_music_sync_create_note": "若网易云音乐中已有同名歌单，将复用该歌单并只添加缺少的歌曲；不会删除已有歌曲。",
   "netease_music_sync_confirm": "开始同步",
   "netease_music_sync_success": "已同步网易云音乐歌单「{name}」，本次新增 {count} 首歌曲。",
+  "netease_music_sync_partial": "另有 {count} 首已匹配歌曲被网易云服务器拒绝，已自动跳过，不影响其余歌曲同步。",
   "netease_music_sync_failed": "同步失败",
   "setting__other_dislike_list": "「不喜欢的歌曲」规则",
   "setting__other_dislike_list_label": "规则数量：",

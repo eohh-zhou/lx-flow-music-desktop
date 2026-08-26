@@ -1,5 +1,13 @@
 # lx-music-desktop change log
 
+## [2.12.29] - 2026-08-26
+
+### Fixed
+
+- Reconciled NetEase playlist contents by song ID after each bulk write and retried omitted tracks in smaller batches.
+- Prevented one server-rejected song from failing the entire sync, while reporting the skipped count and keeping the remaining songs ordered.
+
+
 ## [2.12.28] - 2026-08-26
 
 ### Added

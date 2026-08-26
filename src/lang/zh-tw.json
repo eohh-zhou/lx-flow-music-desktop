@@ -590,6 +590,7 @@
   "netease_music_sync_create_note": "若網易雲音樂已有同名清單，將沿用並只加入缺少的歌曲；不會刪除現有歌曲。",
   "netease_music_sync_confirm": "開始同步",
   "netease_music_sync_success": "已同步網易雲音樂清單「{name}」，本次新增 {count} 首歌曲。",
+  "netease_music_sync_partial": "另有 {count} 首已匹配歌曲被網易雲伺服器拒絕，已自動略過，不影響其餘歌曲同步。",
   "netease_music_sync_failed": "同步失敗",
   "setting__other_dislike_list": "「不喜歡的歌曲」規則",
   "setting__other_dislike_list_label": "規則數量：",

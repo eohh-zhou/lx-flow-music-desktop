@@ -590,6 +590,7 @@
   "netease_music_sync_create_note": "A playlist with the same name will be reused and only missing songs will be added. Existing songs are never deleted.",
   "netease_music_sync_confirm": "Start Sync",
   "netease_music_sync_success": "Synced \"{name}\" to NetEase Cloud Music and added {count} new songs.",
+  "netease_music_sync_partial": "NetEase rejected {count} matched song(s); they were skipped without interrupting the rest of the sync.",
   "netease_music_sync_failed": "Sync failed",
   "setting__other_dislike_list": "Dislike Song Rule",
   "setting__other_dislike_list_label": "Number of rules: ",

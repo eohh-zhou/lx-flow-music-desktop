@@ -97,6 +97,7 @@ declare global {
       added: number
       duplicates: number
       unmatched: number
+      skipped: number
     }
   }
 }

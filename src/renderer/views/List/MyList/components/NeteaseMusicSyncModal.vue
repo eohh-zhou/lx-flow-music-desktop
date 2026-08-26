@@ -48,6 +48,7 @@
           <p v-if="status == 'preview'" :class="$style.note">{{ $t('netease_music_sync_create_note') }}</p>
           <p v-if="status == 'success' && result" :class="[$style.result, $style.success]">
             {{ $t('netease_music_sync_success', { name: result.name, count: result.added }) }}
+            <small v-if="result.skipped"><br>{{ $t('netease_music_sync_partial', { count: result.skipped }) }}</small>
           </p>
         </template>
 

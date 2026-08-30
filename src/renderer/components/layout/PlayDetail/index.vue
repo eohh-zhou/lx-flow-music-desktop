@@ -1,7 +1,7 @@
 <template lang="pug">
 transition(enter-active-class="animated slideInRight" leave-active-class="animated slideOutDown" @after-enter="handleAfterEnter" @after-leave="handleAfterLeave")
   div(v-if="isShowPlayerDetail" :class="[$style.container, { fullscreen: isFullscreen }]" @contextmenu="handleContextMenu")
-    div(:class="$style.bg")
+    div(:class="$style.bg" :style="bgStyle")
     //- div(:class="$style.bg" :style="bgStyle")
     //- div(:class="$style.bg2")
     ControlBtnsLeftHeader(v-if="appSetting['common.controlBtnPosition'] == 'left'")
@@ -27,7 +27,7 @@ transition(enter-active-class="animated slideInRight" leave-active-class="animat
 
 
 <script>
-import { ref, watch } from '@common/utils/vueTools'
+import { ref, computed, watch } from '@common/utils/vueTools'
 import { isFullscreen } from '@renderer/store'
 import {
   isShowPlayerDetail,
@@ -60,6 +60,10 @@ export default {
   },
   setup() {
     const visibled = ref(false)
+
+    const bgStyle = computed(() => {
+      return musicInfo.pic ? { backgroundImage: `url(${musicInfo.pic})` } : {}
+    })
 
     let clickTime = 0
 
@@ -104,6 +108,7 @@ export default {
       isShowPlayerDetail,
       isShowPlayComment,
       musicInfo,
+      bgStyle,
       hide,
       handleContextMenu,
       hideComment,
@@ -140,10 +145,11 @@ export default {
   position: absolute;
   display: flex;
   flex-flow: column nowrap;
-  width: 100%;
-  height: 100%;
+  // 停靠在侧边栏右侧（QQ 音乐式），侧边栏保持可见
+  left: @width-app-left;
   top: 0;
-  left: 0;
+  width: calc(100% - @width-app-left);
+  height: 100%;
   background-color: var(--color-content-background);
   z-index: 10;
   // -webkit-app-region: drag;
@@ -159,6 +165,13 @@ export default {
   * {
     box-sizing: border-box;
   }
+
+  // 全屏模式仍覆盖整个窗口
+  &:global(.fullscreen) {
+    left: 0;
+    width: 100%;
+    border-radius: 0;
+  }
 }
 .bg {
   position: absolute;
@@ -168,16 +181,20 @@ export default {
   left: 0;
   background: var(--background-image) var(--background-image-position) no-repeat;
   background-size: var(--background-image-size);
-  // background-size: 110% 110%;
-  // filter: blur(60px);
-  opacity: .7;
+  background-color: var(--color-app-background);
+  filter: blur(70px) saturate(1.3);
+  transform: scale(1.3);
   z-index: -1;
   &:before {
     content: '';
     display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
     height: 100%;
     background-color: var(--color-app-background);
+    opacity: .35;
   }
   &:after {
     position: absolute;
@@ -188,6 +205,7 @@ export default {
     width: 100%;
     height: 100%;
     background-color: var(--color-main-background);
+    opacity: .78;
   }
 }
 // .bg2 {
@@ -250,9 +268,8 @@ export default {
   max-width: 100%;
   max-height: 80%;
   min-width: 100%;
-  box-shadow: 0 0 6px var(--color-primary-alpha-500);
-  border-radius: 6px;
-  opacity: .8;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  border-radius: @radius-card;
 }
 .description {
   max-width: 300px;

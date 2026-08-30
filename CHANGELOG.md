@@ -1,5 +1,18 @@
 # lx-music-desktop change log
 
+## [2.12.31] - 2026-08-30
+
+### Added
+
+- Added a unified online-playlist view for QQ Music and NetEase Cloud Music account playlists.
+- Added single-line and double-line desktop lyric layouts, a lyric context menu, and color presets.
+- Added more built-in light and dark themes.
+
+### Changed
+
+- Redesigned the sidebar, toolbar, player controls, list views, search input, and related interface styling.
+- Made the main window resizable and maximizable, with its size remembered between launches.
+
 ## [2.12.30] - 2026-08-26
 
 ### Changed

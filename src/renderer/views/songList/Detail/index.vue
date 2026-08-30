@@ -184,11 +184,10 @@ export default {
   aspect-ratio: 1 / 1;
   position: relative;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: @radius-border;
   background-position: center;
   background-size: cover;
-  opacity: .9;
-  box-shadow: 0 0 2px 0 rgba(0,0,0,.2);
+  box-shadow: var(--shadow-card);
 }
 .playNum {
   position: absolute;
@@ -224,18 +223,11 @@ export default {
   flex: none;
   display: flex;
   align-items: center;
+  gap: 8px;
   padding-right: 15px;
 
   .headerRightBtn {
-    border-radius: 0;
-    &:first-child {
-      border-top-left-radius: 4px;
-      border-bottom-left-radius: 4px;
-    }
-    &:last-child {
-      border-top-right-radius: 4px;
-      border-bottom-right-radius: 4px;
-    }
+    border-radius: @radius-round;
   }
 }
 

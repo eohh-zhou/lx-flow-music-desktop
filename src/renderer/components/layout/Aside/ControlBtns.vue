@@ -5,6 +5,11 @@
         <use xlink:href="#icon-window-close" />
       </svg>
     </button>
+    <button type="button" :class="[$style.btn, $style.max]" :aria-label="isMaximized ? $t('restore') : $t('max')" ignore-tip :title="isMaximized ? $t('restore') : $t('max')" @click="handleToggleMaximize">
+      <svg :class="$style.controlBtniIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve">
+        <use :xlink:href="isMaximized ? '#icon-window-restore' : '#icon-window-maximize'" />
+      </svg>
+    </button>
     <button type="button" :class="[$style.btn, $style.min]" :aria-label="$t('min')" ignore-tip :title="$t('min')" @click="minWindow">
       <svg :class="$style.controlBtniIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve">
         <use xlink:href="#icon-window-minimize" />
@@ -14,14 +19,20 @@
 </template>
 
 <script setup>
-import { minWindow, closeWindow } from '@renderer/utils/ipc'
 import { onMounted, onBeforeUnmount, ref, useCssModule } from '@common/utils/vueTools'
+import { minWindow, closeWindow, maxWindowToggle, onMaximizeChange } from '@renderer/utils/ipc'
 // import { getRandom } from '../../utils'
 import { isFullscreen } from '@renderer/store'
 
 const dom_btns = ref()
+const isMaximized = ref(false)
+let removeMaximizeListener = null
 
 const cssModule = useCssModule()
+
+const handleToggleMaximize = () => {
+  maxWindowToggle()
+}
 
 const handle_focus = () => {
   if (!dom_btns.value) return
@@ -39,11 +50,13 @@ onMounted(() => {
   window.app_event.on('focus', handle_focus)
   dom_btns.value.addEventListener('mouseenter', handle_mouseenter)
   dom_btns.value.addEventListener('mouseleave', handle_mouseleave)
+  removeMaximizeListener = onMaximizeChange(maximized => { isMaximized.value = maximized })
 })
 onBeforeUnmount(() => {
   window.app_event.off('focus', handle_focus)
   dom_btns.value.removeEventListener('mouseenter', handle_mouseenter)
   dom_btns.value.removeEventListener('mouseleave', handle_mouseleave)
+  removeMaximizeListener?.()
 })
 
 </script>
@@ -55,10 +68,11 @@ onBeforeUnmount(() => {
 @control-btn-height: 6%;
 .controlBtn {
   box-sizing: border-box;
-  padding: 0 7px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: flex-start;
+  gap: 8px;
   width: 100%;
   height: @control-btn-height;
   -webkit-app-region: no-drag;
@@ -90,9 +104,9 @@ onBeforeUnmount(() => {
   &.min {
     background-color: var(--color-btn-min);
   }
-  // &.max {
-  //   background-color: var(--color-btn-max);
-  // }
+  &.max {
+    background-color: var(--color-btn-min);
+  }
   &.close {
     background-color: var(--color-btn-close);
   }

@@ -20,7 +20,7 @@
           <use xlink:href="#icon-prevMusic" />
         </svg>
       </div>
-      <div :class="$style.playBtn" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
+      <div :class="[$style.playBtn, $style.mainBtn]" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
         <svg v-if="isPlay" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
           <use xlink:href="#icon-pause" />
         </svg>
@@ -111,32 +111,55 @@ const {
   justify-content: flex-end;
   align-items: center;
   padding: 0 25px;
+  gap: 10px;
   color: var(--color-button-font);
 }
 .playBtn {
-  height: 40%;
-  padding: 5px;
-  cursor: pointer;
-  flex: none;
-  // transition: @transition-normal;
-  // transition-property: color;
-  color: var(--color-button-font);
-  transition: opacity 0.2s ease;
-  opacity: 1;
+  height: 34px;
+  width: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: @radius-round;
+  color: var(--color-700);
+  transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease, background-color 0.2s ease;
   cursor: pointer;
 
-  +.playBtn {
-    margin-left: 10px;
-  }
   svg {
     fill: currentColor;
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2));
+    height: 17px;
+    width: 17px;
   }
   &:hover {
-    opacity: 0.8;
+    color: var(--color-1000);
+    background-color: var(--color-100);
+    transform: scale(1.05);
   }
   &:active {
-    opacity: 0.6;
+    transform: scale(.95);
+  }
+}
+
+.mainBtn {
+  height: 40px;
+  width: 40px;
+  color: #fff;
+  background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary-dark-100));
+  box-shadow: 0 4px 14px var(--color-primary-alpha-500);
+
+  svg {
+    height: 20px;
+    width: 20px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .15));
+  }
+  &:hover {
+    color: #fff;
+    background: linear-gradient(145deg, var(--color-primary), var(--color-primary-dark-100));
+    box-shadow: 0 6px 18px var(--color-primary-alpha-400);
+    transform: scale(1.06);
+  }
+  &:active {
+    transform: scale(.94);
   }
 }
 

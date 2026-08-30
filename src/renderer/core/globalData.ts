@@ -25,7 +25,7 @@ window.lx = {
   restorePlayInfo: null,
   worker: createWorkers(),
   isProd: process.env.NODE_ENV == 'production',
-  rootOffset: window.dt ? 0 : 8,
+  rootOffset: window.transparent ? 8 : 0,
   apiInitPromise: [Promise.resolve(false), true, () => {}],
 }
 

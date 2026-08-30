@@ -5,21 +5,18 @@
         <li v-for="item in props.listInfo.list" :key="item.id" :class="$style.item" @click="toDetail(item)">
           <div :class="$style.image">
             <img :class="$style.img" loading="lazy" decoding="async" :src="item.img">
-          </div>
-          <div :class="$style.desc">
-            <h4>{{ item.name }}</h4>
-            <div>
-              <p :class="$style.author">{{ item.author }}</p>
-              <p v-if="item.time" :class="$style.time">{{ item.time }}</p>
-              <div :class="$style.songlist_info">
-                <span v-if="item.total != null"><svg-icon name="music" />{{ item.total }}</span>
-                <span v-if="item.play_count != null"><svg-icon name="headphones" />{{ item.play_count }}</span>
-                <span v-if="visibleSource">{{ item.source }}</span>
-              </div>
+            <div v-if="item.play_count != null" :class="$style.playCount">
+              <svg-icon name="headphones" />
+              <span>{{ item.play_count }}</span>
             </div>
           </div>
+          <h4 :class="$style.title">{{ item.name }}</h4>
+          <p :class="$style.meta">
+            <span v-if="item.author">{{ item.author }}</span>
+            <span v-if="item.time">{{ item.time }}</span>
+            <span v-if="visibleSource">{{ item.source }}</span>
+          </p>
         </li>
-        <li v-for="(i, index) in 6" :key="index" :class="$style.item" style="margin-bottom: 0;height: 0;" />
       </ul>
       <div :class="$style.pagination">
         <material-pagination :count="props.listInfo.total" :limit="props.listInfo.limit" :page="props.listInfo.page" @btn-click="togglePage" />
@@ -106,97 +103,91 @@ defineExpose({
   flex-flow: column nowrap;
   font-size: 14px;
   box-sizing: border-box;
-  padding: 15px 15px 0;
+  padding: 18px 20px 0;
 
   ul {
-    display: flex;
-    flex-flow: row wrap;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 24px 20px;
   }
 }
 .item {
-  max-width: 360px;
-  width: 32%;
-  box-sizing: border-box;
-  display: flex;
-  // flex-flow: column nowrap;
-  // padding: 10px;
-  margin-bottom: 20px;
+  min-width: 0;
   cursor: pointer;
-  transition: opacity @transition-normal;
-  &:hover {
-    opacity: .7;
-  }
 }
 .image {
-  flex: none;
-  width: 40%;
-  display: flex;
-  background-position: center;
-  background-size: cover;
-  border-radius: 4px;
-  overflow: hidden;
-  opacity: .9;
+  position: relative;
+  width: 100%;
   aspect-ratio: 1 / 1;
-
-  box-shadow: 0 0 2px 0 rgba(0,0,0,.2);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: var(--color-100);
+  box-shadow: var(--shadow-card);
+  transition: transform @transition-normal, box-shadow @transition-normal;
 }
 .img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform @transition-normal;
 }
-
-.desc {
-  flex: auto;
-  padding: 2px 15px 2px 7px;
-  overflow: hidden;
-  h4 {
-    font-size: 14px;
-    // height: 2.6em;
-    text-align: justify;
-    line-height: 1.3;
-    .mixin-ellipsis-2();
-  }
-}
-.songlist_info {
+.playCount {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
   display: flex;
   flex-flow: row nowrap;
-  gap: 15px;
-  margin-top: 8px;
-  font-size: 12px;
-  .mixin-ellipsis-1();
-  text-align: justify;
-  line-height: 1.2;
-  // text-indent: 24px;
-  color: var(--color-font-label);
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: @radius-round;
+  background: rgba(28, 28, 30, .55);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+
   svg {
-    margin-right: 2px;
+    width: 10px;
+    height: 10px;
   }
 }
-.author {
-  margin-top: 6px;
-  font-size: 12px;
-  .mixin-ellipsis-1();
+.title {
+  margin-top: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
   text-align: justify;
-  line-height: 1.3;
-  // text-indent: 24px;
-  color: var(--color-font-label);
+  color: var(--color-font);
+  transition: color @transition-fast;
+  .mixin-ellipsis-2();
 }
-.time {
-  margin-top: 3px;
+.meta {
+  margin-top: 4px;
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 6px;
   font-size: 12px;
-  .mixin-ellipsis-1();
-  text-align: justify;
   line-height: 1.3;
-  // text-indent: 24px;
   color: var(--color-font-label);
+  .mixin-ellipsis-1();
+}
+.item:hover {
+  .image {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+  }
+  .img {
+    transform: scale(1.05);
+  }
+  .title {
+    color: var(--color-primary);
+  }
 }
 .pagination {
   text-align: center;
-  padding: 15px 0;
-  // left: 50%;
-  // transform: translateX(-50%);
+  padding: 20px 0;
 }
 .noitem {
   position: absolute;
@@ -208,7 +199,6 @@ defineExpose({
   flex-flow: column nowrap;
   justify-content: center;
   align-items: center;
-  // background-color: var(--color-000);
 
   p {
     font-size: 24px;

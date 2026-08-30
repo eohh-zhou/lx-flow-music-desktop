@@ -790,6 +790,26 @@ export const maxWindow = () => {
 }
 
 /**
+ * 最大化、还原窗口切换
+ */
+export const maxWindowToggle = () => {
+  rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.max_toggle)
+}
+
+/**
+ * 窗口最大化状态变化事件
+ * @param listener
+ * @returns
+ */
+export const onMaximizeChange = (listener: (isMaximized: boolean) => void): RemoveListener => {
+  const handle = ({ params }: { params: boolean }) => { listener(params) }
+  rendererOn<boolean>(WIN_MAIN_RENDERER_EVENT_NAME.max_change, handle)
+  return () => {
+    rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.max_change, handle)
+  }
+}
+
+/**
  * 最小化、最大化窗口切换
  */
 export const minMaxWindowToggle = () => {

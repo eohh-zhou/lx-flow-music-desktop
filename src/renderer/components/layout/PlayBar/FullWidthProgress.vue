@@ -26,7 +26,7 @@
           <use xlink:href="#icon-prevMusic" />
         </svg>
       </div>
-      <div :class="$style.playBtn" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
+      <div :class="[$style.playBtn, $style.mainBtn]" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
         <svg v-if="isPlay" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
           <use xlink:href="#icon-pause" />
         </svg>
@@ -151,7 +151,7 @@ export default {
 .player {
   position: relative;
   height: @height-player;
-  // border-top: 1px solid var(--color-primary-alpha-900);
+  border-top: 1px solid var(--color-100);
   box-sizing: border-box;
   display: flex;
   flex-flow: row nowrap;
@@ -159,7 +159,6 @@ export default {
   contain: strict;
   padding: 8px 6px 6px;
   z-index: 2;
-  // box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1);
   * {
     box-sizing: border-box;
   }
@@ -170,8 +169,8 @@ export default {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: var(--color-main-background);
-    opacity: .9;
+    background: linear-gradient(180deg, var(--color-000), var(--color-050));
+    opacity: .92;
     z-index: -1;
   }
 }
@@ -212,31 +211,38 @@ export default {
   //   fill: currentColor;
   // }
   img {
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
     max-width: 100%;
     max-height: 100%;
     transition: @transition-normal;
-    transition-property: border-color;
-    // border-radius: 50%;
+    transition-property: border-color, transform, box-shadow;
     border-radius: @radius-border;
-    // border: 2px solid @color-theme_2-background_1;
+  }
+
+  &:hover img {
+    transform: scale(1.02);
   }
 
   .emptyPic {
-    background-color: var(--color-primary-light-900-alpha-200);
+    background:
+      radial-gradient(120% 120% at 20% 15%, var(--color-primary-light-100) 0%, var(--color-primary) 45%, var(--color-primary-dark-200) 100%);
     border-radius: @radius-border;
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-primary-light-400-alpha-200);
+    color: rgba(255, 255, 255, .95);
     user-select: none;
-    font-size: 20px;
-    font-family: Consolas, "Courier New", monospace;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    box-shadow: inset 0 -6px 14px rgba(0, 0, 0, .12), 0 4px 14px var(--color-primary-alpha-600);
 
     span {
       padding-left: 3px;
+      font-weight: 500;
     }
   }
 }
@@ -256,13 +262,16 @@ export default {
 
 .title {
   max-width: 100%;
-  font-size: 12px;
-  color: var(--color-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-font);
   .mixin-ellipsis-1();
 }
 .status {
-  padding-top: 3px;
+  padding-top: 2px;
   height: 23px;
+  font-size: 11.5px;
+  color: var(--color-font-label);
   .mixin-ellipsis-1();
   max-width: 100%;
 }
@@ -270,7 +279,8 @@ export default {
 .timeContent {
   flex: none;
   color: var(--color-550);
-  font-size: 13px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
   padding-left: 10px;
 }
 
@@ -282,28 +292,58 @@ export default {
   align-items: center;
   padding-left: 10px;
   padding-right: 15px;
-  gap: 18px;
+  gap: 10px;
 }
 
 .playBtn {
   flex: none;
-  height: 52%;
-  // margin-top: -2px;
+  height: 34px;
+  width: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: @radius-round;
   transition: @transition-fast;
-  transition-property: color, opacity;
-  color: var(--color-button-font);
+  transition-property: color, background-color, opacity, transform;
+  color: var(--color-700);
   opacity: 1;
   cursor: pointer;
 
   svg {
     fill: currentColor;
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2));
+    height: 17px;
+    width: 17px;
   }
   &:hover {
-    opacity: 0.8;
+    color: var(--color-1000);
+    background-color: var(--color-100);
+    transform: scale(1.05);
   }
   &:active {
-    opacity: 0.6;
+    transform: scale(.95);
+  }
+}
+
+.mainBtn {
+  height: 40px;
+  width: 40px;
+  color: #fff;
+  background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary-dark-100));
+  box-shadow: 0 4px 14px var(--color-primary-alpha-500);
+
+  svg {
+    height: 20px;
+    width: 20px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .15));
+  }
+  &:hover {
+    color: #fff;
+    background: linear-gradient(145deg, var(--color-primary), var(--color-primary-dark-100));
+    box-shadow: 0 6px 18px var(--color-primary-alpha-400);
+    transform: scale(1.06);
+  }
+  &:active {
+    transform: scale(.94);
   }
 }
 

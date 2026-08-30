@@ -1,5 +1,5 @@
 <template>
-  <material-modal :show="modelValue" bg-close="bg-close" teleport="#view" @close="$emit('update:modelValue', false)">
+  <material-modal :show="modelValue" bg-close="bg-close" :teleport="teleport" @close="$emit('update:modelValue', false)">
     <main :class="$style.main">
       <h2>{{ $t('theme_selector_modal__title') }}</h2>
       <div class="scroll" :class="$style.content">
@@ -46,6 +46,16 @@ export default {
   name: 'ThemeSelectorModal',
   props: {
     modelValue: {
+      type: Boolean,
+      default: false,
+    },
+    // 从侧边栏等 view 层之外的入口打开时需传 '#root'，避免被播放详情页(z-index 更高)遮挡
+    teleport: {
+      type: String,
+      default: '#view',
+    },
+    // 换肤模式：点击主题立即应用（而非仅作为跟随系统的亮/暗预设）
+    immediate: {
       type: Boolean,
       default: false,
     },
@@ -104,14 +114,24 @@ export default {
     })
 
     const setLightId = (id) => {
-      if (appSetting['theme.lightId'] == id) return
+      if (appSetting['theme.lightId'] == id && !(props.immediate && appSetting['theme.id'] != id)) return
       updateSetting({ 'theme.lightId': id })
-      if (appSetting['theme.id'] == 'auto') applyTheme('auto', id, appSetting['theme.darkId'], dataPath)
+      if (props.immediate) {
+        updateSetting({ 'theme.id': id })
+        applyTheme(id, id, appSetting['theme.darkId'], dataPath)
+      } else if (appSetting['theme.id'] == 'auto') {
+        applyTheme('auto', id, appSetting['theme.darkId'], dataPath)
+      }
     }
     const setDarkId = (id) => {
-      if (appSetting['theme.darkId'] == id) return
+      if (appSetting['theme.darkId'] == id && !(props.immediate && appSetting['theme.id'] != id)) return
       updateSetting({ 'theme.darkId': id })
-      if (appSetting['theme.id'] == 'auto') applyTheme('auto', appSetting['theme.lightId'], id, dataPath)
+      if (props.immediate) {
+        updateSetting({ 'theme.id': id })
+        applyTheme(id, appSetting['theme.lightId'], id, dataPath)
+      } else if (appSetting['theme.id'] == 'auto') {
+        applyTheme('auto', appSetting['theme.lightId'], id, dataPath)
+      }
     }
     return {
       appSetting,

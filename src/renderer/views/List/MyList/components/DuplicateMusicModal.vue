@@ -9,6 +9,10 @@
     >
       <div :class="$style.listItem">
         <div :class="$style.num">{{ item.index + 1 }}</div>
+        <div :class="$style.cover">
+          <img v-if="item.musicInfo.meta.picUrl" :src="item.musicInfo.meta.picUrl" loading="lazy" decoding="async" alt="">
+          <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve"><use xlink:href="#icon-album" /></svg>
+        </div>
         <div :class="$style.textContent">
           <h3 :class="$style.text" :aria-label="`${item.musicInfo.name} - ${item.musicInfo.singer}`">{{ item.musicInfo.name }} - {{ item.musicInfo.singer }}</h3>
           <h3 v-if="item.musicInfo.meta.albumName" :class="[$style.text, $style.albumName]" :aria-label="item.musicInfo.meta.albumName">{{ item.musicInfo.meta.albumName }}</h3>
@@ -163,6 +167,31 @@ export default {
   width: 30px;
   text-align: center;
   color: var(--color-font-label);
+}
+
+.cover {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+
+  img {
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    object-fit: cover;
+    background-color: var(--color-100);
+  }
+
+  svg {
+    width: 26px;
+    height: 26px;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    background-color: var(--color-100);
+    color: var(--color-350);
+  }
 }
 
 .textContent {

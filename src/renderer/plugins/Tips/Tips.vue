@@ -87,7 +87,7 @@ export default {
   font-size: 12px;
   // max-width: 80%;
   color: var(--color-font);
-  border-radius: 3px;
+  border-radius: 6px;
   background: var(--color-content-background);
   overflow: hidden;
   pointer-events: none;

@@ -245,7 +245,8 @@ export default {
 
   :global {
     dt {
-      border-left: 5px solid var(--color-primary-alpha-700);
+      border-left: 3px solid var(--color-primary);
+      border-radius: 2px;
       padding: 3px 7px;
       margin: 15px 0;
 

@@ -158,6 +158,12 @@
       <g id="icon-window-close-2" fill="currentColor">
         <path d="M13.46,12L19,17.54V19H17.54L12,13.46L6.46,19H5V17.54L10.54,12L5,6.46V5H6.46L12,10.54L17.54,5H19V6.46L13.46,12Z" />
       </g>
+      <g id="icon-window-maximize" fill="currentColor">
+        <path fill-rule="evenodd" d="M4,4H20V20H4V4ZM6,6H18V18H6V6Z" />
+      </g>
+      <g id="icon-window-restore" fill="currentColor">
+        <path fill-rule="evenodd" d="M3,3H17V17H3V3ZM5,5H15V15H5V5ZM7,7H21V21H7V7ZM9,9H19V19H9V9Z" />
+      </g>
       <g id="icon-list-loop" fill="currentColor">
         <!-- 0 0 24 24-->
         <path d="M0 0h24v24H0z" fill="none" />
@@ -211,6 +217,10 @@
       <g id="icon-audio-wave" fill="currentColor">
         <!-- 0 0 24 24-->
         <path fill="currentColor" d="M22 12L20 13L19 14L18 13L17 16L16 13L15 21L14 13L13 15L12 13L11 17L10 13L9 22L8 13L7 19L6 13L5 14L4 13L2 12L4 11L5 10L6 11L7 5L8 11L9 2L10 11L11 7L12 11L13 9L14 11L15 3L16 11L17 8L18 11L19 10L20 11L22 12Z" />
+      </g>
+      <g id="icon-skin" fill="currentColor">
+        <!-- 0 0 24 24-->
+        <path d="M17.5,12A1.5,1.5 0 0,1 16,10.5A1.5,1.5 0 0,1 17.5,9A1.5,1.5 0 0,1 19,10.5A1.5,1.5 0 0,1 17.5,12M14.5,8A1.5,1.5 0 0,1 13,6.5A1.5,1.5 0 0,1 14.5,5A1.5,1.5 0 0,1 16,6.5A1.5,1.5 0 0,1 14.5,8M9.5,8A1.5,1.5 0 0,1 8,6.5A1.5,1.5 0 0,1 9.5,5A1.5,1.5 0 0,1 11,6.5A1.5,1.5 0 0,1 9.5,8M6.5,12A1.5,1.5 0 0,1 5,10.5A1.5,1.5 0 0,1 6.5,9A1.5,1.5 0 0,1 8,10.5A1.5,1.5 0 0,1 6.5,12M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A1.5,1.5 0 0,0 13.5,19.5C13.5,19.11 13.35,18.76 13.11,18.5C12.88,18.23 12.73,17.88 12.73,17.5C12.73,16.67 13.4,16 14.23,16H16A5,5 0 0,0 21,11C21,6.58 16.97,3 12,3Z" />
       </g>
       <g id="icon-font-decrease" fill="currentColor">
         <!-- 0 0 24 24-->

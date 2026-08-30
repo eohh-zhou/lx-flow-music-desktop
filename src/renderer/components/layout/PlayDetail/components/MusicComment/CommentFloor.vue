@@ -76,7 +76,7 @@ export default {
 }
 .avatar {
   width: 40px;
-  border-radius: 4px;
+  border-radius: 8px;
   box-shadow: 0 0 2px rgba(0, 0, 0, .15);
 }
 .right {

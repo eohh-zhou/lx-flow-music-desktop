@@ -5,7 +5,7 @@ import { isPlay, musicInfo } from '@renderer/store/player/state'
 import { setStatusText } from '@renderer/store/player/action'
 import { markRawList } from '@common/utils/vueTools'
 import { appSetting } from '@renderer/store/setting'
-import { onNewDesktopLyricProcess } from '@renderer/utils/ipc'
+import { onNewDesktopLyricProcess, focusWindow } from '@renderer/utils/ipc'
 
 const getCurrentTime = () => {
   return getPlayerCurrentTime() * 1000
@@ -45,6 +45,12 @@ export const sendDesktopLyricInfo = (info: LX.DesktopLyric.LyricActions, transfe
 }
 const handleDesktopLyricMessage = (action: LX.DesktopLyric.WinMainActions) => {
   switch (action) {
+    case 'open_settings':
+      focusWindow()
+      void import('@renderer/router').then(({ default: router }) => {
+        void router.push({ path: '/setting', query: { name: 'SettingDesktopLyric' } }).catch(_ => _)
+      })
+      break
     case 'get_info':
       sendDesktopLyricInfo({
         action: 'set_info',

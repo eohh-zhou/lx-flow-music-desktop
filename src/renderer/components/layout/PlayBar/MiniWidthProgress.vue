@@ -5,43 +5,48 @@
       <div v-else :class="$style.emptyPic">L<span>X</span></div>
     </div>
     <div :class="$style.infoContent">
-      <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
-        {{ title }}
+      <div :class="$style.titleRow">
+        <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
+          {{ title }}
+        </div>
+        <button :class="[$style.commentBtn, {[$style.commentActive]: isShowPlayComment}]" :aria-label="$t('comment__show')" :title="$t('comment__show')" ignore-tip @click="toggleVisibleComment">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve">
+            <use xlink:href="#icon-comment" />
+          </svg>
+        </button>
       </div>
-      <div :class="$style.status">{{ statusText }}</div>
+      <div :class="$style.status">{{ singer || statusText }}</div>
     </div>
-    <!-- <div :class="$style.timeContainer">
-      <div :class="$style.timeContent">
-        <span>{{ nowPlayTimeStr }}</span>
-        <span style="margin: 0 1px;">/</span>
-        <span>{{ maxPlayTimeStr }}</span>
+    <div :class="$style.centerZone">
+      <div :class="$style.transportRow">
+        <div :class="$style.playBtn" :aria-label="$t('player__prev')" @click="playPrev()">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
+            <use xlink:href="#icon-prevMusic" />
+          </svg>
+        </div>
+        <div :class="[$style.playBtn, $style.mainBtn]" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
+          <svg v-if="isPlay" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
+            <use xlink:href="#icon-pause" />
+          </svg>
+          <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
+            <use xlink:href="#icon-play" />
+          </svg>
+        </div>
+        <div :class="$style.playBtn" :aria-label="$t('player__next')" @click="playNext()">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
+            <use xlink:href="#icon-nextMusic" />
+          </svg>
+        </div>
+      </div>
+      <div :class="$style.progressRow">
+        <span :class="$style.time">{{ nowPlayTimeStr }}</span>
         <div :class="$style.progress">
           <common-progress-bar v-if="!isShowPlayerDetail" :class-name="$style.progressBar" :progress="progress" :handle-transition-end="handleTransitionEnd" :is-active-transition="isActiveTransition" />
         </div>
-      </div>
-    </div> -->
-    <play-progress />
-    <control-btns />
-    <div :class="$style.playBtnContent">
-      <div :class="$style.playBtn" :aria-label="$t('player__prev')" @click="playPrev()">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
-          <use xlink:href="#icon-prevMusic" />
-        </svg>
-      </div>
-      <div :class="$style.playBtn" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
-        <svg v-if="isPlay" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
-          <use xlink:href="#icon-pause" />
-        </svg>
-        <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
-          <use xlink:href="#icon-play" />
-        </svg>
-      </div>
-      <div :class="$style.playBtn" :aria-label="$t('player__next')" @click="playNext()">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
-          <use xlink:href="#icon-nextMusic" />
-        </svg>
+        <span :class="$style.time">{{ maxPlayTimeStr }}</span>
       </div>
     </div>
+    <control-btns />
   </div>
 </template>
 
@@ -50,13 +55,13 @@ import { computed } from '@common/utils/vueTools'
 import { useRouter } from '@common/utils/vueRouter'
 import { clipboardWriteText } from '@common/utils/electron'
 import ControlBtns from './ControlBtns.vue'
-import PlayProgress from './PlayProgress.vue'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 // import { lyric } from '@renderer/core/share/lyric'
 import {
   statusText,
   musicInfo,
   isShowPlayerDetail,
+  isShowPlayComment,
   isPlay,
   playInfo,
   playMusicInfo,
@@ -64,6 +69,7 @@ import {
 import {
   setMusicInfo,
   setShowPlayerDetail,
+  setShowPlayComment,
 } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 import { togglePlay, playNext, playPrev } from '@renderer/core/player'
@@ -74,7 +80,6 @@ export default {
   name: 'CorePlayBar',
   components: {
     ControlBtns,
-    PlayProgress,
   },
   setup() {
     const router = useRouter()
@@ -90,6 +95,11 @@ export default {
     const showPlayerDetail = () => {
       if (!playMusicInfo.musicInfo) return
       setShowPlayerDetail(true)
+    }
+    const toggleVisibleComment = () => {
+      if (!playMusicInfo.musicInfo) return
+      if (!isShowPlayerDetail.value) setShowPlayerDetail(true)
+      setShowPlayComment(!isShowPlayComment.value)
     }
     const handleCopy = (text) => {
       clipboardWriteText(text)
@@ -119,6 +129,8 @@ export default {
         : ''
     })
 
+    const singer = computed(() => musicInfo.singer || '')
+
     // onBeforeUnmount(() => {
     // window.eventHub.emit(eventPlayerNames.setTogglePlay)
     // })
@@ -134,7 +146,10 @@ export default {
       imgError,
       statusText,
       title,
+      singer,
       showPlayerDetail,
+      isShowPlayComment,
+      toggleVisibleComment,
       isPlay,
       togglePlay,
       playNext,
@@ -153,7 +168,7 @@ export default {
 .player {
   position: relative;
   height: @height-player;
-  border-top: 1px solid var(--color-primary-alpha-900);
+  border-top: 1px solid var(--color-100);
   box-sizing: border-box;
   display: flex;
   flex-flow: row nowrap;
@@ -172,8 +187,8 @@ export default {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: var(--color-main-background);
-    opacity: .9;
+    background: linear-gradient(180deg, var(--color-000), var(--color-050));
+    opacity: .92;
     z-index: -1;
   }
 }
@@ -202,57 +217,115 @@ export default {
   //   fill: currentColor;
   // }
   img {
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
     max-width: 100%;
     max-height: 100%;
     transition: @transition-normal;
-    transition-property: border-color;
-    // border-radius: 50%;
-    border-radius: @radius-border;
-    // border: 2px solid @color-theme_2-background_1;
+    transition-property: border-color, transform, box-shadow;
+    // 圆形碟片样式（网易云风格）
+    border-radius: 50%;
+    border: 3px solid var(--color-950);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  }
+
+  &:hover img {
+    transform: scale(1.03);
   }
 
   .emptyPic {
-    background-color: var(--color-primary-light-900-alpha-200);
-    border-radius: @radius-border;
+    background:
+      radial-gradient(120% 120% at 20% 15%, var(--color-primary-light-100) 0%, var(--color-primary) 45%, var(--color-primary-dark-200) 100%);
+    border-radius: 50%;
+    border: 3px solid var(--color-950);
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-primary-light-400-alpha-200);
+    color: rgba(255, 255, 255, .95);
     user-select: none;
-    font-size: 20px;
-    font-family: Consolas, "Courier New", monospace;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    box-shadow: inset 0 -6px 14px rgba(0, 0, 0, .12), 0 4px 14px var(--color-primary-alpha-600);
 
     span {
       padding-left: 3px;
+      font-weight: 500;
     }
   }
 }
 
 .infoContent {
+  flex: 0 1 230px;
+  min-width: 0;
   padding: 0 10px;
-  flex: auto;
   display: flex;
   flex-flow: column nowrap;
   justify-content: center;
   align-items: flex-start;
   font-size: 13px;
   color: var(--color-font);
-  min-width: 0;
   line-height: 1.5;
 }
 
-.title {
+.titleRow {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 7px;
   max-width: 100%;
-  font-size: 12px;
-  color: var(--color-font-label);
+  min-width: 0;
+}
+
+.title {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-font);
+  cursor: pointer;
   .mixin-ellipsis-1();
 }
+
+.commentBtn {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: @radius-round;
+  background-color: transparent;
+  color: var(--color-450);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  transition: @transition-fast;
+  transition-property: color, background-color, transform;
+
+  svg {
+    fill: currentColor;
+  }
+
+  &:hover {
+    color: var(--color-primary);
+    background-color: var(--color-primary-alpha-900);
+  }
+  &:active {
+    transform: scale(.9);
+  }
+}
+
+.commentActive {
+  color: var(--color-primary);
+}
 .status {
-  padding-top: 3px;
-  height: 23px;
+  margin-top: 1px;
+  min-width: 0;
+  height: 17px;
+  font-size: 11.5px;
+  color: var(--color-font-label);
   .mixin-ellipsis-1();
   max-width: 100%;
 }
@@ -304,36 +377,107 @@ export default {
 //   justify-content: space-between;
 // }
 
-.playBtnContent {
+.centerZone {
+  flex: 1 1 auto;
+  min-width: 140px;
   height: 100%;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  // 右侧功能按钮较宽，补偿偏移使控制键组接近视觉居中偏左
+  margin-right: 150px;
+}
+
+.transportRow {
   flex: none;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  padding-left: 10px;
-  padding-right: 15px;
-  gap: 18px;
+  justify-content: center;
+  gap: 12px;
+}
+
+.progressRow {
+  flex: none;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  margin-top: 2px;
+}
+.time {
+  flex: none;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-550);
+  min-width: 36px;
+  &:first-child {
+    text-align: right;
+  }
+}
+.progress {
+  flex: auto;
+  min-width: 60px;
+  position: relative;
+  margin: 0 10px;
+  padding: 4px 0;
+  .progressBar {
+    height: 3.5px;
+  }
 }
 
 .playBtn {
   flex: none;
-  height: 52%;
-  // margin-top: -2px;
+  height: 30px;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: @radius-round;
   transition: @transition-fast;
-  transition-property: color, opacity;
-  color: var(--color-button-font);
+  transition-property: color, background-color, opacity, transform;
+  color: var(--color-700);
   opacity: 1;
   cursor: pointer;
 
   svg {
     fill: currentColor;
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2));
+    height: 15px;
+    width: 15px;
   }
   &:hover {
-    opacity: 0.8;
+    color: var(--color-1000);
+    background-color: var(--color-100);
+    transform: scale(1.05);
   }
   &:active {
-    opacity: 0.6;
+    transform: scale(.95);
+  }
+}
+
+.mainBtn {
+  height: 36px;
+  width: 36px;
+  color: #fff;
+  background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary-dark-100));
+  box-shadow: 0 4px 14px var(--color-primary-alpha-500);
+
+  svg {
+    height: 17px;
+    width: 17px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .15));
+  }
+  &:hover {
+    color: #fff;
+    background: linear-gradient(145deg, var(--color-primary), var(--color-primary-dark-100));
+    box-shadow: 0 6px 18px var(--color-primary-alpha-400);
+    transform: scale(1.06);
+  }
+  &:active {
+    transform: scale(.94);
   }
 }
 

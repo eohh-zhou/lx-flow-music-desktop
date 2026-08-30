@@ -9,10 +9,11 @@
           <thead>
             <tr>
               <th class="num" style="width: 5%;">#</th>
+              <th style="width: 7%;"></th>
               <th class="nobreak">{{ $t('music_name') }}</th>
-              <th class="nobreak" style="width: 20%;">{{ $t('download__progress') }}</th>
-              <th class="nobreak" style="width: 22%;">{{ $t('download__status') }}</th>
-              <th class="nobreak" style="width: 10%;">{{ $t('download__quality') }}</th>
+              <th class="nobreak" style="width: 18%;">{{ $t('download__progress') }}</th>
+              <th class="nobreak" style="width: 19%;">{{ $t('download__status') }}</th>
+              <th class="nobreak" style="width: 9%;">{{ $t('download__quality') }}</th>
               <th class="nobreak" style="width: 13%;">{{ $t('action') }}</th>
             </tr>
           </thead>
@@ -38,12 +39,16 @@
                 <div v-else class="num">{{ index + 1 }}</div>
               </transition>
             </div>
+            <div class="list-item-cell no-select" :class="$style.cover" style="flex: 0 0 7%;">
+              <img v-if="item.metadata.musicInfo.meta.picUrl" :src="item.metadata.musicInfo.meta.picUrl" loading="lazy" decoding="async" alt="">
+              <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve"><use xlink:href="#icon-album" /></svg>
+            </div>
             <div class="list-item-cell auto name">
               <span class="select name" :aria-label="getName(item)">{{ getName(item) }}</span>
             </div>
-            <div class="list-item-cell" style="flex: 0 0 20%;">{{ item.progress }}%<span v-if="item.status == downloadStatus.RUN && item.speed"> - {{ item.speed }}/s</span></div>
-            <div class="list-item-cell" style="flex: 0 0 22%;" :aria-label="item.statusText">{{ item.statusText }}</div>
-            <div class="list-item-cell" style="flex: 0 0 10%;">{{ getTypeName(item.metadata.quality) }}</div>
+            <div class="list-item-cell" style="flex: 0 0 18%;">{{ item.progress }}%<span v-if="item.status == downloadStatus.RUN && item.speed"> - {{ item.speed }}/s</span></div>
+            <div class="list-item-cell" style="flex: 0 0 19%;" :aria-label="item.statusText">{{ item.statusText }}</div>
+            <div class="list-item-cell" style="flex: 0 0 9%;">{{ getTypeName(item.metadata.quality) }}</div>
             <div class="list-item-cell" style="flex: 0 0 13%; padding-left: 0; padding-right: 0;">
               <material-list-buttons
                 :index="index" :download-btn="false" :file-btn="item.status != downloadStatus.ERROR" remove-btn="remove-btn"
@@ -278,6 +283,31 @@ export default {
 
   color: var(--color-button-font);
   opacity: .7;
+}
+
+.cover {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    object-fit: cover;
+    background-color: var(--color-100);
+  }
+
+  svg {
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    background-color: var(--color-100);
+    color: var(--color-350);
+  }
 }
 
 .content {

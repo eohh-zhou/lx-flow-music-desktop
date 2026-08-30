@@ -82,7 +82,7 @@ export default {
   height: 100%;
   border: none;
   outline: none;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 5px;
   background-color: var(--color-primary-light-200-alpha-900);
   box-sizing: border-box;

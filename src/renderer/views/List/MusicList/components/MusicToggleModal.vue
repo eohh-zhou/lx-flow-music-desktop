@@ -206,7 +206,7 @@ export default {
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    border-radius: 4px;
+    border-radius: 8px;
 
     &:hover {
       background-color: var(--color-primary-background-hover);

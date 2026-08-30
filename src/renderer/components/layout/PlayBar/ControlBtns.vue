@@ -14,6 +14,11 @@
         <use xlink:href="#icon-desktop-lyric-off" />
       </svg>
     </button>
+    <button :class="[$style.titleBtn, { [$style.commentActive]: isShowPlayComment }]" :aria-label="$t('comment__show')" :title="$t('comment__show')" ignore-tip @click="toggleVisibleComment">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="72%" viewBox="0 0 24 24" space="preserve">
+        <use xlink:href="#icon-comment" />
+      </svg>
+    </button>
     <common-volume-btn />
     <common-toggle-play-mode-btn />
     <common-list-add-modal v-model:show="isShowAddMusicTo" :music-info="playMusicInfo.musicInfo" />
@@ -23,7 +28,8 @@
 <script>
 import { ref } from '@common/utils/vueTools'
 import useToggleDesktopLyric from '@renderer/utils/compositions/useToggleDesktopLyric'
-import { musicInfo, playMusicInfo } from '@renderer/store/player/state'
+import { musicInfo, playMusicInfo, isShowPlayerDetail, isShowPlayComment } from '@renderer/store/player/state'
+import { setShowPlayerDetail, setShowPlayComment } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 
 export default {
@@ -38,6 +44,16 @@ export default {
       if (!musicInfo.id) return
       isShowAddMusicTo.value = true
     }
+    const toggleVisibleComment = () => {
+      if (!playMusicInfo.musicInfo) return
+      // 播放详情页未打开时，先打开详情页再展开评论面板，否则切换面板显隐
+      if (!isShowPlayerDetail.value) {
+        setShowPlayerDetail(true)
+        if (!isShowPlayComment.value) setShowPlayComment(true)
+      } else {
+        setShowPlayComment(!isShowPlayComment.value)
+      }
+    }
     return {
       appSetting,
       isShowAddMusicTo,
@@ -46,6 +62,8 @@ export default {
       toggleLockDesktopLyric,
       addMusicTo,
       playMusicInfo,
+      isShowPlayComment,
+      toggleVisibleComment,
     }
   },
 }
@@ -60,40 +78,52 @@ export default {
   flex: none;
   display: flex;
   flex-flow: row nowrap;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
 
   button {
-    color: var(--color-button-font);
+    color: var(--color-550);
   }
 }
 
 .titleBtn {
   flex: none;
-  height: 100%;
-  width: 24px;
+  height: 30px;
+  width: 30px;
+  border-radius: @radius-round;
   transition: @transition-fast;
-  transition-property: color, opacity;
-  // color: var(--color-button-font);
+  transition-property: color, opacity, background-color;
   display: flex;
   flex-flow: column nowrap;
   justify-content: center;
   align-items: center;
   background-color: transparent;
   border: none;
-  width: 24px;
   padding: 0;
 
-  opacity: .6;
+  opacity: .85;
   cursor: pointer;
 
   svg {
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2));
+    filter: none;
   }
   &:hover {
     opacity: 1;
+    color: var(--color-900) !important;
+    background-color: var(--color-100);
   }
   &:active {
     opacity: 1;
+    transform: scale(.94);
+  }
+}
+
+.commentActive {
+  color: var(--color-primary);
+  opacity: 1;
+
+  &:hover {
+    color: var(--color-primary) !important;
   }
 }
 

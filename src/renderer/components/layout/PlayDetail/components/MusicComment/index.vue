@@ -119,6 +119,8 @@ export default {
     },
   },
   mounted() {
+    // 详情页打开时评论开关已是开启状态的话，直接加载评论内容
+    if (this.show) this.handleShowComment()
     this.setWidth()
     window.addEventListener('resize', this.setWidth)
   },
@@ -289,7 +291,7 @@ export default {
 .commentMain {
   flex: auto;
   background-color: var(--color-primary-light-400-alpha-700);
-  border-radius: 4px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
 }

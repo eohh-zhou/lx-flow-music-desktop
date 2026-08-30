@@ -7,17 +7,19 @@
           <thead>
             <tr v-if="actionButtonsVisible">
               <th class="num" style="width: 5%;">#</th>
+              <th style="width: 7%;"></th>
               <th class="nobreak">{{ $t('music_name') }}</th>
-              <th class="nobreak" style="width: 22%;">{{ $t('music_singer') }}</th>
-              <th class="nobreak" style="width: 22%;">{{ $t('music_album') }}</th>
+              <th class="nobreak" style="width: 19%;">{{ $t('music_singer') }}</th>
+              <th class="nobreak" style="width: 19%;">{{ $t('music_album') }}</th>
               <th class="nobreak" style="width: 9%;">{{ $t('music_time') }}</th>
               <th class="nobreak" style="width: 16%;">{{ $t('action') }}</th>
             </tr>
             <tr v-else>
               <th class="num" style="width: 5%;">#</th>
+              <th style="width: 7%;"></th>
               <th class="nobreak">{{ $t('music_name') }}</th>
-              <th class="nobreak" style="width: 24%;">{{ $t('music_singer') }}</th>
-              <th class="nobreak" style="width: 27%;">{{ $t('music_album') }}</th>
+              <th class="nobreak" style="width: 21%;">{{ $t('music_singer') }}</th>
+              <th class="nobreak" style="width: 24%;">{{ $t('music_album') }}</th>
               <th class="nobreak" style="width: 10%;">{{ $t('music_time') }}</th>
             </tr>
           </thead>
@@ -32,6 +34,10 @@
                 @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
               >
                 <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>{{ index + 1 }}</div>
+                <div class="list-item-cell no-select" :class="$style.cover" style="flex: 0 0 7%;">
+                  <img v-if="item.meta.picUrl" :src="item.meta.picUrl" loading="lazy" decoding="async" alt="">
+                  <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve"><use xlink:href="#icon-album" /></svg>
+                </div>
                 <div class="list-item-cell auto name">
                   <span class="select name" :aria-label="item.name">{{ item.name }}</span>
                   <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
@@ -39,8 +45,8 @@
                   <span v-else-if="item.meta._qualitys['320k']" class="no-select badge badge-theme-secondary">{{ $t('tag__high_quality') }}</span>
                   <span v-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
                 </div>
-                <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
-                <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
+                <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+                <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 9%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 16%; padding-left: 0; padding-right: 0;">
                   <material-list-buttons :index="index" :remove-btn="false" :download-btn="assertApiSupport(item.source)" :play-btn="checkApiSource ? assertApiSupport(item.source) : true" @btn-click="handleListBtnClick" />
@@ -60,6 +66,10 @@
                 @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
               >
                 <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>{{ index + 1 }}</div>
+                <div class="list-item-cell no-select" :class="$style.cover" style="flex: 0 0 7%;">
+                  <img v-if="item.meta.picUrl" :src="item.meta.picUrl" loading="lazy" decoding="async" alt="">
+                  <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve"><use xlink:href="#icon-album" /></svg>
+                </div>
                 <div class="list-item-cell auto name">
                   <span class="select name" :aria-label="item.name">{{ item.name }}</span>
                   <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
@@ -67,8 +77,8 @@
                   <span v-else-if="item.meta._qualitys['320k']" class="no-select badge badge-theme-secondary">{{ $t('tag__high_quality') }}</span>
                   <span v-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
                 </div>
-                <div class="list-item-cell" style="flex: 0 0 24%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
-                <div class="list-item-cell" style="flex: 0 0 27%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
+                <div class="list-item-cell" style="flex: 0 0 21%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+                <div class="list-item-cell" style="flex: 0 0 24%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 10%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
               </div>
             </template>
@@ -247,7 +257,7 @@ export default {
       }
     }
     const scrollToTop = () => {
-      listRef.value.scrollTo(0, true)
+      listRef.value?.scrollTo(0, true)
     }
 
     return {
@@ -304,6 +314,31 @@ export default {
   display: flex;
   flex-flow: column nowrap;
   font-size: 14px;
+}
+
+.cover {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    object-fit: cover;
+    background-color: var(--color-100);
+  }
+
+  svg {
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    background-color: var(--color-100);
+    color: var(--color-350);
+  }
 }
 
 .content {

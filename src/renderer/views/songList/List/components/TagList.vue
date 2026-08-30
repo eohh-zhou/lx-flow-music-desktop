@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
   width: 645px;
   left: 8px;
   margin-top: 12px;
-  border-radius: 4px;
+  border-radius: 8px;
   background-color: var(--color-content-background);
   opacity: 0;
   transform: scale(.95, .8);

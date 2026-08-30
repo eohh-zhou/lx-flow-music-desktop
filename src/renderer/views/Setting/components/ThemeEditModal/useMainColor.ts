@@ -8,21 +8,21 @@ export default () => {
   const initMainColor = (color: string, changed: (color: string) => void) => {
     if (!primary_color_ref.value) return
     tools = pickrTools.create(primary_color_ref.value, color, [
-      'rgba(77, 175, 124, 1)',
-      'rgba(52, 152, 219, 1)',
-      'rgba(77, 131, 175, 1)',
-      'rgba(245, 171, 53, 1)',
-      'rgba(214, 69, 65, 1)',
-      'rgba(241, 130, 141, 1)',
-      'rgba(155, 89, 182, 1)',
-      'rgba(108, 122, 137, 1)',
-      'rgba(51, 110, 123, 1)',
-      'rgba(79, 98, 208, 1)',
-      'rgba(150, 150, 150, 1)',
-      'rgba(74, 55, 82, 1)',
-      'rgba(87, 144, 167, 1)',
-      'rgba(192, 57, 43, 1)',
-      'rgba(113.52, 107.21, 166.13, 1)',
+      'rgba(250, 45, 72, 1)',
+      'rgba(255, 159, 10, 1)',
+      'rgba(255, 214, 10, 1)',
+      'rgba(52, 199, 89, 1)',
+      'rgba(90, 200, 250, 1)',
+      'rgba(10, 132, 255, 1)',
+      'rgba(94, 92, 230, 1)',
+      'rgba(191, 90, 242, 1)',
+      'rgba(255, 55, 95, 1)',
+      'rgba(255, 69, 58, 1)',
+      'rgba(142, 142, 147, 1)',
+      'rgba(174, 174, 178, 1)',
+      'rgba(50, 173, 185, 1)',
+      'rgba(100, 210, 255, 1)',
+      'rgba(156, 220, 254, 1)',
     ], changed, () => {})
   }
   const destroyMainColor = () => {

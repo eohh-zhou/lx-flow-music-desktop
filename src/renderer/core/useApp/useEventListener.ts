@@ -72,12 +72,12 @@ const handle_selection = (event: LX.KeyDownEevent) => {
 export default () => {
   watch(isFullscreen, val => {
     if (val) {
-      document.documentElement.classList.remove(window.dt ? 'disableTransparent' : 'transparent')
+      document.documentElement.classList.remove(window.transparent ? 'transparent' : 'disableTransparent')
       document.documentElement.classList.add('fullscreen')
       document.documentElement.style.fontSize = `${getFontSizeWithScreen(window.screen.width)}px`
     } else {
       document.documentElement.classList.remove('fullscreen')
-      document.documentElement.classList.add(window.dt ? 'disableTransparent' : 'transparent')
+      document.documentElement.classList.add(window.transparent ? 'transparent' : 'disableTransparent')
       document.documentElement.style.fontSize = `${appSetting['common.fontSize']}px`
     }
   }, {

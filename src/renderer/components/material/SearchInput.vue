@@ -2,6 +2,13 @@
   <div :class="$style.container">
     <div :class="[$style.search, {[$style.active]: focus}, {[$style.big]: big}, {[$style.small]: small}]">
       <div :class="$style.form">
+        <button type="button" :class="$style.searchBtn" @click="handleSearch">
+          <slot>
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 30.239 30.239" space="preserve">
+              <use xlink:href="#icon-search" />
+            </svg>
+          </slot>
+        </button>
         <input
           ref="dom_input"
           v-model.trim="text"
@@ -23,13 +30,6 @@
             </svg>
           </button>
         </transition>
-        <button type="button" @click="handleSearch">
-          <slot>
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 30.239 30.239" space="preserve">
-              <use xlink:href="#icon-search" />
-            </svg>
-          </slot>
-        </button>
       </div>
       <div v-if="list" :class="$style.list" :style="listStyle">
         <ul ref="dom_list" @mouseleave="selectIndex = -1">
@@ -203,86 +203,99 @@ export default {
 
 .container {
   position: relative;
-  width: 35%;
-  height: @height-toolbar * 0.52;
+  width: 100%;
+  max-width: 420px;
+  min-width: 160px;
+  height: 34px;
   -webkit-app-region: no-drag;
 }
 
 .search {
   position: absolute;
   width: 100%;
-  border-radius: @form-radius;
-  transition: box-shadow .4s ease, background-color @transition-normal;
+  border-radius: @radius-round;
+  border: 1px solid var(--color-primary-alpha-900);
+  transition: box-shadow .25s ease, background-color .25s ease, border-color .25s ease;
   display: flex;
   flex-flow: column nowrap;
-  background-color: var(--color-primary-light-300-alpha-700);
+  background-color: var(--color-000);
+
+  &:hover:not(.active) {
+    background-color: var(--color-primary-light-1000);
+    border-color: var(--color-primary-alpha-700);
+  }
 
   &.active {
-    background-color: var(--color-primary-light-600-alpha-100);
-    box-shadow: 0 1px 5px 0 rgba(0,0,0,.2);
-    .form {
-      input {
-        border-bottom-left-radius: 0;
+    background-color: var(--color-000);
+    border-color: var(--color-primary-alpha-500);
+    box-shadow: 0 0 0 3px var(--color-primary-alpha-900), 0 2px 10px rgba(0, 0, 0, .05);
 
-      }
-      button {
-        border-bottom-right-radius: 0;
-      }
+    .searchBtn {
+      color: var(--color-primary);
     }
   }
   .form {
     display: flex;
-    height: @height-toolbar * 0.52;
+    height: 32px;
     position: relative;
     input {
       flex: auto;
-      // border: 1px solid;
-      border-top-left-radius: 3px;
-      border-bottom-left-radius: 3px;
       background-color: transparent;
-      // border-bottom: 2px solid var(--color-primary);
-      // border-color: var(--color-primary);
       border: none;
       min-width: 0;
 
       outline: none;
-      // height: @height-toolbar * .7;
-      padding: 0 5px;
+      padding: 0 4px 0 2px;
       overflow: hidden;
       font-size: 13.5px;
-      line-height: @height-toolbar * 0.52 + 5px;
+      line-height: 32px;
       &::placeholder {
-        color: var(--color-button-font);
+        color: var(--color-450);
         font-size: .98em;
       }
     }
     button {
       flex: none;
       border: none;
-      // background-color: @color-search-form-background;
       background-color: transparent;
       outline: none;
       cursor: pointer;
       height: 100%;
-      padding: 6px 7px;
-      color: var(--color-button-font);
-      transition: background-color .2s ease;
+      width: 30px;
+      padding: 0;
+      margin: 0 2px;
+      border-radius: @radius-round;
+      color: var(--color-500);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color .2s ease, color .2s ease;
 
-      &:last-child {
-        border-top-right-radius: 3px;
-        border-bottom-right-radius: 3px;
+      svg {
+        height: 14px;
+        width: 14px;
       }
 
       &:hover {
-        background-color: var(--color-button-background-hover);
+        color: var(--color-800);
+        background-color: var(--color-100);
       }
       &:active {
-        background-color: var(--color-button-background-active);
+        opacity: .7;
+      }
+    }
+    .searchBtn {
+      margin-left: 6px;
+      pointer-events: auto;
+      color: var(--color-550);
+
+      &:hover {
+        color: var(--color-primary);
+        background-color: transparent;
       }
     }
   }
   .list {
-    // background-color: @color-search-form-background;
     font-size: 13px;
     transition: .3s ease;
     height: 0;
@@ -290,19 +303,23 @@ export default {
     overflow: hidden;
     li {
       cursor: pointer;
-      padding: 8px 5px;
-      transition: background-color .2s ease;
+      padding: 8px 14px 8px 40px;
+      transition: background-color .15s ease;
       line-height: 1.3;
       span {
         .mixin-ellipsis-2();
       }
 
       &.select {
-        background-color: var(--color-primary-dark-100-alpha-700);
+        background-color: var(--color-primary-alpha-900);
+      }
+      &:first-child {
+        margin-top: 4px;
       }
       &:last-child {
-        border-bottom-left-radius: 3px;
-        border-bottom-right-radius: 3px;
+        margin-bottom: 6px;
+        border-bottom-left-radius: @radius-card;
+        border-bottom-right-radius: @radius-card;
       }
     }
   }

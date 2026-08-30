@@ -5,17 +5,19 @@
         <thead>
           <tr v-if="actionButtonsVisible">
             <th class="num" style="width: 5%;">#</th>
+            <th style="width: 7%;"></th>
             <th class="nobreak">{{ $t('music_name') }}</th>
-            <th class="nobreak" style="width: 22%;">{{ $t('music_singer') }}</th>
-            <th class="nobreak" style="width: 22%;">{{ $t('music_album') }}</th>
+            <th class="nobreak" style="width: 19%;">{{ $t('music_singer') }}</th>
+            <th class="nobreak" style="width: 19%;">{{ $t('music_album') }}</th>
             <th class="nobreak" style="width: 9%;">{{ $t('music_time') }}</th>
             <th class="nobreak" style="width: 16%;">{{ $t('action') }}</th>
           </tr>
           <tr v-else>
             <th class="num" style="width: 5%;">#</th>
+            <th style="width: 7%;"></th>
             <th class="nobreak">{{ $t('music_name') }}</th>
-            <th class="nobreak" style="width: 25%;">{{ $t('music_singer') }}</th>
-            <th class="nobreak" style="width: 28%;">{{ $t('music_album') }}</th>
+            <th class="nobreak" style="width: 22%;">{{ $t('music_singer') }}</th>
+            <th class="nobreak" style="width: 25%;">{{ $t('music_album') }}</th>
             <th class="nobreak" style="width: 10%;">{{ $t('music_time') }}</th>
           </tr>
         </thead>
@@ -41,12 +43,16 @@
               <div v-else class="num">{{ index + 1 }}</div>
             </transition>
           </div>
+          <div class="list-item-cell no-select" :class="$style.cover" style="flex: 0 0 7%;">
+            <img v-if="item.meta.picUrl" :src="item.meta.picUrl" loading="lazy" decoding="async" alt="">
+            <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve"><use xlink:href="#icon-album" /></svg>
+          </div>
           <div class="list-item-cell auto name" :aria-label="item.name">
             <span class="select name">{{ item.name }}</span>
             <span v-if="isShowSource" class="no-select label-source">{{ item.source }}</span>
           </div>
-          <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
-          <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
+          <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+          <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 9%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 16%; padding-left: 0; padding-right: 0;">
             <material-list-buttons :index="index" :download-btn="assertApiSupport(item.source) && item.source != 'local'" @btn-click="handleListBtnClick" />
@@ -73,12 +79,16 @@
               <div v-else class="num">{{ index + 1 }}</div>
             </transition>
           </div>
+          <div class="list-item-cell no-select" :class="$style.cover" style="flex: 0 0 7%;">
+            <img v-if="item.meta.picUrl" :src="item.meta.picUrl" loading="lazy" decoding="async" alt="">
+            <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve"><use xlink:href="#icon-album" /></svg>
+          </div>
           <div class="list-item-cell auto name">
             <span class="select name" :aria-label="item.name">{{ item.name }}</span>
             <span v-if="isShowSource" class="no-select label-source">{{ item.source }}</span>
           </div>
-          <div class="list-item-cell" style="flex: 0 0 25%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
-          <div class="list-item-cell" style="flex: 0 0 28%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
+          <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+          <div class="list-item-cell" style="flex: 0 0 25%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 10%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
         </div>
       </base-virtualized-list>
@@ -392,6 +402,30 @@ export default {
   align-items: center;
   justify-content: center;
   position: relative;
+}
+.cover {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    object-fit: cover;
+    background-color: var(--color-100);
+  }
+
+  svg {
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    background-color: var(--color-100);
+    color: var(--color-350);
+  }
 }
 .playIcon {
   position: absolute;

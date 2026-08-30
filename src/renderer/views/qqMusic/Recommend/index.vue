@@ -63,7 +63,6 @@
       </div>
 
       <song-list v-else-if="activeTab == 'playlists'" :list-info="playlistListInfo" />
-      <song-list v-else-if="activeTab == 'myPlaylists'" :list-info="accountPlaylistListInfo" />
 
       <material-online-list
         v-else
@@ -85,7 +84,6 @@ import { useRouter } from '@common/utils/vueRouter'
 import { useI18n } from '@root/lang'
 import { formatPlayCount, toNewMusicInfo } from '@renderer/utils'
 import {
-  getQQMusicAccountPlaylists,
   getQQMusicDailyRecommend,
   getQQMusicNewSongs,
   getQQMusicRadarList,
@@ -96,7 +94,7 @@ import { playSongListDetail } from '@renderer/views/songList/Detail/action'
 import type { ListInfo } from '@renderer/store/songList/state'
 import SongList from '@renderer/views/songList/List/components/SongList.vue'
 
-type RecommendTab = 'home' | 'myPlaylists' | 'radar' | 'playlists' | 'newSongs'
+type RecommendTab = 'home' | 'radar' | 'playlists' | 'newSongs'
 
 interface HomeItem {
   id: string
@@ -117,7 +115,6 @@ const error = ref('')
 const daily = ref<LX.QQMusic.DailyRecommend | null>(null)
 const radarGroups = ref<LX.QQMusic.RadioGroup[]>([])
 const playlists = ref<LX.QQMusic.PlaylistItem[]>([])
-const accountPlaylists = ref<LX.QQMusic.AccountPlaylistItem[]>([])
 const newSongs = ref<LX.Music.MusicInfoOnline[]>([])
 const loadedTabs = new Set<RecommendTab>()
 const QQ_RECOMMEND_REFRESH_INTERVAL = 30 * 60 * 1000
@@ -141,7 +138,6 @@ const refreshIfStale = () => {
 
 const tabs = computed(() => [
   { id: 'home', label: t('qq_music_home') },
-  { id: 'myPlaylists', label: t('qq_music_my_playlists') },
   { id: 'radar', label: t('qq_music_radar') },
   { id: 'playlists', label: t('qq_music_playlist') },
   { id: 'newSongs', label: t('qq_music_new_song') },
@@ -150,13 +146,6 @@ const tabs = computed(() => [
 const firstRadio = computed(() => radarGroups.value.flatMap(group => group.list).find(item => item.id == 99) ?? radarGroups.value[0]?.list[0])
 
 const homeItems = computed<HomeItem[]>(() => [
-  {
-    id: 'myPlaylists',
-    name: t('qq_music_my_playlists'),
-    desc: t('qq_music_home_my_playlists_desc'),
-    img: accountPlaylists.value[0]?.img ?? '',
-    tab: 'myPlaylists',
-  },
   {
     id: 'radar',
     name: firstRadio.value?.name ?? t('qq_music_radar'),
@@ -208,28 +197,6 @@ const playlistListInfo = computed<ListInfo>(() => ({
   sortId: '',
 }))
 
-const accountPlaylistListInfo = computed<ListInfo>(() => ({
-  list: accountPlaylists.value.map(item => ({
-    play_count: item.playCount ? formatPlayCount(item.playCount) : '',
-    id: `qqaccount_${item.dirId}_${item.tid}`,
-    author: `${t(item.subscribed ? 'qq_music_playlist_collected' : 'qq_music_playlist_created')}${item.author ? ` · ${item.author}` : ''}`,
-    name: item.name,
-    img: item.img,
-    desc: item.desc,
-    source: 'tx',
-    total: String(item.trackCount),
-  })),
-  total: accountPlaylists.value.length,
-  page: 1,
-  limit: Math.max(accountPlaylists.value.length, 1),
-  key: 'qq_music_account_playlists',
-  noItemLabel: accountPlaylists.value.length ? '' : t('no_item'),
-  source: 'tx',
-  tagId: '',
-  sortId: '',
-}))
-
-
 const setNewSongs = (result: LX.QQMusic.NewSongRecommend) => {
   newSongs.value = result.list
     .map(song => toNewMusicInfo(song))
@@ -253,27 +220,20 @@ const loadActiveTab = async(force = false) => {
   error.value = ''
   try {
     if (tab == 'home') {
-      const [dailyResult, radarResult, playlistResult, accountPlaylistResult, newSongResult] = await Promise.all([
+      const [dailyResult, radarResult, playlistResult, newSongResult] = await Promise.all([
         getQQMusicDailyRecommend(),
         getQQMusicRadarList(),
         getQQMusicRecommendPlaylists(),
-        getQQMusicAccountPlaylists(),
         getQQMusicNewSongs(),
       ])
       if (requestId != currentRequestId) return
       daily.value = dailyResult
       radarGroups.value = radarResult.groups
       playlists.value = playlistResult.list
-      accountPlaylists.value = accountPlaylistResult.list
       setNewSongs(newSongResult)
       loadedTabs.add('radar')
-      loadedTabs.add('myPlaylists')
       loadedTabs.add('playlists')
       loadedTabs.add('newSongs')
-    } else if (tab == 'myPlaylists') {
-      const result = await getQQMusicAccountPlaylists()
-      if (requestId != currentRequestId) return
-      accountPlaylists.value = result.list
     } else if (tab == 'radar') {
       const result = await getQQMusicRadarList()
       if (requestId != currentRequestId) return

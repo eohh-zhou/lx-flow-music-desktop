@@ -35,6 +35,7 @@ declare global {
   interface Window {
     ELECTRON_DISABLE_SECURITY_WARNINGS?: string
     dt: boolean
+    transparent: boolean
     shouldUseDarkColors: boolean
     lx: Lx
     app_event: AppEventTypes

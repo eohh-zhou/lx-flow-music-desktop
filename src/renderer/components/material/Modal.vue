@@ -269,11 +269,9 @@ export default {
 
 .content {
   position: relative;
-  border-radius: 4px;
-  box-shadow: 0 0 4px rgba(0, 0, 0, .25);
+  border-radius: @radius-card;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .22);
   overflow: hidden;
-  // max-height: 80%;
-  // max-width: 76%;
   min-width: 220px;
   position: relative;
   display: flex;
@@ -284,7 +282,7 @@ export default {
 
 .header {
   flex: none;
-  background-color: var(--color-primary-light-100-alpha-100);
+  background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -295,9 +293,9 @@ export default {
     cursor: pointer;
     padding: 4px 7px;
     background-color: transparent;
-    color: var(--color-primary-dark-500-alpha-500);
+    color: var(--color-550);
     outline: none;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
     line-height: 0;
 
     svg {
@@ -305,10 +303,11 @@ export default {
     }
 
     &:hover {
-      background-color: var(--color-primary-dark-100-alpha-600);
+      color: var(--color-800);
+      background-color: var(--color-150);
     }
     &:active {
-      background-color: var(--color-primary-dark-200-alpha-600);
+      opacity: .7;
     }
   }
 }

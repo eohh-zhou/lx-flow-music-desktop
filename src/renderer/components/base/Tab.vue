@@ -58,8 +58,8 @@ export default {
 .list {
   display: flex;
   flex-flow: row nowrap;
-  font-size: 12px;
-  gap: 25px;
+  font-size: 13px;
+  gap: 22px;
   padding: 0 15px;
 
   &.left {
@@ -76,6 +76,8 @@ export default {
   display: block;
   // padding: 5px 15px;
   cursor: pointer;
+  color: var(--color-600);
+  font-weight: 500;
   transition: color @transition-normal;
 
 
@@ -86,13 +88,14 @@ export default {
 
   &.active {
     color: var(--color-primary);
+    font-weight: 600;
     cursor: default;
 
     >.label {
       &:after {
         // background-color: var(--color-primary);
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(-50%) translateY(0);
       }
     }
   }
@@ -101,18 +104,19 @@ export default {
 .label {
   display: block;
   position: relative;
-  padding: 8px 0;
+  padding: 9px 1px;
   &:after {
     .mixin-after();
-    left: 0;
-    bottom: 0;
+    left: 50%;
+    bottom: 2px;
     width: 100%;
-    height: 2px;
+    height: 2.5px;
     border-radius: 20px;
     background-color: transparent;
-    transform: translateY(-4px);
+    transform: translateX(-50%) translateY(-4px);
     opacity: 0;
-    background-color: var(--color-primary-alpha-300);
+    background-color: var(--color-primary);
+    box-shadow: 0 1px 4px var(--color-primary-alpha-500);
     transition: @transition-fast;
     transition-property: transform, opacity;
   }

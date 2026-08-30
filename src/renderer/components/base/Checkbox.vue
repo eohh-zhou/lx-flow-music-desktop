@@ -170,14 +170,14 @@ export default {
     right: 0;
     border: 1px solid var(--color-font-label);
     transition: border-color 0.2s ease;
-    border-radius: 2px;
+    border-radius: 4px;
   }
 }
 .icon {
   transition: 0.3s ease;
   transition-property: transform;
   transform: scale(0);
-  border-radius: 2px;
+  border-radius: 4px;
   // opacity: 0;
 }
 

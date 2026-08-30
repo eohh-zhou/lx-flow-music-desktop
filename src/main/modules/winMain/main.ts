@@ -4,10 +4,25 @@ import { createTaskBarButtons, getWindowSizeInfo } from './utils'
 import { getPlatform, isLinux, isWin } from '@common/utils'
 import { getProxy, isCmdParamEnabled, openDevTools as handleOpenDevTools } from '@main/utils'
 import { mainSend } from '@common/mainIpc'
-import { sendFocus, sendTaskbarButtonClick } from './rendererEvent'
+import { sendFocus, sendTaskbarButtonClick, sendMaximizeChange } from './rendererEvent'
 import { encodePath } from '@common/utils/electron'
 
 let browserWindow: Electron.BrowserWindow | null = null
+let saveBoundsTimer: NodeJS.Timeout | null = null
+
+const saveWindowBounds = () => {
+  if (!browserWindow || browserWindow.isDestroyed()) return
+  if (browserWindow.isMaximized() || browserWindow.isFullScreen() || !browserWindow.isVisible()) return
+  const { width, height } = browserWindow.getContentBounds()
+  const bounds = `${width},${height}`
+  if (global.lx.appSetting['common.windowBounds'] == bounds) return
+  global.lx.event_app.update_config({ 'common.windowBounds': bounds })
+}
+
+const handleWindowResize = () => {
+  if (saveBoundsTimer) clearTimeout(saveBoundsTimer)
+  saveBoundsTimer = setTimeout(saveWindowBounds, 600)
+}
 
 const winEvent = () => {
   if (!browserWindow) return
@@ -65,34 +80,44 @@ const winEvent = () => {
   browserWindow.on('hide', () => {
     global.lx.event_app.main_window_hide()
   })
+  browserWindow.on('resize', handleWindowResize)
+  browserWindow.on('maximize', () => { sendMaximizeChange(true) })
+  browserWindow.on('unmaximize', () => { sendMaximizeChange(false) })
 }
 
 
 export const createWindow = () => {
   closeWindow()
   const windowSizeInfo = getWindowSizeInfo(global.lx.appSetting['common.windowSizeId'])
+  const savedBounds = global.lx.appSetting['common.windowBounds']?.split(',').map(Number) ?? []
+  const useSavedBounds = savedBounds.length == 2 && savedBounds[0] >= windowSizeInfo.minWidth && savedBounds[1] >= windowSizeInfo.minHeight
 
   const { shouldUseDarkColors, theme } = global.lx.theme
   const ses = session.fromPartition('persist:win-main')
   const proxy = getProxy()
   setSesProxy(ses, proxy?.host, proxy?.port)
 
+  // 透明窗口在 Windows 上无法通过边缘拖拽调整大小，且缩放渲染易出现残影，故 Windows 使用不透明窗口
+  const useTransparent = !isWin && !global.envParams.cmdParams.dt
+
   /**
    * Initial window options
    */
   const options: Electron.BrowserWindowConstructorOptions = {
-    height: windowSizeInfo.height,
+    height: useSavedBounds ? savedBounds[1] : windowSizeInfo.height,
     useContentSize: true,
-    width: windowSizeInfo.width,
+    width: useSavedBounds ? savedBounds[0] : windowSizeInfo.width,
+    minWidth: windowSizeInfo.minWidth,
+    minHeight: windowSizeInfo.minHeight,
     frame: false,
-    transparent: !global.envParams.cmdParams.dt,
-    hasShadow: global.envParams.cmdParams.dt,
+    transparent: useTransparent,
+    hasShadow: true,
     // enableRemoteModule: false,
     // icon: join(global.__static, isWin ? 'icons/256x256.ico' : 'icons/512x512.png'),
-    resizable: false,
-    maximizable: false,
+    resizable: true,
+    maximizable: true,
     fullscreenable: true,
-    roundedCorners: global.envParams.cmdParams.dt,
+    roundedCorners: true,
     show: !isCmdParamEnabled(global.envParams.cmdParams.hidden),
     webPreferences: {
       session: ses,
@@ -106,7 +131,7 @@ export const createWindow = () => {
       spellcheck: false, // 禁用拼写检查器
     },
   }
-  if (global.envParams.cmdParams.dt) options.backgroundColor = theme.colors['--color-primary-light-1000']
+  if (!useTransparent) options.backgroundColor = theme.colors['--color-primary-light-1000']
   if (global.lx.appSetting['common.startInFullscreen']) {
     options.fullscreen = true
     if (isLinux) options.resizable = true
@@ -114,7 +139,7 @@ export const createWindow = () => {
   browserWindow = new BrowserWindow(options)
 
   const winURL = process.env.NODE_ENV !== 'production' ? 'http://localhost:9080' : `file://${path.join(encodePath(__dirname), 'index.html')}`
-  void browserWindow.loadURL(winURL + `?os=${getPlatform()}&dt=${global.envParams.cmdParams.dt}&dark=${shouldUseDarkColors}&theme=${encodeURIComponent(JSON.stringify(theme))}`)
+  void browserWindow.loadURL(winURL + `?os=${getPlatform()}&dt=${global.envParams.cmdParams.dt}&transparent=${useTransparent}&dark=${shouldUseDarkColors}&theme=${encodeURIComponent(JSON.stringify(theme))}`)
 
   winEvent()
 
@@ -187,6 +212,11 @@ export const maximize = () => {
 export const unmaximize = () => {
   if (!browserWindow) return
   browserWindow.unmaximize()
+}
+export const maxWindowToggle = () => {
+  if (!browserWindow) return
+  if (browserWindow.isMaximized()) browserWindow.unmaximize()
+  else browserWindow.maximize()
 }
 export const toggleHide = () => {
   if (!browserWindow) return

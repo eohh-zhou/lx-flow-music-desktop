@@ -22,7 +22,10 @@
           <div v-if="resultList" ref="dom_scrollContainer" class="scroll" :class="$style.list" :style="listStyle">
             <ul ref="dom_list">
               <li v-for="(item, index) in resultList" :key="item.songmid" :class="selectIndex === index ? $style.select : null" @mouseenter="selectIndex = index" @click="handleTemplistClick(index)">
-                <div :class="$style.img" />
+                <div :class="$style.img">
+                  <img v-if="item.meta.picUrl" :src="item.meta.picUrl" loading="lazy" decoding="async" alt="">
+                  <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve"><use xlink:href="#icon-album" /></svg>
+                </div>
                 <div :class="$style.text">
                   <h3 :class="$style.text">{{ item.name }} - {{ item.singer }}</h3>
                   <h3 v-if="item.meta.albumName" :class="[$style.text, $style.albumName]">{{ item.meta.albumName }}</h3>
@@ -236,7 +239,7 @@ export default {
 .search {
   position: absolute;
   width: 100%;
-  border-radius: 4px;
+  border-radius: 8px;
   transition: box-shadow .4s ease, background-color @transition-normal;
   display: flex;
   flex-flow: column nowrap;
@@ -329,7 +332,7 @@ export default {
       &.select {
         background-color: var(--color-primary-dark-100-alpha-700);
       }
-      border-radius: 4px;
+      border-radius: 8px;
       // &:last-child {
       //   border-bottom-left-radius: 4px;
       //   border-bottom-right-radius: 4px;
@@ -340,6 +343,27 @@ export default {
 
 .img {
   flex: none;
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+
+  img {
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    object-fit: cover;
+    background-color: var(--color-100);
+  }
+
+  svg {
+    width: 26px;
+    height: 26px;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    background-color: var(--color-100);
+    color: var(--color-350);
+  }
 }
 .text {
   flex: auto;

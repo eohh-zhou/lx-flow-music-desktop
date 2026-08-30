@@ -156,9 +156,12 @@ const handleSearch = (text) => {
   align-items: center;
   justify-content: center;
   p {
-    font-size: 24px;
-    color: var(--color-font-label);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--color-350);
     text-align: center;
+    user-select: none;
   }
 }
 </style>

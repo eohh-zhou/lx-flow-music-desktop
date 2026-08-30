@@ -6,6 +6,7 @@ import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
 import {
   minimize,
   maximize,
+  maxWindowToggle,
   closeWindow,
   showWindow,
   setFullScreen,
@@ -49,6 +50,9 @@ export default () => {
   })
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.max, () => {
     maximize()
+  })
+  mainOn(WIN_MAIN_RENDERER_EVENT_NAME.max_toggle, () => {
+    maxWindowToggle()
   })
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.focus, () => {
     showWindow()
@@ -135,6 +139,10 @@ export default () => {
 
 export const sendFocus = () => {
   sendEvent(WIN_MAIN_RENDERER_EVENT_NAME.focus)
+}
+
+export const sendMaximizeChange = (isMaximized: boolean) => {
+  sendEvent(WIN_MAIN_RENDERER_EVENT_NAME.max_change, isMaximized)
 }
 
 export const sendTaskbarButtonClick = (action: LX.Player.StatusButtonActions, data?: unknown) => {

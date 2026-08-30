@@ -6,6 +6,54 @@ const { createThemeColors } = require('./utils')
 
 const defaultThemes = [
   {
+    id: 'red_light',
+    name: '绯红·亮',
+    isDark: false,
+    isDarkFont: false,
+    config: {
+      primary: 'rgb(250, 45, 72)',
+      font: 'rgb(33, 33, 33)',
+      '--color-app-background': '#f5f5f7',
+      '--color-main-background': 'rgba(255, 255, 255, 0.86)',
+      '--color-nav-font': 'var(--color-650)',
+      '--background-image': 'none',
+      '--background-image-position': 'center',
+      '--background-image-size': 'cover',
+
+      '--color-btn-hide': '#b9b9be',
+      '--color-btn-min': '#b9b9be',
+      '--color-btn-close': '#fa5f57',
+
+      '--color-badge-primary': 'var(--color-primary)',
+      '--color-badge-secondary': '#0a84ff',
+      '--color-badge-tertiary': '#ff9f0a',
+    },
+  },
+  {
+    id: 'red_dark',
+    name: '绯红·暗',
+    isDark: true,
+    isDarkFont: false,
+    config: {
+      primary: 'rgb(250, 45, 72)',
+      font: 'rgb(229, 229, 229)',
+      '--color-app-background': 'rgba(24, 24, 26, 1)',
+      '--color-main-background': 'rgba(28, 28, 30, 0.95)',
+      '--color-nav-font': 'var(--color-650)',
+      '--background-image': 'none',
+      '--background-image-position': 'center',
+      '--background-image-size': 'cover',
+
+      '--color-btn-hide': '#636366',
+      '--color-btn-min': '#636366',
+      '--color-btn-close': '#ff5f57',
+
+      '--color-badge-primary': 'var(--color-primary)',
+      '--color-badge-secondary': '#0a84ff',
+      '--color-badge-tertiary': '#ff9f0a',
+    },
+  },
+  {
     id: 'green',
     name: '绿意盎然',
     isDark: false,

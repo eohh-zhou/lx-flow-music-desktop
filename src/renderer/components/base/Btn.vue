@@ -38,7 +38,7 @@ export default {
   padding: 8px 15px;
   color: var(--color-button-font);
   outline: none;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease;
   background-color: var(--color-button-background);
   font-size: 14px;
   &[disabled] {
@@ -52,9 +52,11 @@ export default {
 
   &:hover {
     background-color: var(--color-button-background-hover);
+    transform: translateY(-1px);
   }
   &:active {
     background-color: var(--color-button-background-active);
+    transform: translateY(0);
   }
 }
 

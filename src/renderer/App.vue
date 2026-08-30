@@ -1,11 +1,13 @@
 <template>
   <div id="container" class="view-container">
-    <layout-aside id="left" />
-    <div id="right">
-      <layout-toolbar id="toolbar" />
-      <layout-view id="view" />
-      <layout-play-bar id="player" />
+    <div id="main">
+      <layout-aside id="left" />
+      <div id="right">
+        <layout-toolbar id="toolbar" />
+        <layout-view id="view" />
+      </div>
     </div>
+    <layout-play-bar id="player" />
     <layout-icons />
     <layout-change-log-modal />
     <layout-update-modal />
@@ -56,6 +58,13 @@ html, body {
 body {
   user-select: none;
   height: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-primary-alpha-700);
+  color: var(--color-1000);
 }
 #root {
   height: 100%;
@@ -124,8 +133,16 @@ body {
 #container {
   position: relative;
   display: flex;
+  flex-flow: column nowrap;
   height: 100%;
   background-color: var(--color-app-background);
+}
+
+#main {
+  flex: auto;
+  display: flex;
+  flex-flow: row nowrap;
+  min-height: 0;
 }
 
 #left {
@@ -139,10 +156,9 @@ body {
   transition: background-color @transition-normal;
   background-color: var(--color-main-background);
 
-  border-top-left-radius: @radius-border;
-  border-bottom-left-radius: @radius-border;
+  border-top-left-radius: @radius-card;
   overflow: hidden;
-  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: -1px 0 0 var(--color-100), 0 2px 16px rgba(0, 0, 0, 0.05);
 }
 #toolbar, #player {
   flex: none;

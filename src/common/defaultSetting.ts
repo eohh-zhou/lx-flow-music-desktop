@@ -8,6 +8,7 @@ const defaultSetting: LX.AppSetting = {
   version: '2.1.0',
 
   'common.windowSizeId': 3,
+  'common.windowBounds': null,
   'common.fontSize': 16,
   'common.startInFullscreen': false,
   'common.langId': null,
@@ -81,8 +82,8 @@ const defaultSetting: LX.AppSetting = {
   'desktopLyric.audioVisualization': false,
   'desktopLyric.fullscreenHide': true,
   'desktopLyric.pauseHide': true,
-  'desktopLyric.width': 450,
-  'desktopLyric.height': 300,
+  'desktopLyric.width': 680,
+  'desktopLyric.height': 64,
   'desktopLyric.x': null,
   'desktopLyric.y': null,
   'desktopLyric.isLockScreen': isWin,
@@ -152,9 +153,9 @@ const defaultSetting: LX.AppSetting = {
   'openAPI.bindLan': false,
 
   // 'theme.id': 'blue_plus',
-  'theme.id': 'green',
-  'theme.lightId': 'green',
-  'theme.darkId': 'black',
+  'theme.id': 'red_light',
+  'theme.lightId': 'red_light',
+  'theme.darkId': 'red_dark',
 
   'odc.isAutoClearSearchInput': false,
   'odc.isAutoClearSearchList': false,

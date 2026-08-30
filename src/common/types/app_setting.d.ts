@@ -9,9 +9,14 @@ declare global {
       version: string
 
       /**
-       * 窗口大小id
-       */
+     * 窗口大小id
+     */
       'common.windowSizeId': number
+
+      /**
+     * 自定义窗口尺寸（拖拽边缘调整后记忆），格式 "width,height"
+     */
+      'common.windowBounds': string | null
 
       /**
        * 窗口大小id

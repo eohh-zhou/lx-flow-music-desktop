@@ -12,7 +12,9 @@ const getOffsetTop = (contentHeight, lineHeight) => {
   }
 }
 
-export default (isComputeHeight) => {
+// getLineCount() > 0 时为网易云式“当前句”模式：仅渲染当前句（1 行）或当前句+下一句（2 行），
+// 行切换时直接替换 DOM 并播放入场动画，不再整首平铺滚动；返回 0 时为原全量滚动模式
+export default (isComputeHeight, getLineCount = () => 0) => {
   const dom_lyric = ref(null)
   const dom_lyric_text = ref(null)
   const isMsDown = ref(false)
@@ -35,8 +37,21 @@ export default (isComputeHeight) => {
   let isSetedLines = false
   let prevActiveLine = 0
 
+  // 拖动窗口的 IPC 调用按帧合并，避免每个 mousemove 都触发一次 IPC 往返导致拖动卡顿
+  let rafId = null
+  let pendingBounds = null
+  const sendBoundsRaf = (bounds) => {
+    pendingBounds = bounds
+    if (rafId != null) return
+    rafId = window.requestAnimationFrame(() => {
+      rafId = null
+      if (pendingBounds) setWindowBounds(pendingBounds)
+      pendingBounds = null
+    })
+  }
 
   const handleScrollLrc = (duration = 300) => {
+    if (getLineCount() > 0) return
     if (!dom_lines?.length || !dom_lyric.value) return
     if (isStopScroll) return
     let dom_p = dom_lines[lyric.line]
@@ -68,6 +83,27 @@ export default (isComputeHeight) => {
     }, 3000)
   }
 
+  // 当前句模式：仅把当前句（含双行模式的下一句）放入容器
+  const renderSingle = () => {
+    if (!dom_lyric_text.value) return
+    const lineCount = getLineCount()
+    if (lineCount <= 0) return
+    const frag = document.createDocumentFragment()
+    for (let i = 0; i < lineCount; i++) {
+      const line = lyric.lines[lyric.line + i]
+      if (line?.dom_line) frag.appendChild(line.dom_line)
+    }
+    dom_lyric_text.value.textContent = ''
+    dom_lyric_text.value.appendChild(frag)
+    // 重新触发入场动画
+    const first = dom_lyric_text.value.firstElementChild
+    if (first) {
+      first.style.animation = 'none'
+      first.getBoundingClientRect()
+      first.style.animation = ''
+    }
+  }
+
   const handleLyricDown = (target, x, y) => {
     if (target.classList.contains('font-lrc') ||
         target.parentNode.classList.contains('font-lrc') ||
@@ -77,6 +113,15 @@ export default (isComputeHeight) => {
       if (delayScrollTimeout) {
         clearTimeout(delayScrollTimeout)
         delayScrollTimeout = null
+      }
+      // 当前句模式不支持拖动滚动歌词，按下歌词也移动窗口
+      if (getLineCount() > 0) {
+        winEvent.isMsDown = true
+        winEvent.msDownX = x
+        winEvent.msDownY = y
+        winEvent.windowW = window.innerWidth
+        winEvent.windowH = window.innerHeight
+        return
       }
       isMsDown.value = true
       msDownY = y
@@ -118,14 +163,14 @@ export default (isComputeHeight) => {
     } else if (winEvent.isMsDown) {
       // https://github.com/lyswhut/lx-music-desktop/issues/2244
       if (isWin) {
-        setWindowBounds({
+        sendBoundsRaf({
           x: x - winEvent.msDownX,
           y: y - winEvent.msDownY,
           w: winEvent.windowW,
           h: winEvent.windowH,
         })
       } else {
-        setWindowBounds({
+        sendBoundsRaf({
           x: x - winEvent.msDownX,
           y: y - winEvent.msDownY,
           w: window.innerWidth,
@@ -146,6 +191,7 @@ export default (isComputeHeight) => {
 
   const handleWheel = (event) => {
     console.log(event.deltaY)
+    if (getLineCount() > 0) return
     if (cancelScrollFn) {
       cancelScrollFn()
       cancelScrollFn = null
@@ -155,6 +201,10 @@ export default (isComputeHeight) => {
   }
 
   const setLyric = (lines) => {
+    if (getLineCount() > 0) {
+      renderSingle()
+      return
+    }
     const dom_line_content = document.createDocumentFragment()
     for (const line of lines) {
       dom_line_content.appendChild(line.dom_line)
@@ -206,7 +256,14 @@ export default (isComputeHeight) => {
   }
 
   watch(() => lyric.lines, initLrc)
-  watch(() => lyric.line, scrollLine)
+  watch(() => lyric.line, (line, oldLine) => {
+    if (getLineCount() > 0) {
+      if (line < 0) return
+      renderSingle()
+      return
+    }
+    scrollLine(line, oldLine)
+  })
 
   onMounted(() => {
     document.addEventListener('mousemove', handleMouseMsMove)
@@ -222,6 +279,7 @@ export default (isComputeHeight) => {
     document.removeEventListener('mouseup', handleMouseMsUp)
     document.removeEventListener('touchmove', handleTouchMove)
     document.removeEventListener('touchend', handleMouseMsUp)
+    if (rafId != null) window.cancelAnimationFrame(rafId)
   })
 
   return {

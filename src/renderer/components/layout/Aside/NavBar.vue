@@ -600,6 +600,26 @@ export default {
   .link {
     width: 100%;
   }
+
+  // 分組按鈕（我的列表/在线歌单）选中不变色，只保留子项选中变色
+  .link.active {
+    color: var(--color-nav-font);
+    background-color: transparent;
+    font-weight: 500;
+
+    &>svg {
+      opacity: .82;
+    }
+
+    &:hover {
+      color: var(--color-font);
+      background-color: var(--color-050);
+
+      &>svg {
+        opacity: 1;
+      }
+    }
+  }
 }
 
 .chevron {

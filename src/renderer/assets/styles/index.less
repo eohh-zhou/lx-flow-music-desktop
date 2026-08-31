@@ -446,43 +446,48 @@ input, textarea {
 }
 
 // 全局默认滚动条（未使用 .scroll 类的容器也生效，如侧边栏）
+// 平时隐藏，悬停容器时才显示，类似网易云音乐
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   background-color: transparent;
 }
 ::-webkit-scrollbar-track {
   background-color: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  border-radius: 4px;
-  background-color: var(--color-250);
+  border-radius: 3px;
+  background-color: transparent;
   transition: background-color .3s ease;
 }
+*:hover::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-400) 45%, transparent);
+}
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-400);
+  background-color: color-mix(in srgb, var(--color-400) 70%, transparent) !important;
 }
 
 .scroll {
   overflow: auto;
   &::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-    background-color: rgba(0, 0, 0, 0);
+    width: 5px;
+    height: 5px;
+    background-color: transparent;
   }
   &::-webkit-scrollbar-track {
-    background-color: rgba(0, 0, 0, 0);
+    background-color: transparent;
     border-radius: 3px;
   }
   &::-webkit-scrollbar-thumb {
     border-radius: 3px;
-    background-color: var(--color-300);
-    transition: background-color 0.4s ease;
+    background-color: transparent;
+    transition: background-color 0.3s ease;
+  }
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-400) 45%, transparent);
   }
   &::-webkit-scrollbar-thumb:hover {
-    border-radius: 3px;
-    background-color: var(--color-400);
-    transition: background-color 0.4s ease;
+    background-color: color-mix(in srgb, var(--color-400) 70%, transparent);
   }
 }
 

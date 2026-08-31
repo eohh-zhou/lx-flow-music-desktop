@@ -121,7 +121,7 @@ export default {
       source: 'tx',
       info: {
         name: result.name,
-        desc: 'QQ音乐新歌推荐',
+        desc: '企鹅音乐新歌推荐',
         img: result.list[0]?.img ?? '',
       },
     }

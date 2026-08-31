@@ -92,16 +92,16 @@ export default () => {
       albumId: info.source === 'tx' ? info.meta.albumId : undefined,
     }).then(result => {
       if (!result.reported && result.reason == 'song-not-resolved') {
-        console.warn('QQ Music play report skipped: song not resolved')
+        console.warn('企鹅音乐 play report skipped: song not resolved')
       }
     }).catch(error => {
       if (reportedMusicId == reportKey) reportedMusicId = ''
-      console.warn('QQ Music play report failed', error)
+      console.warn('企鹅音乐 play report failed', error)
       const message = error instanceof Error ? error.message : String(error)
-      if (isQQMusicLoginAlertShown || !/QQ 音乐登录状态已失效|module code 1000/i.test(message)) return
+      if (isQQMusicLoginAlertShown || !/企鹅音乐登录状态已失效|module code 1000/i.test(message)) return
       isQQMusicLoginAlertShown = true
       void dialog({
-        message: 'QQ 音乐登录状态已失效，播放记录无法同步。请前往“设置 → QQ 音乐登录”重新登录。',
+        message: '企鹅音乐登录状态已失效，播放记录无法同步。请前往“设置 → 企鹅音乐登录”重新登录。',
         confirmButtonText: t('alert_button_text'),
       })
     })

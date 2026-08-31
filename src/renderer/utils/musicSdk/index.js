@@ -19,7 +19,7 @@ const sources = {
       id: 'kg',
     },
     {
-      name: 'QQ音乐',
+      name: '企鹅音乐',
       id: 'tx',
     },
     {

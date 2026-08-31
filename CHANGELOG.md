@@ -1,5 +1,21 @@
 # lx-music-desktop change log
 
+## [2.12.32] - 2026-08-31
+
+### Added
+
+- Added expandable local playlists to the main sidebar, using each playlist's first-track artwork as its cover.
+
+### Changed
+
+- Replaced user-facing QQ Music labels with “企鹅音乐”.
+- Moved local playlist creation, update, and playlist-specific actions into sidebar context menus.
+- Removed the old in-content playlist selector and the default “My Favorites” sidebar entry.
+
+### Fixed
+
+- Made the main “Song Lists” navigation button always open the discovery page instead of restoring the previously opened playlist detail.
+
 ## [2.12.31] - 2026-08-30
 
 ### Added

@@ -4,10 +4,11 @@ import { userLists } from '@renderer/store/list/state'
 import useDarg from '@renderer/utils/compositions/useDrag'
 
 
-export default ({ dom_lists_list, handleSaveListName, handleMenuClick }: {
+export default ({ dom_lists_list, handleSaveListName, handleMenuClick, fixedListCount = 2 }: {
   dom_lists_list: Ref<HTMLElement | null>
   handleSaveListName: () => Promise<void> | void
   handleMenuClick: () => void
+  fixedListCount?: number
 }) => {
   const isModDown = ref(false)
   const styles = useCssModule()
@@ -17,7 +18,10 @@ export default ({ dom_lists_list, handleSaveListName, handleMenuClick }: {
     dragingItemClassName: styles.dragingItem,
     filter: 'default-list',
     onUpdate(newIndex: number, oldIndex: number) {
-      void updateUserListPosition({ ids: [userLists[oldIndex - 2].id], position: newIndex - 2 })
+      void updateUserListPosition({
+        ids: [userLists[oldIndex - fixedListCount].id],
+        position: newIndex - fixedListCount,
+      })
     },
   })
 

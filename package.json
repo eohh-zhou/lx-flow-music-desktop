@@ -1,7 +1,7 @@
 {
   "name": "lx-flow-music-desktop",
-  "version": "2.12.31",
-  "description": "LX Flow Music 桌面版，包含 QQ 音乐和网易云音乐个性化推荐功能。",
+  "version": "2.12.32",
+  "description": "LX Flow Music 桌面版，包含企鹅音乐和网易云音乐个性化推荐功能。",
   "main": "./dist/main.js",
   "scripts": {
     "pack": "node build-config/pack.js && npm run pack:win:setup:x64",

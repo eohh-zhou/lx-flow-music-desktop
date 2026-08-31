@@ -204,9 +204,9 @@ export default {
 .container {
   position: relative;
   width: 100%;
-  max-width: 420px;
-  min-width: 160px;
-  height: 34px;
+  max-width: 300px;
+  min-width: 140px;
+  height: 26px;
   -webkit-app-region: no-drag;
 }
 
@@ -214,15 +214,14 @@ export default {
   position: absolute;
   width: 100%;
   border-radius: @radius-round;
-  border: 1px solid var(--color-primary-alpha-900);
+  border: 1px solid transparent;
   transition: box-shadow .25s ease, background-color .25s ease, border-color .25s ease;
   display: flex;
   flex-flow: column nowrap;
-  background-color: var(--color-000);
+  background-color: var(--color-050);
 
   &:hover:not(.active) {
-    background-color: var(--color-primary-light-1000);
-    border-color: var(--color-primary-alpha-700);
+    background-color: var(--color-100);
   }
 
   &.active {
@@ -236,7 +235,7 @@ export default {
   }
   .form {
     display: flex;
-    height: 32px;
+    height: 24px;
     position: relative;
     input {
       flex: auto;
@@ -247,8 +246,8 @@ export default {
       outline: none;
       padding: 0 4px 0 2px;
       overflow: hidden;
-      font-size: 13.5px;
-      line-height: 32px;
+      font-size: 12.5px;
+      line-height: 24px;
       &::placeholder {
         color: var(--color-450);
         font-size: .98em;
@@ -261,7 +260,7 @@ export default {
       outline: none;
       cursor: pointer;
       height: 100%;
-      width: 30px;
+      width: 24px;
       padding: 0;
       margin: 0 2px;
       border-radius: @radius-round;
@@ -272,8 +271,8 @@ export default {
       transition: background-color .2s ease, color .2s ease;
 
       svg {
-        height: 14px;
-        width: 14px;
+        height: 12px;
+        width: 12px;
       }
 
       &:hover {

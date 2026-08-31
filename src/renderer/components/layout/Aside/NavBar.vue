@@ -570,15 +570,15 @@ export default {
 .navGroup {
   flex: none;
   + .navGroup {
-    margin-top: 10px;
+    margin-top: 16px;
   }
 }
 
 .groupLabel {
-  padding: 6px 12px 4px;
+  padding: 8px 12px 6px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: .8px;
+  letter-spacing: 1.2px;
   color: var(--color-400);
   user-select: none;
 }
@@ -692,13 +692,13 @@ export default {
   }
 
   &.active {
-    color: var(--color-primary);
-    background-color: var(--color-primary-alpha-900);
+    color: #fff;
+    background-color: var(--color-primary);
     font-weight: 600;
 
     &:hover {
-      color: var(--color-primary);
-      background-color: var(--color-primary-alpha-800);
+      color: #fff;
+      background-color: var(--color-primary-dark-100);
     }
   }
 
@@ -793,8 +793,8 @@ export default {
   }
 
   &.active {
-    color: var(--color-primary);
-    background-color: var(--color-primary-alpha-900);
+    color: #fff;
+    background-color: var(--color-primary);
     font-weight: 600;
 
     &>svg {
@@ -802,8 +802,8 @@ export default {
     }
 
     &:hover {
-      color: var(--color-primary);
-      background-color: var(--color-primary-alpha-800);
+      color: #fff;
+      background-color: var(--color-primary-dark-100);
     }
   }
 

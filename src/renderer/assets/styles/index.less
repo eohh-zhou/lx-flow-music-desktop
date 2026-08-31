@@ -445,6 +445,24 @@ input, textarea {
   }
 }
 
+// 全局默认滚动条（未使用 .scroll 类的容器也生效，如侧边栏）
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background-color: transparent;
+}
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: var(--color-250);
+  transition: background-color .3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-400);
+}
+
 .scroll {
   overflow: auto;
   &::-webkit-scrollbar {
@@ -515,8 +533,11 @@ table {
     transition-property: background-color, color;
     // border-bottom: 1px solid @color-theme_2-line;
     box-sizing: border-box;
-    font-size: 12px;
+    font-size: 13px;
 
+    &.zebra {
+      background-color: var(--color-050);
+    }
     &:hover {
       background-color: var(--color-primary-background-hover);
 
@@ -545,6 +566,12 @@ table {
 
       &.auto {
         flex: auto;
+      }
+
+      // 次要列（歌手/专辑/时长/操作）弱化，突出歌名
+      &:not(.name):not(.num) {
+        color: var(--color-500);
+        font-size: 12.5px;
       }
 
       &.num, .num {

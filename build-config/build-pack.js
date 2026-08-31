@@ -12,6 +12,10 @@ const options = {
   // The release workflow can provide prebuilt Electron-native modules.
   // Set LX_SKIP_NATIVE_REBUILD=1 when the host has no C++ toolchain.
   npmRebuild: process.env.LX_SKIP_NATIVE_REBUILD == '1' ? false : undefined,
+  // 使用新版逐文件下载的 winCodeSign 工具集，避免旧版 7z 包解压 darwin 符号链接时报权限错误
+  toolsets: {
+    winCodeSign: '1.1.0',
+  },
   appId: 'io.lxflowmusic.desktop',
   productName: 'LXFlowMusic',
   beforePack,

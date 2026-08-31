@@ -1,7 +1,7 @@
 <template>
   <div :class="$style.player">
     <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
-      <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="imgError">
+      <img v-if="musicInfo.pic" :class="{[$style.rotating]: isPlay}" :src="musicInfo.pic" decoding="async" @error="imgError">
       <div v-else :class="$style.emptyPic">L<span>X</span></div>
     </div>
     <div :class="$style.infoContent">
@@ -204,17 +204,31 @@ export default {
     max-height: 100%;
     transition: @transition-normal;
     transition-property: border-color, transform, box-shadow;
-    border-radius: @radius-border;
+    border-radius: @radius-round;
+    border: 3px solid rgba(0, 0, 0, .08);
   }
 
   &:hover img {
     transform: scale(1.02);
   }
 
+  .rotating {
+    animation: play-bar-vinyl-rotate 18s linear infinite;
+  }
+
+  @keyframes play-bar-vinyl-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   .emptyPic {
     background:
       radial-gradient(120% 120% at 20% 15%, var(--color-primary-light-100) 0%, var(--color-primary) 45%, var(--color-primary-dark-200) 100%);
-    border-radius: @radius-border;
+    border-radius: @radius-round;
     width: 100%;
     height: 100%;
     display: flex;

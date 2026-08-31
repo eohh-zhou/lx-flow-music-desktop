@@ -18,12 +18,12 @@
     </div>
     <div v-if="appSetting['common.controlBtnPosition'] != 'left'" :class="$style.rightBtns">
       <button :class="$style.toolBtn" :aria-label="$t('skin')" :title="$t('skin')" ignore-tip @click="openThemeSelector">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="16px" height="16px" viewBox="0 0 24 24" space="preserve">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="14px" height="14px" viewBox="0 0 24 24" space="preserve">
           <use xlink:href="#icon-skin" />
         </svg>
       </button>
       <button :class="$style.toolBtn" :aria-label="$t('setting')" :title="$t('setting')" ignore-tip @click="goSetting">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="16px" height="16px" viewBox="0 0 493.23 436.47" space="preserve">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="14px" height="14px" viewBox="0 0 493.23 436.47" space="preserve">
           <use xlink:href="#icon-setting" />
         </svg>
       </button>
@@ -89,10 +89,13 @@ onMounted(updateNavState)
   display: flex;
   height: @height-toolbar;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 0 15px;
   -webkit-app-region: drag;
   z-index: 2;
+  background-color: var(--color-main-background);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
 
   &.fullscreen {
     -webkit-app-region: no-drag;
@@ -113,8 +116,8 @@ onMounted(updateNavState)
 
 .navBtn {
   flex: none;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   border: none;
   border-radius: @radius-round;
   background-color: transparent;
@@ -148,7 +151,7 @@ onMounted(updateNavState)
 .searchWrap {
   flex: 1 1 auto;
   min-width: 0;
-  max-width: 480px;
+  max-width: 360px;
   margin: 0 auto;
   display: flex;
   justify-content: center;
@@ -165,8 +168,8 @@ onMounted(updateNavState)
 
 .toolBtn {
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border: none;
   border-radius: @radius-round;
   background-color: transparent;

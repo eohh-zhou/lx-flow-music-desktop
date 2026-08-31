@@ -30,7 +30,7 @@
           <base-virtualized-list v-if="actionButtonsVisible" ref="listRef" :list="list" key-name="id" :item-height="listItemHeight" container-class="scroll" content-class="list" @contextmenu.capture="handleListRightClick">
             <template #default="{ item, index }">
               <div
-                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
+                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { zebra: index % 2 == 1 }]"
                 @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
               >
                 <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>{{ index + 1 }}</div>
@@ -62,7 +62,7 @@
           <base-virtualized-list v-else ref="listRef" :list="list" key-name="id" :item-height="listItemHeight" container-class="scroll" content-class="list" @contextmenu.capture="handleListRightClick">
             <template #default="{ item, index }">
               <div
-                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
+                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { zebra: index % 2 == 1 }]"
                 @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
               >
                 <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>{{ index + 1 }}</div>
@@ -323,19 +323,20 @@ export default {
   justify-content: center;
 
   img {
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
     object-fit: cover;
     background-color: var(--color-100);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .10);
   }
 
   svg {
-    width: 30px;
-    height: 30px;
-    padding: 5px;
+    width: 34px;
+    height: 34px;
+    padding: 6px;
     box-sizing: border-box;
-    border-radius: 4px;
+    border-radius: 6px;
     background-color: var(--color-100);
     color: var(--color-350);
   }

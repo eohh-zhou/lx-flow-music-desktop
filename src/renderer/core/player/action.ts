@@ -1,4 +1,4 @@
-import { isEmpty, setPause, setPlay, setResource, setStop } from '@renderer/plugins/player'
+import { isEmpty, resumeAudioContext, setPause, setPlay, setResource, setStop } from '@renderer/plugins/player'
 import { isPlay, playedList, playInfo, playMusicInfo, tempPlayList, musicInfo as _musicInfo } from '@renderer/store/player/state'
 import {
   getList,
@@ -187,6 +187,10 @@ const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
 // 处理音乐播放
 const handlePlay = () => {
   window.lx.isPlayedStop &&= false
+
+  // Resume Web Audio synchronously from the play command so Chromium treats
+  // the first click as the user gesture that unlocks audio output.
+  void resumeAudioContext()
 
   resetRandomNextMusicInfo()
   if (window.lx.restorePlayInfo) {
@@ -583,6 +587,7 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
 export const play = () => {
   window.lx.isPlayedStop &&= false
   if (playMusicInfo.musicInfo == null) return
+  void resumeAudioContext()
   if (isEmpty()) {
     if (createGettingUrlId(playMusicInfo.musicInfo) != gettingUrlId) setMusicUrl(playMusicInfo.musicInfo)
     return

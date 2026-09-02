@@ -13,6 +13,8 @@ export default () => {
       setTimeout(() => {
         if (listRef.value) listRef.value.scrollToTop()
       })
+    }).catch(() => {
+      // 加载失败时 store 已设置「加载失败」提示，此处吞掉异常避免未处理的 rejection 触发 dev overlay
     })
   }
 

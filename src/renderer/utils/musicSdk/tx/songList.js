@@ -276,7 +276,9 @@ export default {
     const { body } = await requestObj_listDetail.promise
 
     if (body.code !== this.successCode) return this.getListDetail(id, ++tryNum)
-    const cdlist = body.cdlist[0]
+    const cdlist = body.cdlist && body.cdlist[0]
+    // 部分歌单因作者隐私设置/平台限制返回 subcode 4000（check privacy error），此时无 cdlist 字段
+    if (!cdlist) throw new Error(body.msg || 'failed')
     return {
       list: this.filterListDetail(cdlist.songlist),
       page: 1,

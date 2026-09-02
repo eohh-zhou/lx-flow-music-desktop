@@ -1,10 +1,9 @@
 // import { useCommit } from '@common/utils/vueTools'
-import { defaultList } from '@renderer/store/list/state'
-import { getListMusics, addListMusics } from '@renderer/store/list/action'
+import { setTempList } from '@renderer/store/list/action'
 import { addTempPlayList } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
-import { type Ref } from '@common/utils/vueTools'
 import { playList } from '@renderer/core/player'
+import { type Ref } from '@common/utils/vueTools'
 import { LIST_IDS } from '@common/constants'
 
 export default ({ selectedList, props, removeAllSelect, emit }: {
@@ -18,19 +17,23 @@ export default ({ selectedList, props, removeAllSelect, emit }: {
   let clickTime = 0
   let clickIndex = -1
 
+  // 播放在线歌曲时以临时列表作为播放队列，不写入试听列表；
+  // 歌曲真正播放后由 usePlayHistory 记录到试听列表顶部
   const handlePlayMusic = async(index: number, single: boolean) => {
-    let targetSong = props.list[index]
-    const defaultListMusics = await getListMusics(defaultList.id)
+    const targetSong = props.list[index]
+    if (!targetSong) return
+    let playIndex = index
+    let playMusics: LX.Music.MusicInfoOnline[]
     if (selectedList.value.length && !single) {
-      await addListMusics(defaultList.id, [...selectedList.value])
+      playMusics = [...selectedList.value]
+      const targetIndex = playMusics.findIndex((s: LX.Music.MusicInfoOnline) => s.id == targetSong.id)
+      if (targetIndex > -1) playIndex = targetIndex
       removeAllSelect()
     } else {
-      await addListMusics(defaultList.id, [targetSong])
+      playMusics = [...props.list]
     }
-    let targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id)
-    if (targetIndex > -1) {
-      playList(defaultList.id, targetIndex)
-    }
+    await setTempList(`play__${Date.now()}`, playMusics)
+    playList(LIST_IDS.TEMP, playIndex)
   }
 
   const handlePlayMusicLater = (index: number, single: boolean) => {

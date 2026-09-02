@@ -22,6 +22,7 @@ const { debounce } = require('./utils')
 let electronProcess = null
 let hotMiddlewareRenderer
 let hotMiddlewareRendererLyric
+const rendererPort = Number(process.env.LX_DEV_PORT ?? 9080)
 
 
 function startRenderer() {
@@ -48,7 +49,7 @@ function startRenderer() {
     // })
 
     const server = new WebpackDevServer({
-      port: 9080,
+      port: rendererPort,
       hot: true,
       historyApiFallback: true,
       static: {
@@ -176,6 +177,10 @@ function startElectron() {
     // 'NODE_ENV=development',
     path.join(__dirname, '../dist/main.js'),
   ]
+
+  if (process.env.LX_DEV_USER_DATA) {
+    args.unshift(`--user-data-dir=${process.env.LX_DEV_USER_DATA}`)
+  }
 
   // detect yarn or npm and process commandline args accordingly
   if (process.env.npm_execpath.endsWith('yarn.js')) {

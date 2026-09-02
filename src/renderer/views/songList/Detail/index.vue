@@ -1,5 +1,16 @@
 <template>
   <div :class="$style.container">
+    <div v-if="searchKeyword" :class="$style.searchBar">
+      <svg :class="$style.searchBarIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 30.239 30.239" space="preserve">
+        <use xlink:href="#icon-search" />
+      </svg>
+      <span :class="$style.searchBarText">{{ $t('search__scope_filter_tip', { kw: searchKeyword }) }}</span>
+      <button :class="$style.searchBarClear" :title="$t('search__clear_filter')" @click="clearScopeSearch">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve">
+          <use xlink:href="#icon-close" />
+        </svg>
+      </button>
+    </div>
     <div :class="$style.songListHeader">
       <div :class="$style.songListHeaderLeft" :style="{ backgroundImage: 'url('+(picUrl || listDetailInfo.info.img)+')' }">
         <!-- <span v-if="listDetailInfo.info.play_count" :class="$style.playNum">{{ listDetailInfo.info.play_count }}</span> -->
@@ -32,9 +43,9 @@
         :page="listDetailInfo.page"
         :limit="listDetailInfo.limit"
         :total="listDetailInfo.total"
-        :list="listDetailInfo.list"
+        :list="displayList"
         :no-item="listDetailInfo.noItemLabel"
-        @play-list="handlePlayList"
+        @play-list="handlePlayListScoped"
         @toggle-page="togglePage"
       />
     </div>
@@ -42,10 +53,10 @@
 </template>
 
 <script lang="ts">
-import { ref, watch } from '@common/utils/vueTools'
+import { computed, ref, watch } from '@common/utils/vueTools'
+import { useRoute, useRouter } from '@common/utils/vueRouter'
 import { listDetailInfo } from '@renderer/store/songList/state'
 import { setVisibleListDetail } from '@renderer/store/songList/action'
-import { useRouter } from '@common/utils/vueRouter'
 import { addSongListDetail, playSongListDetail } from './action'
 import useList from './useList'
 import useKeyBack from './useKeyBack'
@@ -107,6 +118,7 @@ export default {
   beforeRouteEnter: verifyQueryParams,
   beforeRouteUpdate: verifyQueryParams,
   setup() {
+    const route = useRoute()
     const router = useRouter()
 
     const {
@@ -115,6 +127,36 @@ export default {
       getListData,
       handlePlayList,
     } = useList()
+
+    const searchKeyword = computed(() => typeof route.query.search === 'string' ? route.query.search : '')
+    // 过滤态下同时记录「展示索引 -> 原始索引」映射，play-list 事件需要回查原始索引
+    const displayData = computed(() => {
+      const kw = searchKeyword.value.trim().toLowerCase()
+      if (!kw) return null
+      const items: LX.Music.MusicInfoOnline[] = []
+      const indexes: number[] = []
+      listDetailInfo.list.forEach((m: LX.Music.MusicInfoOnline, i: number) => {
+        if ((m.name || '').toLowerCase().includes(kw) ||
+            (m.singer || '').toLowerCase().includes(kw) ||
+            (m.meta?.albumName || '').toLowerCase().includes(kw)) {
+          items.push(m)
+          indexes.push(i)
+        }
+      })
+      return { items, indexes }
+    })
+    const displayList = computed(() => displayData.value ? displayData.value.items : listDetailInfo.list)
+    // material-online-list 内部操作均基于传入的 displayList（索引一致），
+    // 唯独 play-list 由 useList 按原始 listDetailInfo.list 播放，需要映射回原始索引
+    const handlePlayListScoped = (index: number) => {
+      const map = displayData.value?.indexes
+      handlePlayList(map ? map[index] : index)
+    }
+    const clearScopeSearch = () => {
+      const newQuery = { ...route.query }
+      delete newQuery.search
+      void router.replace({ path: route.path, query: newQuery }).catch(() => {})
+    }
 
 
     const togglePage = (page: number) => {
@@ -152,7 +194,11 @@ export default {
       addSongListDetail,
       playSongListDetail,
       handlePlayList,
+      handlePlayListScoped,
       handleBack,
+      searchKeyword,
+      displayList,
+      clearScopeSearch,
     }
   },
 }
@@ -169,6 +215,54 @@ export default {
   // height: 100%;
   display: flex;
   flex-flow: column nowrap;
+}
+
+.searchBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 15px 0;
+  padding: 6px 16px;
+  border-radius: @radius-border;
+  background-color: var(--color-050);
+  border-bottom: 1px solid var(--color-100);
+  font-size: 12.5px;
+  color: var(--color-font);
+  user-select: none;
+}
+.searchBarIcon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--color-primary);
+}
+.searchBarText {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.searchBarClear {
+  flex: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-450);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: @transition-fast;
+  transition-property: background-color, color;
+  svg { width: 12px; height: 12px; }
+  &:hover {
+    color: var(--color-primary);
+    background-color: var(--color-100);
+  }
 }
 
 .songListHeader {

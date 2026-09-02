@@ -1,13 +1,15 @@
 // import {  } from '@renderer/utils/ipc'
 
 import { appSetting } from '@renderer/store/setting'
-import { fetchingListStatus, listUpdateTimes, allMusicList, userLists, tempListMeta } from './state'
+import { fetchingListStatus, listUpdateTimes, allMusicList, userLists, tempListMeta, defaultList } from './state'
 import {
   registerListAction,
   createUserList as createUserListAction,
   addListMusics as addListMusicsAction,
   moveListMusics as moveListMusicsAction,
+  updateListMusicsPosition as updateListMusicsPositionAction,
   overwriteListMusics,
+  getListMusics,
 } from '@renderer/store/list/listManage'
 import { toRaw } from '@common/utils/vueTools'
 import { LIST_IDS } from '@common/constants'
@@ -76,12 +78,29 @@ export const createUserList = async({ name, id = `userlist_${Date.now()}`, list 
 }
 
 
-export const setTempList = async(id: string, list: LX.Music.MusicInfoOnline[]) => {
+export const setTempList = async(id: string, list: LX.Music.MusicInfo[]) => {
   tempListMeta.id = id
   await overwriteListMusics({
     listId: LIST_IDS.TEMP,
     musicInfos: list,
   })
+}
+
+/**
+ * 记录播放过的歌曲到试听列表（已存在则移到最上面，否则插入最上面）
+ * @param musicInfo 歌曲信息
+ */
+export const recordPlayMusic = async(musicInfo: LX.Music.MusicInfo) => {
+  const list = await getListMusics(defaultList.id)
+  if (list.some(m => m.id == musicInfo.id)) {
+    await updateListMusicsPositionAction({
+      listId: defaultList.id,
+      position: 0,
+      ids: [musicInfo.id],
+    })
+  } else {
+    await addListMusics(defaultList.id, [musicInfo], 'top')
+  }
 }
 
 export {

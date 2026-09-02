@@ -57,24 +57,37 @@ let pitchShifterNodeTempValue = 1
 let defaultChannelCount = 2
 export const soundR = 0.5
 
+export const resumeAudioContext = async() => {
+  if (!audioContext || audioContext.state == 'running') return
+  try {
+    await audioContext.resume()
+  } catch (err) {
+    // A later user-initiated play will retry this. Do not leave an unhandled promise.
+    console.warn('Resume audio context failed:', err)
+  }
+}
+
 
 export const createAudio = () => {
   if (audio) return
   audio = new window.Audio() as HTMLAudioElementChrome
   audio.controls = false
+  // The play URL is resolved asynchronously. Keep autoplay enabled so a
+  // desktop playback request is not lost between the click and URL loading.
   audio.autoplay = true
   audio.preload = 'auto'
   audio.crossOrigin = 'anonymous'
 
-  // https://developer.chrome.com/blog/autoplay
   audio.addEventListener('playing', () => {
-    if (audioContext?.state == 'suspended') {
-      void audioContext.resume().catch((err) => {
-        console.error('Resume audio context failed:', err)
-        throw err
-      })
-    }
+    void resumeAudioContext()
   })
+
+  // Unlock a context created during startup on the first real interaction.
+  const unlockAudio = () => {
+    void resumeAudioContext()
+  }
+  window.addEventListener('pointerdown', unlockAudio, true)
+  window.addEventListener('keydown', unlockAudio, true)
 }
 
 const initAnalyser = () => {
@@ -139,6 +152,11 @@ const initAdvancedAudioFeatures = () => {
   convolverDynamicsCompressor.connect(panner)
   panner.connect(gainNode)
   gainNode.connect(audioContext.destination)
+
+  // Desktop playback may initialize the graph before the media URL arrives.
+  // Start the context when the application policy allows it; a later play
+  // gesture still retries this when Chromium requires one.
+  void resumeAudioContext()
 
   // 音频输出设备改变时刷新 audio node 连接
   window.app_event.on('playerDeviceChanged', handleMediaListChange)
@@ -393,11 +411,21 @@ export const setPitchShifter = (val: number) => {
 export const hasInitedAdvancedAudioFeatures = (): boolean => audioContext != null
 
 export const setResource = (src: string) => {
-  if (audio) audio.src = src
+  if (!audio) return
+  audio.src = src
+  // Keep an explicit play attempt for builds where autoplay is allowed but the
+  // media element has not started from the new source yet.
+  setPlay()
 }
 
 export const setPlay = () => {
-  void audio?.play()
+  // Start the media element immediately. Context resume may be blocked until a
+  // trusted user gesture, and waiting for it would leave the player stuck at 0:00.
+  const playPromise = audio?.play()
+  void resumeAudioContext()
+  void playPromise?.catch((err) => {
+    console.warn('Start audio playback failed:', err)
+  })
 }
 
 export const setPause = () => {

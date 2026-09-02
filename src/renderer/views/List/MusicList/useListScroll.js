@@ -32,9 +32,11 @@ export default ({ props, listRef, list, handleRestoreScroll }) => {
   onMounted(() => {
     handleRestoreScroll(route.query.scrollIndex, false)
     if (route.query.scrollIndex != null) {
+      const { scrollIndex, ...restQuery } = route.query
       router.replace({
         path: '/list',
         query: {
+          ...restQuery,
           id: props.listId,
           updated: true,
         },

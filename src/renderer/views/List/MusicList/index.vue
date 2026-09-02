@@ -1,5 +1,16 @@
 <template>
   <div :class="$style.list">
+    <div v-if="searchKeyword" :class="$style.searchBar">
+      <svg :class="$style.searchBarIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 30.239 30.239" space="preserve">
+        <use xlink:href="#icon-search" />
+      </svg>
+      <span :class="$style.searchBarText">{{ $t('search__scope_filter_tip', { kw: searchKeyword }) }}</span>
+      <button :class="$style.searchBarClear" :title="$t('search__clear_filter')" @click="clearScopeSearch">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve">
+          <use xlink:href="#icon-close" />
+        </svg>
+      </button>
+    </div>
     <div class="thead">
       <table>
         <thead>
@@ -23,19 +34,19 @@
         </thead>
       </table>
     </div>
-    <div v-show="list.length" ref="dom_listContent" :class="$style.content">
+    <div v-show="displayList.length" ref="dom_listContent" :class="$style.content">
       <base-virtualized-list
-        v-if="actionButtonsVisible" ref="listRef" v-slot="{ item, index }" :list="list" key-name="id"
+        v-if="actionButtonsVisible" ref="listRef" v-slot="{ item, index }" :list="displayList" key-name="id"
         :item-height="listItemHeight" container-class="scroll" content-class="list"
         @scroll="saveListPosition" @contextmenu.capture="handleListRightClick"
       >
         <div
-          class="list-item" :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === index }, { selected: selectedIndex == index || rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }, { zebra: index % 2 == 1 }]"
-          @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
+          class="list-item" :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === srcIndex(index) }, { selected: selectedIndex == srcIndex(index) || rightClickSelectedIndex == srcIndex(index) }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }, { zebra: index % 2 == 1 }]"
+          @click="handleListItemClick($event, srcIndex(index))" @contextmenu="handleListItemRightClick($event, srcIndex(index))"
         >
           <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
             <transition name="play-active">
-              <div v-if="playerInfo.isPlayList && playerInfo.playIndex === index" :class="$style.playIcon">
+              <div v-if="playerInfo.isPlayList && playerInfo.playIndex === srcIndex(index)" :class="$style.playIcon">
                 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
                   <use xlink:href="#icon-play-outline" />
                 </svg>
@@ -55,23 +66,23 @@
           <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 9%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 16%; padding-left: 0; padding-right: 0;">
-            <material-list-buttons :index="index" :download-btn="assertApiSupport(item.source) && item.source != 'local'" @btn-click="handleListBtnClick" />
+            <material-list-buttons :index="srcIndex(index)" :download-btn="assertApiSupport(item.source) && item.source != 'local'" @btn-click="handleListBtnClick" />
           </div>
         </div>
       </base-virtualized-list>
       <base-virtualized-list
-        v-else ref="listRef" v-slot="{ item, index }" :list="list" key-name="id"
+        v-else ref="listRef" v-slot="{ item, index }" :list="displayList" key-name="id"
         :item-height="listItemHeight" container-class="scroll" content-class="list"
         @scroll="saveListPosition" @contextmenu.capture="handleListRightClick"
       >
         <div
           class="list-item"
-          :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === index }, { selected: selectedIndex == index || rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }, { zebra: index % 2 == 1 }]"
-          @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
+          :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === srcIndex(index) }, { selected: selectedIndex == srcIndex(index) || rightClickSelectedIndex == srcIndex(index) }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }, { zebra: index % 2 == 1 }]"
+          @click="handleListItemClick($event, srcIndex(index))" @contextmenu="handleListItemRightClick($event, srcIndex(index))"
         >
           <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
             <transition name="play-active">
-              <div v-if="playerInfo.isPlayList && playerInfo.playIndex === index" :class="$style.playIcon">
+              <div v-if="playerInfo.isPlayList && playerInfo.playIndex === srcIndex(index)" :class="$style.playIcon">
                 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
                   <use xlink:href="#icon-play-outline" />
                 </svg>
@@ -93,8 +104,8 @@
         </div>
       </base-virtualized-list>
     </div>
-    <div v-show="!list.length" :class="$style.noItem">
-      <p v-text="$t('no_item')" />
+    <div v-show="!displayList.length" :class="$style.noItem">
+      <p v-text="searchKeyword ? $t('search__no_match_in_scope') : $t('no_item')" />
     </div>
     <common-list-add-modal
       v-model:show="isShowListAdd" :is-move="isMove" :from-list-id="listId"
@@ -116,6 +127,8 @@
 <script>
 import { clipboardWriteText } from '@common/utils/electron'
 import { assertApiSupport } from '@renderer/store/utils'
+import { useRoute, useRouter } from '@common/utils/vueRouter'
+import { computed } from '@common/utils/vueTools'
 import SearchList from './components/SearchList.vue'
 import MusicSortModal from './components/MusicSortModal.vue'
 import MusicToggleModal from './components/MusicToggleModal.vue'
@@ -310,6 +323,34 @@ export default {
       listRef.value.scrollTo(0, true)
     }
 
+    // 顶栏搜索框 scope 模式：根据 route.query.search 过滤当前列表
+    const route = useRoute()
+    const router = useRouter()
+    const searchKeyword = computed(() => typeof route.query.search === 'string' ? route.query.search : '')
+    // 过滤态下同时记录「展示索引 -> 原始索引」映射，供播放/选择等基于原始索引的逻辑回查
+    const displayData = computed(() => {
+      const kw = searchKeyword.value.trim().toLowerCase()
+      if (!kw) return null
+      const items = []
+      const indexes = []
+      list.value.forEach((m, i) => {
+        if ((m.name || '').toLowerCase().includes(kw) ||
+            (m.singer || '').toLowerCase().includes(kw) ||
+            (m.meta?.albumName || '').toLowerCase().includes(kw)) {
+          items.push(m)
+          indexes.push(i)
+        }
+      })
+      return { items, indexes }
+    })
+    const displayList = computed(() => displayData.value ? displayData.value.items : list.value)
+    const srcIndex = (index) => displayData.value ? displayData.value.indexes[index] : index
+    const clearScopeSearch = () => {
+      const newQuery = { ...route.query }
+      delete newQuery.search
+      void router.replace({ path: route.path, query: newQuery }).catch(() => {})
+    }
+
     return {
       listItemHeight,
       handleListItemClick,
@@ -353,6 +394,10 @@ export default {
       handleMusicSearchAction,
 
       list,
+      displayList,
+      srcIndex,
+      searchKeyword,
+      clearScopeSearch,
       playerInfo,
 
       saveListPosition,
@@ -394,6 +439,52 @@ export default {
       opacity: .75;
       display: inline-block;
     }
+  }
+}
+
+.searchBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--color-050);
+  border-bottom: 1px solid var(--color-100);
+  font-size: 12.5px;
+  color: var(--color-font);
+  user-select: none;
+}
+.searchBarIcon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--color-primary);
+}
+.searchBarText {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.searchBarClear {
+  flex: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-450);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: @transition-fast;
+  transition-property: background-color, color;
+  svg { width: 12px; height: 12px; }
+  &:hover {
+    color: var(--color-primary);
+    background-color: var(--color-100);
   }
 }
 .num {

@@ -105,6 +105,10 @@ export const initSingleInstanceHandle = () => {
 }
 
 export const applyElectronEnvParams = () => {
+  // LX is a desktop music player. Allow playback and Web Audio to start after
+  // an asynchronously resolved URL, without requiring a browser-style gesture.
+  app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
+
   // Is disable hardware acceleration
   if (global.envParams.cmdParams.dha) app.disableHardwareAcceleration()
   if (global.envParams.cmdParams.dhmkh) app.commandLine.appendSwitch('disable-features', 'HardwareMediaKeyHandling')

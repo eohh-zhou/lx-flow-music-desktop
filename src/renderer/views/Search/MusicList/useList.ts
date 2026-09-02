@@ -1,7 +1,7 @@
 import { LIST_IDS } from '@common/constants'
 import { ref } from '@common/utils/vueTools'
 import { playList } from '@renderer/core/player/action'
-import { getListMusics, addListMusics } from '@renderer/store/list/action'
+import { setTempList } from '@renderer/store/list/action'
 import { addHistoryWord } from '@renderer/store/search/action'
 // import { useI18n } from '@renderer/plugins/i18n'
 // import { } from '@renderer/store/search/state'
@@ -35,17 +35,12 @@ export default () => {
     })
   }
 
+  // 播放搜索结果时以临时列表作为播放队列，不写入试听列表
   const handlePlayList = async(index: number) => {
-    let targetSong = listInfo.value.list[index]
-
-    if (!assertApiSupport(targetSong.source)) return
-
-    const defaultListMusics = await getListMusics(LIST_IDS.DEFAULT)
-
-    await addListMusics(LIST_IDS.DEFAULT, [targetSong])
-
-    let targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id)
-    if (targetIndex > -1) playList(LIST_IDS.DEFAULT, targetIndex)
+    const targetSong = listInfo.value.list[index]
+    if (!targetSong || !assertApiSupport(targetSong.source)) return
+    await setTempList(`search__${listInfo.value.key ?? Date.now()}`, [...listInfo.value.list])
+    playList(LIST_IDS.TEMP, index)
   }
 
   return {

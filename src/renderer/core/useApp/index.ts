@@ -13,6 +13,7 @@ import useEventListener from './useEventListener'
 import useDeeplink from './useDeeplink'
 import usePlayer from './usePlayer'
 import useSettingSync from './useSettingSync'
+import useScrollbarHover from './useScrollbarHover'
 import { useRouter } from '@common/utils/vueRouter'
 import handleListAutoUpdate from './listAutoUpdate'
 
@@ -38,6 +39,7 @@ export default () => {
 
   useUpdate()
   useSettingSync()
+  useScrollbarHover()
 
   void getEnvParams().then(envParams => {
     // 移除代理相关的环境变量设置，防止请求库自动应用它们

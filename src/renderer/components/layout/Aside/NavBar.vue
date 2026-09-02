@@ -81,7 +81,7 @@ import { LIST_IDS } from '@common/constants'
 import { appSetting } from '@renderer/store/setting'
 import { useI18n } from '@root/lang'
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from '@common/utils/vueTools'
-import { useRoute, useRouter } from '@common/utils/vueRouter'
+import { useRouter } from '@common/utils/vueRouter'
 import { defaultList, fetchingListStatus, userLists } from '@renderer/store/list/state'
 import { getListMusics, removeUserList } from '@renderer/store/list/action'
 import { setVisibleListDetail } from '@renderer/store/songList/action'
@@ -115,8 +115,11 @@ export default {
   },
   setup() {
     const t = useI18n()
-    const route = useRoute()
     const router = useRouter()
+    // `useRoute()` is read correctly on demand, but its injected proxy does not
+    // invalidate this persistent sidebar on route changes in the current build.
+    // Use the router's source ref for values that must update the rendered state.
+    const currentRoute = router.currentRoute
 
     const expandedGroups = reactive<Record<string, boolean>>({
       List: localStorage.getItem(`${EXPAND_STORAGE_KEY}List`) !== 'false',
@@ -250,7 +253,7 @@ export default {
       }).then(isRemove => {
         if (!isRemove) return
         void removeUserList([listInfo.id])
-        if (route.query.id == listInfo.id) {
+        if (currentRoute.value.query.id == listInfo.id) {
           void router.replace({
             path: '/list',
             query: { id: LIST_IDS.DEFAULT },
@@ -348,12 +351,12 @@ export default {
       fixedListCount: 1,
     })
 
-    watch(() => route.query.id, (listId) => {
+    watch(() => currentRoute.value.query.id, (listId) => {
       if (typeof listId == 'string') saveListPrevSelectId(listId)
     }, { immediate: true })
 
     const menus = computed(() => {
-      const size = 18
+      const size = 16
       const localPlaylistChildren = localPlaylistInfos.value.map((list, index) => {
         const isDefault = list.id == defaultList.id
         const userIndex = isDefault ? undefined : index - 1
@@ -496,17 +499,18 @@ export default {
     })
 
     const isMenuActive = (name: string) => {
-      if (route.name == 'SongListDetail') {
-        const from = route.query.fromName as string | undefined
+      const activeRoute = currentRoute.value
+      if (activeRoute.name == 'SongListDetail') {
+        const from = activeRoute.query.fromName as string | undefined
         if (from == 'QQMusicRecommend' || from == 'QQMusicMyPlaylists' || from == 'NeteaseMusicRecommend' || from == 'NeteaseMusicMyPlaylists') return name == from
       }
-      return route.meta.name == name
+      return activeRoute.meta.name == name
     }
     const handleNavClick = (item: { name: string }) => {
       if (item.name == 'SongList') setVisibleListDetail(false)
     }
     const isChildActive = (child: { name: string, listId?: string }) => child.listId
-      ? route.meta.name == 'List' && route.query.id == child.listId
+      ? currentRoute.value.meta.name == 'List' && currentRoute.value.query.id == child.listId
       : isMenuActive(child.name)
     const isGroupActive = (item: { children: Array<{ name: string, listId?: string }> }) => item.children.some(isChildActive)
     return {
@@ -558,6 +562,14 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 6px 0;
+
+  // 滚动条：平时隐藏，悬停侧边栏时显示（另由 useScrollbarHover 的 .sb-hover 类兜底）
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-500) 35%, transparent);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--color-500) 60%, transparent);
+  }
 }
 
 .list {
@@ -570,12 +582,12 @@ export default {
 .navGroup {
   flex: none;
   + .navGroup {
-    margin-top: 16px;
+    margin-top: 12px;
   }
 }
 
 .groupLabel {
-  padding: 8px 12px 6px;
+  padding: 6px 12px 4px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 1.2px;
@@ -646,7 +658,7 @@ export default {
   display: flex;
   flex-flow: column nowrap;
   gap: 2px;
-  padding: 2px 0 4px;
+  padding: 2px 0 2px;
 }
 
 .sortable {
@@ -692,11 +704,11 @@ export default {
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  height: 36px;
+  height: 32px;
   margin: 0 4px 0 16px;
   padding: 0 10px;
   gap: 8px;
-  border-radius: 8px;
+  border-radius: 7px;
   text-decoration: none;
   transition: @transition-fast;
   transition-property: background-color, color, transform;
@@ -736,7 +748,7 @@ export default {
 .newListInput {
   box-sizing: border-box;
   width: calc(100% - 20px);
-  height: 34px;
+  height: 32px;
   margin: 1px 4px 1px 16px;
   padding: 0 8px;
   border-radius: 7px;
@@ -786,18 +798,18 @@ export default {
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  gap: 10px;
-  height: 40px;
+  gap: 8px;
+  height: 34px;
   padding: 0 12px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background-color: transparent;
   text-decoration: none;
   transition: @transition-fast;
   transition-property: background-color, color, transform;
   color: var(--color-nav-font);
   cursor: pointer;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   text-align: left;
   outline: none;

@@ -39,6 +39,13 @@ export default () => {
     return device ? { label: device.label, deviceId: device.deviceId } : { label: '', deviceId: '' }
   }
   const setMediaDevice = async(deviceId: string, label: string) => {
+    // An empty enumerateDevices() result means Chromium could not enumerate
+    // outputs. Let the audio element use the system default instead of passing
+    // an empty sink id to setSinkId().
+    if (!deviceId) {
+      prevDeviceId = 'default'
+      return
+    }
     prevDeviceLabel = label
     // console.log(device)
     setMediaDeviceId(deviceId).then(() => {

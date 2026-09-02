@@ -2,6 +2,7 @@ import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
 import { mainHandle } from '@common/mainIpc'
 import {
   getApiList,
+  getApiScript,
   importApi,
   removeApi,
   setApi,
@@ -29,6 +30,10 @@ export default () => {
     return getApiList()
   })
 
+  mainHandle<string, string | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_user_api_script, async({ params: apiId }) => {
+    return getApiScript(apiId)
+  })
+
   mainHandle<LX.UserApi.UserApiStatus>(WIN_MAIN_RENDERER_EVENT_NAME.get_user_api_status, async() => {
     return getStatus()
   })
@@ -51,4 +56,3 @@ export const sendStatusChange = (status: LX.UserApi.UserApiStatus) => {
 export const sendShowUpdateAlert = (info: LX.UserApi.UserApiUpdateInfo) => {
   sendEvent(WIN_MAIN_RENDERER_EVENT_NAME.user_api_show_update_alert, info)
 }
-

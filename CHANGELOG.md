@@ -1,5 +1,15 @@
 # lx-music-desktop change log
 
+## [2.12.36] - 2026-09-02
+
+### Fixed
+
+- Fixed clearing a playlist from the renderer by sending the correct list-clear event.
+- Fixed the playlist context-menu Import action being disabled by the Export permission.
+- Made backup exports wait for the file write to finish and report read/write failures.
+- Allowed list imports to read full `.lxmc` backups without changing the current interface settings.
+- Included custom source scripts in full backups and restored their source IDs on another installation.
+
 ## [2.12.32] - 2026-08-31
 
 ### Added

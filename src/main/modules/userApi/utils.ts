@@ -38,7 +38,7 @@ export const getUserApis = (): LX.UserApi.UserApiInfo[] => {
     }
   } else {
     infoFull = defaultUserApis
-    electronStore_userApi.set('userApis', userApis)
+    electronStore_userApi.set('userApis', infoFull)
   }
   userApis = infoFull.map(api => {
     if (api.allowShowUpdateAlert == null) api.allowShowUpdateAlert = false

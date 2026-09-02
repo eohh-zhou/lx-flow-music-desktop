@@ -80,7 +80,7 @@ export default ({
       {
         name: t('lists__import'),
         action: 'import',
-        disabled: !menuControl.export,
+        disabled: !menuControl.import,
       },
       {
         name: t('lists__export'),

@@ -332,6 +332,8 @@
   "setting__backup_all_export_desc": "Save the backup to ...",
   "setting__backup_all_import": "Import",
   "setting__backup_all_import_desc": "Choose a backup file",
+  "setting__backup_all_import_confirm": "Importing all data will overwrite the current lists and most settings. The interface may change with the backup file. Continue?",
+  "setting__backup_error": "The backup operation failed. Check that the file is valid or that the save location is writable, then try again.",
   "setting__backup_other": "Other Backup Formats (Restoring such backup files is not currently supported)",
   "setting__backup_other_export_dir": "Choose where to save the file",
   "setting__backup_other_export_list_csv": "Export lists in CSV format",

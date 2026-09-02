@@ -1,10 +1,15 @@
 import { closeWindow } from './main'
-import { getUserApis, importApi as handleImportApi, removeApi as handleRemoveApi, setAllowShowUpdateAlert as saveAllowShowUpdateAlert } from './utils'
+import { getUserApis, getScript, importApi as handleImportApi, removeApi as handleRemoveApi, setAllowShowUpdateAlert as saveAllowShowUpdateAlert } from './utils'
 import { loadApi, setAllowShowUpdateAlert as setRendererEventAllowShowUpdateAlert, init } from './rendererEvent/rendererEvent'
 
 let userApiId: string | null
 
 export const getApiList = getUserApis
+
+export const getApiScript = async(id: string): Promise<string | null> => {
+  if (!getUserApis().some(api => api.id == id)) return null
+  return getScript(id)
+}
 
 export const importApi = async(script: string): Promise<LX.UserApi.ImportUserApi> => {
   return {

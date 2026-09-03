@@ -18,14 +18,15 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
       div(:class="$style.current")
         h3 当前版本：{{ versionInfo.version }}
         div(:class="$style.desc")
-          p 更新信息获取失败，可能是无法访问 GitHub 导致的，请手动检查更新！
-          p
+          p(v-if="versionInfo.errorCode == 'portable_build'") 此为绿色免安装版，不能在软件内自动更新。请下载 Setup 安装版完成一次安装，之后可直接在软件内更新，且不会清除你的数据。
+          p(v-else) 更新信息获取失败，可能是无法访问 GitHub 导致的，请手动检查更新！
+          p(v-if="versionInfo.errorCode != 'portable_build'")
             | 检查方法：打开
-            base-btn(min aria-label="点击打开" @click="handleOpenUrl('https://github.com/lyswhut/lx-music-desktop/releases')") 软件发布页
+            base-btn(min aria-label="点击打开" @click="handleOpenUrl('https://github.com/eohh-zhou/lx-flow-music-desktop/releases')") 软件发布页
             | ，查看「Latest」发布的
             strong 版本号
             | 与当前版本({{ versionInfo.version }})对比是否一致。
-          p 若一致则不必理会该弹窗，直接关闭即可；否则请手动下载新版本更新。
+          p(v-if="versionInfo.errorCode != 'portable_build'") 若一致则不必理会该弹窗，直接关闭即可；否则请手动下载新版本更新。
     div(:class="$style.footer")
       div(:class="$style.btns")
         base-btn(v-if="versionInfo.status == 'error'" :class="$style.btn2" @click="handleCheckUpdate") 重新检查更新
@@ -74,7 +75,7 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
       div(:class="$style.desc")
         p 发现有新版本啦，你可以选择自动更新或手动更新。
         p 手动更新可以去&nbsp;
-          strong.hover.underline(aria-label="点击打开" @click="handleOpenUrl('https://github.com/lyswhut/lx-music-desktop/releases')") 软件发布页
+          strong.hover.underline(aria-label="点击打开" @click="handleOpenUrl('https://github.com/eohh-zhou/lx-flow-music-desktop/releases')") 软件发布页
           | 下载。
         p 若遇到问题可以阅读
           strong.hover.underline(aria-label="点击打开" @click="handleOpenUrl('https://lyswhut.github.io/lx-music-doc/desktop/faq')") 桌面版常见问题
@@ -316,4 +317,3 @@ export default {
 }
 
 </style>
-

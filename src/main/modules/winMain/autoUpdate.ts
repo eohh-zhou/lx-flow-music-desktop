@@ -1,4 +1,8 @@
 import { autoUpdater } from 'electron-updater'
+import type { NsisUpdater } from 'electron-updater'
+import path from 'node:path'
+import { existsSync } from 'node:fs'
+import { app } from 'electron'
 import { log, isWin } from '@common/utils'
 import { mainOn } from '@common/mainIpc'
 import { isExistWindow, sendEvent } from './index'
@@ -6,6 +10,9 @@ import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
 
 autoUpdater.logger = log
 autoUpdater.autoDownload = false
+// Releases contain a full NSIS installer. Avoid selecting a web package that
+// cannot be verified or installed consistently on machines with old installs.
+autoUpdater.disableWebInstaller = true
 // autoUpdater.forceDevUpdateConfig = true
 // autoUpdater.autoDownload = false
 
@@ -28,6 +35,46 @@ log.info('App starting...')
 function sendStatusToWindow(text: string) {
   log.info(text)
   // ipcMain.send('message', text)
+}
+
+interface UpdateEnvironment {
+  executablePath: string
+  installDirectory: string
+  isPortable: boolean
+}
+
+const getUpdateEnvironment = (): UpdateEnvironment => {
+  const executablePath = app.getPath('exe')
+  const installDirectory = path.dirname(executablePath)
+  return {
+    executablePath,
+    installDirectory,
+    isPortable: isWin && (
+      process.env.PORTABLE_EXECUTABLE_FILE != null ||
+      existsSync(path.join(installDirectory, 'portable'))
+    ),
+  }
+}
+
+const configureWindowsInstallerTarget = () => {
+  const environment = getUpdateEnvironment()
+  if (isWin && app.isPackaged && !environment.isPortable) {
+    // NSIS otherwise falls back to the path stored by a prior installation.
+    // Use the directory of the running executable to avoid stale shortcuts or
+    // a second installation receiving the update.
+    const nsisUpdater = autoUpdater as NsisUpdater
+    nsisUpdater.installDirectory = environment.installDirectory
+  }
+  return environment
+}
+
+const logUpdateEnvironment = (action: string, environment = configureWindowsInstallerTarget()) => {
+  log.info(
+    `[updater] ${action}: version=${app.getVersion()} executable=${environment.executablePath} ` +
+    `installDirectory=${environment.installDirectory} resources=${process.resourcesPath} ` +
+    `userData=${app.getPath('userData')} packaged=${app.isPackaged} portable=${environment.isPortable}`,
+  )
+  return environment
 }
 
 
@@ -77,6 +124,7 @@ const handleSendEvent = (action: WaitEvent) => {
 }
 
 export default () => {
+  logUpdateEnvironment('initialized')
   autoUpdater.on('checking-for-update', () => {
     sendStatusToWindow('Checking for update...')
   })
@@ -89,6 +137,7 @@ export default () => {
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_not_available, info })
   })
   autoUpdater.on('error', err => {
+    log.error(`[updater] Error: ${err.message}`)
     sendStatusToWindow('Error in auto-updater.')
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_error, info: err.message })
   })
@@ -100,6 +149,7 @@ export default () => {
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_progress, info: progressObj })
   })
   autoUpdater.on('update-downloaded', info => {
+    logUpdateEnvironment(`downloaded version=${info.version}`)
     sendStatusToWindow('Update downloaded.')
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_downloaded, info })
   })
@@ -111,11 +161,13 @@ export default () => {
 
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.update_download_update, () => {
     if (!autoUpdater.isUpdaterActive()) return
+    logUpdateEnvironment('download requested')
     void autoUpdater.downloadUpdate()
   })
 
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.quit_update, () => {
     global.lx.isSkipTrayQuit = true
+    logUpdateEnvironment('install requested')
 
     setTimeout(() => {
       autoUpdater.quitAndInstall(true, true)
@@ -124,6 +176,7 @@ export default () => {
 }
 
 const checkUpdate = () => {
+  const environment = logUpdateEnvironment('check requested')
   // if (!isFirstCheckedUpdate) {
   //   if (waitEvent.length) {
   //     waitEvent.forEach((event, index) => {
@@ -137,8 +190,10 @@ const checkUpdate = () => {
   // }
   // isFirstCheckedUpdate = false
 
+  if (environment.isPortable) {
+    handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_error, info: 'portable_build' })
   // 由于集合安装包中不包含win arm版，这将会导致arm版更新失败
-  if (isWin && process.arch.includes('arm')) {
+  } else if (isWin && process.arch.includes('arm')) {
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_error, info: 'failed' })
   } else {
     autoUpdater.autoDownload = global.lx.appSetting['common.tryAutoUpdate']

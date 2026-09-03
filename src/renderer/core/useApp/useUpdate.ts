@@ -120,6 +120,7 @@ export default () => {
   }
 
   const rUpdateAvailable = onUpdateAvailable(({ params: info }) => {
+    versionInfo.errorCode = null
     setUpdateInfo(info)
     const status: LX.UpdateStatus = appSetting['common.tryAutoUpdate'] ? 'downloading' : 'idle'
     if (status == 'downloading') {
@@ -131,14 +132,16 @@ export default () => {
   })
   const rUpdateNotAvailable = onUpdateNotAvailable(({ params: info }) => {
     clearUpdateTimeout()
+    versionInfo.errorCode = null
     setUpdateInfo(info)
     versionInfo.isLatest = true
     versionInfo.isUnknown = false
     versionInfo.status = 'idle'
     handleShowChangeLog()
   })
-  const rUpdateError = onUpdateError(() => {
+  const rUpdateError = onUpdateError(({ params }) => {
     clearUpdateTimeout()
+    versionInfo.errorCode = params == 'portable_build' ? params : null
     // versionInfo.status = 'error'
     void nextTick(() => {
       showUpdateModal('error')

@@ -1,5 +1,12 @@
 # lx-music-desktop change log
 
+## [2.12.39] - 2026-09-03
+
+### Fixed
+
+- Fixed Windows Setup updates targeting a stale installation directory when multiple copies or shortcuts existed.
+- Disabled automatic updates for portable builds and pointed manual downloads to the LX Flow Music release page.
+
 ## [2.12.38] - 2026-09-03
 
 ### Fixed

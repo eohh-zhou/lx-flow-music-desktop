@@ -85,6 +85,9 @@ export default {
 .list {
   font-size: 12px;
   position: fixed;
+  box-sizing: border-box;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
   opacity: 0;
   transform: scale(0);
   transform-origin: 0 0 0;
@@ -93,8 +96,19 @@ export default {
   background-color: var(--color-content-background);
   box-shadow: 0 1px 8px 0 rgba(0,0,0,.2);
   z-index: 1000;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   // will-change: transform;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background-color: color-mix(in srgb, var(--color-500) 35%, transparent);
+  }
 }
 .listItem {
   cursor: pointer;

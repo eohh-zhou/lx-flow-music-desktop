@@ -1,5 +1,12 @@
 # lx-music-desktop change log
 
+## [2.12.38] - 2026-09-03
+
+### Fixed
+
+- Fixed local-playlist context menus being clipped or difficult to click on smaller windows and different display scaling settings.
+- Hid menu actions that are unavailable for the selected playlist and added viewport-aware scrolling and repositioning for the remaining actions.
+
 ## [2.12.37] - 2026-09-03
 
 ### Fixed

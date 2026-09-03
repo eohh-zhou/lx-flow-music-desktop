@@ -41,56 +41,67 @@ export default ({
         name: t('lists__rename'),
         action: 'rename',
         disabled: !menuControl.rename,
+        hide: !menuControl.rename,
       },
       {
         name: t('lists__sort_list'),
         action: 'sort',
         disabled: !menuControl.sort,
+        hide: !menuControl.sort,
       },
       {
         name: t('lists__duplicate'),
         action: 'duplicate',
         disabled: !menuControl.duplicate,
+        hide: !menuControl.duplicate,
       },
       {
         name: t('lists__select_local_file'),
         action: 'local_file',
         disabled: !menuControl.local_file,
+        hide: !menuControl.local_file,
       },
       {
         name: t('lists__sync'),
         action: 'sync',
         disabled: !menuControl.sync,
+        hide: !menuControl.sync,
       },
       {
         name: t('lists__sync_to_qq_music'),
         action: 'qq_sync',
         disabled: !menuControl.qq_sync,
+        hide: !menuControl.qq_sync,
       },
       {
         name: t('lists__sync_to_netease_music'),
         action: 'netease_sync',
         disabled: !menuControl.netease_sync,
+        hide: !menuControl.netease_sync,
       },
       {
         name: t('lists__source_detail'),
         action: 'sourceDetail',
         disabled: !menuControl.sourceDetail,
+        hide: !menuControl.sourceDetail,
       },
       {
         name: t('lists__import'),
         action: 'import',
         disabled: !menuControl.import,
+        hide: !menuControl.import,
       },
       {
         name: t('lists__export'),
         action: 'export',
         disabled: !menuControl.export,
+        hide: !menuControl.export,
       },
       {
         name: t('lists__remove'),
         action: 'remove',
         disabled: !menuControl.remove,
+        hide: !menuControl.remove,
       },
     ]
   })

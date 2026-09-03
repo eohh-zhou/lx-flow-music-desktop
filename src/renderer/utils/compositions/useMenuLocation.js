@@ -28,6 +28,9 @@ export default ({ visible, location, onHide }) => {
     menuStyles.transitionProperty = 'none'
     menuStyles.transform = `scale(1) translate(${handleGetOffsetXY(location.value.x, location.value.y)})`
     menuStyles.pointerEvents = 'auto'
+    // Re-measure after the menu has entered the DOM. This covers font loading,
+    // scrollbar insertion, and window scaling differences between machines.
+    window.requestAnimationFrame(updateMenuOffset)
   }
   const handleHide = () => {
     menuStyles.opacity = 0

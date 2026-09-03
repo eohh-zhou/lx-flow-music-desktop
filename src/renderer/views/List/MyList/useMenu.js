@@ -129,8 +129,8 @@ export default ({
     // menuControl.sort = !!getList(this.getTargetListInfo(index)?.id).length
     menuControl.sourceDetail = assertSupportDetail(source, index)
 
-    menuLocation.x = event.pageX
-    menuLocation.y = event.pageY
+    menuLocation.x = event.clientX
+    menuLocation.y = event.clientY
 
     if (isShowMenu.value) return
     emit('show-menu')

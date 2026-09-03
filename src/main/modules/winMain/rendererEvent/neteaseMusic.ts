@@ -152,7 +152,9 @@ const openNeteaseLogin = async(parent: BrowserWindow | null) => {
       session: authSession,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      // Electron enables the renderer sandbox by default when Node is disabled.
+      // This login page cannot start it on Windows (renderer exit code 49).
+      sandbox: false,
       webSecurity: true,
       enableWebSQL: false,
       spellcheck: false,

@@ -16,6 +16,7 @@ const QQ_MUSIC_PLAYLIST_DETAIL_URL = 'https://c.y.qq.com/qzone/fcg-bin/fcg_ucc_g
 const COOKIE_KEY = 'cookie'
 const QQ_MUSIC_LOGIN_PARTITION = 'qq-music-login'
 const QQ_MUSIC_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile'
+const QQ_MUSIC_LOGIN_POLL_INTERVAL = 1000
 const PLAYLIST_SYNC_PREVIEW_TTL = 10 * 60 * 1000
 const PLAYLIST_SYNC_MAX_TRACKS = 1000
 const PLAYLIST_SYNC_ADD_BATCH_SIZE = 20
@@ -45,6 +46,8 @@ let loginPromise: Promise<LX.QQMusic.LoginResult> | null = null
 let resolveLogin: ((result: LX.QQMusic.LoginResult) => void) | null = null
 let loginCookieChanged: (() => void) | null = null
 let loginDownloadListener: ((event: Electron.Event) => void) | null = null
+let loginPollTimer: NodeJS.Timeout | null = null
+const loginChildWindows = new Set<BrowserWindow>()
 
 const getQQMusicStore = () => getStore(STORE_NAMES.QQ_MUSIC)
 
@@ -61,6 +64,22 @@ const normalizeUin = (value: string | undefined) => {
   if (!value) return '0'
   const normalized = value.replace(/^o/, '').replace(/^0+(?=\d)/, '')
   return /^\d+$/.test(normalized) ? normalized : '0'
+}
+
+const getFirstCookieValue = (cookies: Map<string, string>, names: string[]) => {
+  for (const name of names) {
+    const value = cookies.get(name)
+    if (value) return value
+  }
+  return ''
+}
+
+const getQQMusicUin = (cookies: Map<string, string>) => {
+  for (const name of ['uin', 'p_uin', 'wxuin']) {
+    const uin = normalizeUin(cookies.get(name))
+    if (uin != '0') return uin
+  }
+  return '0'
 }
 
 const getGtk = (skey: string) => {
@@ -104,22 +123,31 @@ const getQQMusicCookieHeader = async() => {
     const previous = cookieMap.get(cookie.name)
     const isYQQCookie = (cookie.domain ?? '').replace(/^\./, '').toLowerCase() == 'y.qq.com'
     const previousIsYQQCookie = (previous?.domain ?? '').replace(/^\./, '').toLowerCase() == 'y.qq.com'
-    if (!previous || (isYQQCookie && !previousIsYQQCookie)) cookieMap.set(cookie.name, cookie)
+    const isIdentityCookie = ['uin', 'p_uin', 'wxuin'].includes(cookie.name)
+    const currentUin = isIdentityCookie ? normalizeUin(cookie.value) : '0'
+    const previousUin = isIdentityCookie ? normalizeUin(previous?.value) : '0'
+    const shouldPreferCurrent = !previous ||
+      (isIdentityCookie && currentUin != '0' && previousUin == '0') ||
+      (isYQQCookie && !previousIsYQQCookie && (!isIdentityCookie || currentUin == previousUin))
+    if (shouldPreferCurrent) cookieMap.set(cookie.name, cookie)
   }
   return Array.from(cookieMap.values()).map(cookie => `${cookie.name}=${cookie.value}`).join('; ')
 }
 
 const hasQQMusicLoginCookie = (cookie: string) => {
   const cookies = parseCookies(cookie)
-  const uin = normalizeUin(cookies.get('uin') ?? cookies.get('p_uin') ?? cookies.get('wxuin'))
-  const authst = cookies.get('qqmusic_key') ?? cookies.get('qm_keyst')
+  const uin = getQQMusicUin(cookies)
+  const authst = getFirstCookieValue(cookies, ['qqmusic_key', 'qm_keyst'])
   return uin != '0' && !!authst
 }
 
 const isQQMusicLoginUrl = (url: string) => {
   try {
     const target = new URL(url)
-    return target.protocol == 'https:' && isQQMusicCookieDomain(target.hostname)
+    // QQ Music's WeChat QR flow opens the official OAuth page before it
+    // redirects back to a QQ domain that writes the account cookies.
+    const isWeChatOAuth = target.hostname.toLowerCase() == 'open.weixin.qq.com'
+    return target.protocol == 'https:' && (isQQMusicCookieDomain(target.hostname) || isWeChatOAuth)
   } catch {
     return false
   }
@@ -134,12 +162,18 @@ const finishQQMusicLogin = (configured: boolean) => {
   const authSession = getQQMusicLoginSession()
   if (loginCookieChanged) authSession.cookies.removeListener('changed', loginCookieChanged)
   if (loginDownloadListener) authSession.removeListener('will-download', loginDownloadListener)
+  if (loginPollTimer) clearInterval(loginPollTimer)
+  loginPollTimer = null
   loginWindow = null
   loginPromise = null
   resolveLogin = null
   loginCookieChanged = null
   loginDownloadListener = null
   if (currentWindow && !currentWindow.isDestroyed()) currentWindow.close()
+  for (const childWindow of loginChildWindows) {
+    if (!childWindow.isDestroyed()) childWindow.close()
+  }
+  loginChildWindows.clear()
   void clearQQMusicLoginSession()
   resolve?.({ configured: configured || !!getCookie() })
 }
@@ -176,7 +210,9 @@ const openQQMusicLogin = async(parent: BrowserWindow | null) => {
       session: authSession,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      // Electron enables the renderer sandbox by default when Node is disabled.
+      // This login page cannot start it on Windows (renderer exit code 49).
+      sandbox: false,
       webSecurity: true,
       enableWebSQL: false,
       spellcheck: false,
@@ -192,25 +228,42 @@ const openQQMusicLogin = async(parent: BrowserWindow | null) => {
   authSession.cookies.on('changed', loginCookieChanged)
   authSession.on('will-download', loginDownloadListener)
 
-  browserWindow.webContents.setWindowOpenHandler(({ url }) => ({ action: isQQMusicLoginUrl(url) ? 'allow' : 'deny' }))
-  browserWindow.webContents.on('will-navigate', (event, url) => {
-    if (!isQQMusicLoginUrl(url)) event.preventDefault()
+  const configureLoginWindow = (targetWindow: BrowserWindow) => {
+    targetWindow.webContents.setWindowOpenHandler(({ url }) => ({ action: isQQMusicLoginUrl(url) ? 'allow' : 'deny' }))
+    targetWindow.webContents.on('will-navigate', (event, url) => {
+      if (!isQQMusicLoginUrl(url)) event.preventDefault()
+    })
+    targetWindow.webContents.on('will-redirect', (event, url) => {
+      if (!isQQMusicLoginUrl(url)) event.preventDefault()
+    })
+    targetWindow.webContents.on('did-navigate', () => {
+      void syncCookie()
+    })
+    targetWindow.webContents.on('did-navigate-in-page', () => {
+      void syncCookie()
+    })
+    targetWindow.webContents.on('did-finish-load', () => {
+      void syncCookie()
+    })
+    targetWindow.on('closed', () => {
+      loginChildWindows.delete(targetWindow)
+    })
+  }
+  configureLoginWindow(browserWindow)
+  browserWindow.webContents.on('did-create-window', childWindow => {
+    loginChildWindows.add(childWindow)
+    configureLoginWindow(childWindow)
   })
-  browserWindow.webContents.on('will-redirect', (event, url) => {
-    if (!isQQMusicLoginUrl(url)) event.preventDefault()
-  })
-  browserWindow.webContents.on('did-navigate', () => {
+  loginPollTimer = setInterval(() => {
     void syncCookie()
-  })
-  browserWindow.webContents.on('did-navigate-in-page', () => {
-    void syncCookie()
-  })
+  }, QQ_MUSIC_LOGIN_POLL_INTERVAL)
   browserWindow.on('closed', () => {
     if (loginWindow === browserWindow) finishQQMusicLogin(false)
   })
 
   try {
     await browserWindow.loadURL(QQ_MUSIC_LOGIN_URL)
+    void syncCookie()
   } catch {
     finishQQMusicLogin(false)
   }
@@ -226,7 +279,7 @@ const getRequiredCookie = () => {
 const buildComm = (cookie: string, personalized = false) => {
   const cookies = parseCookies(cookie)
   const skey = cookies.get('p_skey') ?? cookies.get('skey') ?? ''
-  const authst = cookies.get('qqmusic_key') ?? cookies.get('qm_keyst') ?? ''
+  const authst = getFirstCookieValue(cookies, ['qqmusic_key', 'qm_keyst'])
   const loginType = cookies.get('tmeLoginType')
   const comm: Record<string, any> = {
     ct: personalized && authst ? 19 : 24,
@@ -237,7 +290,7 @@ const buildComm = (cookie: string, personalized = false) => {
     notice: 0,
     platform: 'yqq.json',
     needNewCode: 1,
-    uin: normalizeUin(cookies.get('uin') ?? cookies.get('p_uin') ?? cookies.get('wxuin')),
+    uin: getQQMusicUin(cookies),
   }
   if (skey) comm.g_tk_new_20200303 = getGtk(skey)
   if (authst) comm.authst = authst
@@ -275,8 +328,8 @@ const requestMusicu = async(requestBody: Record<string, any>, cookie: string, pe
 
 const buildMobileComm = (cookie: string) => {
   const cookies = parseCookies(cookie)
-  const uin = normalizeUin(cookies.get('uin') ?? cookies.get('p_uin') ?? cookies.get('wxuin'))
-  const authst = cookies.get('qm_keyst') ?? cookies.get('qqmusic_key') ?? cookies.get('p_skey') ?? ''
+  const uin = getQQMusicUin(cookies)
+  const authst = getFirstCookieValue(cookies, ['qm_keyst', 'qqmusic_key', 'p_skey'])
   const guid = '2796982635'
   return {
     ct: 11,
@@ -328,7 +381,7 @@ const requestMobileMusicu = async(requestBody: Record<string, any>, cookie: stri
 
 const getQQMusicWebAuth = (cookie: string) => {
   const cookies = parseCookies(cookie)
-  const uin = normalizeUin(cookies.get('uin') ?? cookies.get('p_uin') ?? cookies.get('wxuin'))
+  const uin = getQQMusicUin(cookies)
   const skey = cookies.get('p_skey') ?? cookies.get('skey') ?? ''
   return { uin, gtk: skey ? getGtk(skey) : 5381 }
 }

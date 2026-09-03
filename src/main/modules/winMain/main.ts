@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, session } from 'electron'
+import { BrowserWindow, dialog, screen, session } from 'electron'
 import path from 'node:path'
 import { createTaskBarButtons, getWindowSizeInfo } from './utils'
 import { getPlatform, isLinux, isWin } from '@common/utils'
@@ -24,11 +24,34 @@ const handleWindowResize = () => {
   saveBoundsTimer = setTimeout(saveWindowBounds, 600)
 }
 
+const ensureWindowInDisplay = () => {
+  if (!browserWindow || browserWindow.isDestroyed() || browserWindow.isFullScreen()) return
+
+  const bounds = browserWindow.getBounds()
+  const displayHasWindow = screen.getAllDisplays().some(({ workArea }) => {
+    const visibleWidth = Math.min(bounds.x + bounds.width, workArea.x + workArea.width) - Math.max(bounds.x, workArea.x)
+    const visibleHeight = Math.min(bounds.y + bounds.height, workArea.y + workArea.height) - Math.max(bounds.y, workArea.y)
+    return visibleWidth >= Math.min(240, bounds.width / 2) && visibleHeight >= Math.min(160, bounds.height / 2)
+  })
+  if (displayHasWindow) return
+
+  const { workArea } = screen.getPrimaryDisplay()
+  const width = Math.min(bounds.width, workArea.width)
+  const height = Math.min(bounds.height, workArea.height)
+  browserWindow.setBounds({
+    x: workArea.x + Math.round((workArea.width - width) / 2),
+    y: workArea.y + Math.round((workArea.height - height) / 2),
+    width,
+    height,
+  })
+}
+
 const winEvent = () => {
   if (!browserWindow) return
 
   const revealMainWindow = () => {
     if (isCmdParamEnabled(global.envParams.cmdParams.hidden) || !browserWindow || browserWindow.isDestroyed()) return
+    ensureWindowInDisplay()
     showWindow()
     setThumbarButtons()
   }
@@ -69,6 +92,13 @@ const winEvent = () => {
     setTimeout(revealMainWindow, 500)
     setTimeout(revealMainWindow, 1500)
     global.lx.event_app.main_window_ready_to_show()
+  })
+
+  // `ready-to-show` is not emitted when the renderer fails to paint its first
+  // frame. The window still exists in that case, so reveal it after the page
+  // load and let the renderer display its own error state if necessary.
+  browserWindow.webContents.once('did-finish-load', () => {
+    setTimeout(revealMainWindow, 100)
   })
 
   browserWindow.on('show', () => {
@@ -118,6 +148,7 @@ export const createWindow = () => {
     maximizable: true,
     fullscreenable: true,
     roundedCorners: true,
+    center: true,
     show: !isCmdParamEnabled(global.envParams.cmdParams.hidden),
     webPreferences: {
       session: ses,

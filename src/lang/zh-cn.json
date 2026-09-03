@@ -332,7 +332,7 @@
   "setting__backup_all_export_desc": "选择备份保存位置",
   "setting__backup_all_import": "导入",
   "setting__backup_all_import_desc": "选择备份文件",
-  "setting__backup_all_import_confirm": "导入所有数据会覆盖当前歌单和大部分设置，界面可能随备份文件发生变化，是否继续？",
+  "setting__backup_all_import_confirm": "导入所有数据会覆盖当前歌单并恢复自定义音源，当前界面设置保持不变，是否继续？",
   "setting__backup_error": "备份操作失败，请检查文件是否有效或保存位置是否有写入权限，然后重试。",
   "setting__backup_other": "其他备份格式（目前不支持恢复此类备份文件）",
   "setting__backup_other_export_dir": "选择文件保存位置",

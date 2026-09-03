@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { cpSync, existsSync, mkdirSync, renameSync } from 'fs'
-import { app, shell, screen, nativeTheme, dialog } from 'electron'
+import { app, shell, screen, nativeTheme, dialog, session } from 'electron'
 import { URL_SCHEME_RXP } from '@common/constants'
 import { getProxy, getTheme, initHotKey, initSetting, isCmdParamEnabled, parseEnvParams } from './utils'
 import { navigationUrlWhiteList } from '@common/config'
@@ -80,7 +80,7 @@ export const initGlobalData = () => {
       : path.join(__dirname, 'static')
 }
 
-export const initSingleInstanceHandle = () => {
+export const initSingleInstanceHandle = (startApp?: () => void) => {
   // 单例应用程序
   if (!app.requestSingleInstanceLock()) {
     app.quit()
@@ -98,9 +98,7 @@ export const initSingleInstanceHandle = () => {
       if (!isCmdParamEnabled(envParams.cmdParams.hidden)) {
         showMainWindow()
       }
-    } else {
-      app.quit()
-    }
+    } else startApp?.()
   })
 }
 
@@ -184,6 +182,10 @@ export const registerDeeplink = (startApp: () => void) => {
 export const listenerAppEvent = (startApp: () => void) => {
   app.on('web-contents-created', (event, contents) => {
     contents.on('will-navigate', (event, navigationUrl) => {
+      // Login windows have their own strict URL guards and must be able to follow
+      // the provider's OAuth redirects in production builds.
+      const isAuthSession = contents.session === session.fromPartition('qq-music-login') || contents.session === session.fromPartition('netease-music-login')
+      if (isAuthSession) return
       if (process.env.NODE_ENV !== 'production') {
         console.log('navigation to url:', navigationUrl.length > 130 ? navigationUrl.substring(0, 130) + '...' : navigationUrl)
         return

@@ -8,19 +8,19 @@ const defaultSetting: LX.AppSetting = {
   version: '2.1.0',
 
   'common.windowSizeId': 3,
-  'common.windowBounds': null,
-  'common.fontSize': 16,
+  'common.windowBounds': '1103,740',
+  'common.fontSize': 19,
   'common.startInFullscreen': false,
-  'common.langId': null,
+  'common.langId': 'zh-cn',
   'common.apiSource': 'temp',
-  'common.sourceNameType': 'alias',
+  'common.sourceNameType': 'real',
   'common.font': '',
   'common.isShowAnimation': true,
   'common.randomAnimate': true,
   'common.isAgreePact': false,
-  'common.controlBtnPosition': isMac ? 'left' : 'right',
-  'common.playBarProgressStyle': 'mini',
-  'common.transparentWindow': !isMac,
+  'common.controlBtnPosition': 'right',
+  'common.playBarProgressStyle': 'middle',
+  'common.transparentWindow': true,
   'common.tryAutoUpdate': true,
   'common.showChangeLog': true,
   'qqMusic.enabled': true,
@@ -106,11 +106,11 @@ const defaultSetting: LX.AppSetting = {
   'desktopLyric.style.isFontWeightLine': true,
   'desktopLyric.style.isFontWeightExtended': true,
 
-  'list.isClickPlayList': false,
+  'list.isClickPlayList': true,
   'list.isShowSource': true,
   'list.isSaveScrollLocation': true,
   'list.addMusicLocationType': 'top',
-  'list.actionButtonsVisible': false,
+  'list.actionButtonsVisible': true,
 
   'download.enable': false,
   'download.isSavePathGroupByListName': false,
@@ -130,8 +130,8 @@ const defaultSetting: LX.AppSetting = {
   'download.isEmbedLyricR': false,
   'download.isUseOtherSource': false,
 
-  'search.isShowHotSearch': false,
-  'search.isShowHistorySearch': false,
+  'search.isShowHotSearch': true,
+  'search.isShowHistorySearch': true,
   'search.isFocusSearchBox': false,
 
   'network.proxy.enable': false,
@@ -160,13 +160,6 @@ const defaultSetting: LX.AppSetting = {
   'odc.isAutoClearSearchInput': false,
   'odc.isAutoClearSearchList': false,
 
-}
-
-
-// 使用新年皮肤
-if (new Date().getMonth() < 2) {
-  defaultSetting['theme.id'] = 'happy_new_year'
-  defaultSetting['desktopLyric.style.lyricPlayedColor'] = 'rgba(255, 57, 71, 1)'
 }
 
 

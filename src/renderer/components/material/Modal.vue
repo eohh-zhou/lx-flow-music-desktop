@@ -185,7 +185,9 @@ export default {
         this.modalCount = ++modalCount
         this.showModal = true
         void nextTick(() => {
+          if (!this.show || !this.$refs.dom_container) return
           const node = this.$refs.dom_container.parentNode
+          if (!node) return
           if (!node.classList.contains('show-modal')) {
             node.classList.add('show-modal')
             this.isAddedClass = true

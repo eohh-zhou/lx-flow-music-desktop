@@ -55,7 +55,6 @@ export default {
 
     const onHide = () => {
       emit('update:modelValue', false)
-      menuClick(null)
     }
 
     const { dom_menu, menuStyles } = useMenuLocation({
@@ -85,26 +84,29 @@ export default {
 
 .list {
   font-size: 12px;
-  position: absolute;
+  position: fixed;
   opacity: 0;
   transform: scale(0);
   transform-origin: 0 0 0;
-  transition: .14s ease;
-  transition-property: transform, opacity;
+  transition: none;
   border-radius: @radius-border;
   background-color: var(--color-content-background);
   box-shadow: 0 1px 8px 0 rgba(0,0,0,.2);
-  z-index: 10;
+  z-index: 1000;
   overflow: hidden;
   // will-change: transform;
 }
 .listItem {
   cursor: pointer;
   min-width: 96px;
-  line-height: 34px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   // color: var(--color-button-font);
-  padding: 0 10px;
+  padding: 7px 12px;
   text-align: center;
+  line-height: 1.35;
   outline: none;
   transition: @transition-normal;
   transition-property: background-color, opacity;

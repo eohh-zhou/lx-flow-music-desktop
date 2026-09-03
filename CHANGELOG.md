@@ -1,5 +1,14 @@
 # lx-music-desktop change log
 
+## [2.12.37] - 2026-09-03
+
+### Fixed
+
+- Fixed playlist sync modals in the sidebar failing to render.
+- Fixed QQ Music and NetEase Cloud Music playlist sync actions doing nothing when clicked.
+- Fixed playlist context-menu positioning and click targets.
+- Retained the preceding import, backup, and music-service login fixes.
+
 ## [2.12.36] - 2026-09-02
 
 ### Fixed

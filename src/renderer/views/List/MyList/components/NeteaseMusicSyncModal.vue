@@ -1,6 +1,6 @@
 <template>
   <material-modal
-    :show="visible" teleport="#view" width="560px" max-width="86%" max-height="82%"
+    :show="visible" :teleport="teleport" width="560px" max-width="86%" max-height="82%"
     :bg-close="!busy" :close-btn="!busy" @close="closeModal"
   >
     <main class="scroll" :class="$style.main">
@@ -98,6 +98,10 @@ export default {
     listInfo: {
       type: Object,
       required: true,
+    },
+    teleport: {
+      type: String,
+      default: '#view',
     },
   },
   emits: ['update:visible'],

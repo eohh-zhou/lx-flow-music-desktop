@@ -2,19 +2,19 @@
 dt#backup {{ $t('setting__backup') }}
 dd
   h3#backup_part {{ $t('setting__backup_part') }}
-  div
+  div(:class="$style.backupActions")
     base-btn.btn.gap-left(min @click="handleImportPlayList") {{ $t('setting__backup_part_import_list') }}
     base-btn.btn.gap-left(min @click="handleExportPlayList") {{ $t('setting__backup_part_export_list') }}
     base-btn.btn.gap-left(min @click="handleImportSetting") {{ $t('setting__backup_part_import_setting') }}
     base-btn.btn.gap-left(min @click="handleExportSetting") {{ $t('setting__backup_part_export_setting') }}
 dd
   h3#backup_all {{ $t('setting__backup_all') }}
-  div
+  div(:class="$style.backupActions")
     base-btn.btn.gap-left(min @click="handleImportAllData") {{ $t('setting__backup_all_import') }}
     base-btn.btn.gap-left(min @click="handleExportAllData") {{ $t('setting__backup_all_export') }}
 dd
   h3#backup_other {{ $t('setting__backup_other') }}
-  div
+  div(:class="$style.backupActions")
     base-btn.btn.gap-left(min @click="handleExportPlayListToText") {{ $t('setting__backup_other_export_list_text') }}
     base-btn.btn.gap-left(min @click="handleExportPlayListToCsv") {{ $t('setting__backup_other_export_list_csv') }}
 </template>
@@ -190,17 +190,16 @@ export default {
           return
         }
 
-        const apiIdMap = await restoreUserApis(allData.userApis)
+        // Full backups restore data only. UI and other personal settings stay local.
+        await restoreUserApis(allData.userApis)
         switch (allData.type) {
           case 'allData':
             // 兼容0.6.2及以前版本的列表数据
             if (allData.defaultList) await overwriteListMusics({ listId: LIST_IDS.DEFAULT, musicInfos: filterMusicList(allData.defaultList.list.map(m => toNewMusicInfo(m))) })
             else await importOldListData(allData.playList)
-            importOldSettingData(allData.setting, apiIdMap)
             break
           case 'allData_v2':
             await importNewListData(allData.playList)
-            importNewSettingData(allData.setting, apiIdMap)
             break
           default: { showImportTip(allData.type) }
         }
@@ -461,6 +460,22 @@ export default {
   },
 }
 </script>
+
+<style lang="less" module>
+@import '@renderer/assets/styles/layout.less';
+
+.backupActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+:global(.backupActions .btn) {
+  min-height: 34px;
+  padding: 7px 12px;
+  line-height: 1.3;
+}
+</style>
 
 <style lang="less" module>
 .savePath {

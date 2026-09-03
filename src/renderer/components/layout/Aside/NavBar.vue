@@ -21,11 +21,10 @@
                   </svg>
                 </button>
               </div>
-              <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
-                <ul
-                  v-show="expandedGroups[item.name]" :ref="item.name == 'List' ? setLocalListRef : undefined"
-                  :class="[$style.subList, { [$style.sortable]: item.name == 'List' && isModDown }]"
-                >
+              <ul
+                v-show="expandedGroups[item.name]" :ref="item.name == 'List' ? setLocalListRef : undefined"
+                :class="[$style.subList, { [$style.sortable]: item.name == 'List' && isModDown }]"
+              >
                   <li
                     v-for="child in item.children" :key="child.key"
                     :class="[$style.subItem, { 'default-list': child.isDefault }, { 'user-list': child.isUser }, { [$style.clicked]: rightClickItemIndex == child.menuIndex }, { [$style.fetching]: child.listId && fetchingListStatus[child.listId] }]"
@@ -45,16 +44,13 @@
                       :placeholder="child.tips" @keyup.enter="handleSaveListName" @blur="handleSaveListName"
                     />
                   </li>
-                  <transition enter-active-class="animated-fast slideInLeft" leave-active-class="animated-fast fadeOut" @after-enter="focusNewListInput">
-                    <li v-if="item.name == 'List' && isShowNewList" :class="[$style.subItem, $style.newListItem]">
-                      <base-input
-                        ref="dom_listsNewInput" :class="$style.newListInput" type="text" :placeholder="$t('lists__new_list_input')"
-                        @keyup.enter="handleCreateList" @blur="handleCreateList"
-                      />
-                    </li>
-                  </transition>
+                  <li v-if="item.name == 'List' && isShowNewList" :class="[$style.subItem, $style.newListItem]">
+                    <base-input
+                      ref="dom_listsNewInput" :class="$style.newListInput" type="text" :placeholder="$t('lists__new_list_input')"
+                      @keyup.enter="handleCreateList" @blur="handleCreateList"
+                    />
+                  </li>
                 </ul>
-              </transition>
             </template>
             <router-link v-else :class="[$style.link, {[$style.active]: isMenuActive(item.name)}]" role="tab" :aria-selected="isMenuActive(item.name)" :to="item.to" :aria-label="item.tips" @click="handleNavClick(item)">
               <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="item.iconSize" :height="item.size" :width="item.size" space="preserve">
@@ -70,8 +66,8 @@
     <DuplicateMusicModal v-model:visible="isShowDuplicateMusicModal" :list-info="duplicateListInfo" />
     <ListSortModal v-model:visible="isShowListSortModal" :list-info="sortListInfo" />
     <ListUpdateModal v-model:visible="isShowListUpdateModal" />
-    <QQMusicSyncModal v-model:visible="isShowQQMusicSyncModal" :list-info="qqMusicSyncListInfo" />
-    <NeteaseMusicSyncModal v-model:visible="isShowNeteaseMusicSyncModal" :list-info="neteaseMusicSyncListInfo" />
+    <QQMusicSyncModal v-model:visible="isShowQQMusicSyncModal" :list-info="qqMusicSyncListInfo" teleport="#root" />
+    <NeteaseMusicSyncModal v-model:visible="isShowNeteaseMusicSyncModal" :list-info="neteaseMusicSyncListInfo" teleport="#root" />
   </div>
 </template>
 
@@ -203,7 +199,20 @@ export default {
     } = useEditList({ dom_lists_list })
 
     const focusNewListInput = () => {
-      void nextTick(() => dom_listsNewInput.value?.focus())
+      void nextTick(() => {
+        // Vue may expose a component ref as an array when it is created inside
+        // a transition. Resolve the last item before calling the public focus
+        // method so this remains valid across Vue/compiler versions.
+        const refValue = dom_listsNewInput.value
+        const input = Array.isArray(refValue) ? refValue.at(-1) : refValue
+        if (input instanceof HTMLElement) {
+          input.focus()
+          return
+        }
+        if (input && typeof (input as { focus?: unknown }).focus == 'function') {
+          (input as { focus: () => void }).focus()
+        }
+      })
     }
     const startCreateList = () => {
       expandedGroups.List = true
@@ -216,13 +225,17 @@ export default {
     const qqMusicSyncListInfo = ref<LX.List.MyListInfo>(defaultList)
     const handleQQMusicSync = (listInfo: LX.List.MyListInfo) => {
       qqMusicSyncListInfo.value = listInfo
-      isShowQQMusicSyncModal.value = true
+      void nextTick(() => {
+        isShowQQMusicSyncModal.value = true
+      })
     }
     const isShowNeteaseMusicSyncModal = ref(false)
     const neteaseMusicSyncListInfo = ref<LX.List.MyListInfo>(defaultList)
     const handleNeteaseMusicSync = (listInfo: LX.List.MyListInfo) => {
       neteaseMusicSyncListInfo.value = listInfo
-      isShowNeteaseMusicSyncModal.value = true
+      void nextTick(() => {
+        isShowNeteaseMusicSyncModal.value = true
+      })
     }
 
     const handleOpenSourceDetailPage = async(listInfo: LX.List.MyListInfo) => {
@@ -301,8 +314,8 @@ export default {
       event.stopPropagation()
       localListMenuTarget.value = 'group'
       rightClickItemIndex.value = -10
-      localListMenuLocation.x = event.pageX
-      localListMenuLocation.y = event.pageY
+      localListMenuLocation.x = event.clientX
+      localListMenuLocation.y = event.clientY
       if (isShowLocalListMenu.value) {
         isShowLocalListMenu.value = false
       }
@@ -325,21 +338,39 @@ export default {
     const handleLocalListMenuClick = (action?: { action: string }) => {
       if (localListMenuTarget.value == 'group') {
         isShowLocalListMenu.value = false
-        if (action?.action == 'new_list') startCreateList()
-        else if (action?.action == 'update_lists') isShowListUpdateModal.value = true
+        if (action?.action == 'new_list') {
+          void nextTick(startCreateList)
+        } else if (action?.action == 'update_lists') {
+          void nextTick(() => {
+            isShowListUpdateModal.value = true
+          })
+        }
         return
       }
       const index = rightClickItemIndex.value
-      rightClickItemIndex.value = -10
       if (index < -2) {
         isShowLocalListMenu.value = false
+        void nextTick(() => {
+          if (!isShowLocalListMenu.value) rightClickItemIndex.value = -10
+        })
         return
       }
-      localListMenuClick(action, index)
+      // Finish the menu/selection patch before opening a modal or native dialog.
+      // Running both updates in the same Vue flush can leave a Teleport anchor
+      // without a sibling and abort the action before its handler runs.
+      isShowLocalListMenu.value = false
+      void nextTick(() => {
+        if (!isShowLocalListMenu.value) rightClickItemIndex.value = -10
+        localListMenuClick(action, index)
+      })
     }
 
     watch(isShowLocalListMenu, (isVisible) => {
-      if (!isVisible) rightClickItemIndex.value = -10
+      if (!isVisible) {
+        void nextTick(() => {
+          if (!isShowLocalListMenu.value) rightClickItemIndex.value = -10
+        })
+      }
     })
 
     const { isModDown } = useDarg({

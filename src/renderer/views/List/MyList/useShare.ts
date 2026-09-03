@@ -11,6 +11,13 @@ import { dialog } from '@renderer/plugins/Dialog'
 export default () => {
   const t = useI18n()
   const showImportTip = useImportTip()
+  const showShareError = (error: unknown) => {
+    console.error(error)
+    void dialog({
+      message: t('setting__backup_error'),
+      confirmButtonText: t('ok'),
+    })
+  }
 
   const handleExportList = (listInfo: LX.List.MyListInfo) => {
     if (!listInfo) return
@@ -19,10 +26,14 @@ export default () => {
       defaultPath: `lx_list_part_${filterFileName(listInfo.name)}.lxmc`,
     }).then(async result => {
       if (result.canceled || !result.filePath) return
-      void window.lx.worker.main.saveLxConfigFile(result.filePath, {
-        type: 'playListPart_v2',
-        data: { ...toRaw(listInfo), list: toRaw(await getListMusics(listInfo.id)) },
-      })
+      try {
+        await window.lx.worker.main.saveLxConfigFile(result.filePath, {
+          type: 'playListPart_v2',
+          data: { ...toRaw(listInfo), list: toRaw(await getListMusics(listInfo.id)) },
+        })
+      } catch (error) {
+        showShareError(error)
+      }
     })
   }
   const handleImportList = (listInfo: LX.List.MyListInfo, index: number) => {
@@ -41,16 +52,29 @@ export default () => {
       try {
         configData = await window.lx.worker.main.readLxConfigFile(filePath)
       } catch (error) {
+        showShareError(error)
+        return
+      }
+      if (!configData || typeof configData != 'object') {
+        showImportTip()
         return
       }
       let listData: LX.ConfigFile.MyListInfoPart['data']
       switch (configData.type) {
         case 'playListPart':
           listData = configData.data
+          if (!listData || !Array.isArray(listData.list)) {
+            showImportTip(configData.type)
+            return
+          }
           listData.list = filterMusicList(listData.list.map(m => toNewMusicInfo(m)))
           break
         case 'playListPart_v2':
           listData = configData.data
+          if (!listData || !Array.isArray(listData.list)) {
+            showImportTip(configData.type)
+            return
+          }
           listData.list = filterMusicList(listData.list).map(m => fixNewMusicInfoQuality(m))
           break
         default:

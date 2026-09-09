@@ -205,9 +205,8 @@ export const userListsUpdatePosition = (position: number, ids: string[]) => {
 }
 
 export const listMusicOverwrite = (listId: string, musicInfos: LX.Music.MusicInfo[]): string[] => {
-  const isExist = allMusicList.has(listId)
   overwriteMusicList(listId, musicInfos)
-  return isExist || listId == loveList.id ? [listId] : []
+  return [listId]
 }
 
 export const listMusicClear = (ids: string[]): string[] => {
@@ -223,7 +222,7 @@ export const listMusicClear = (ids: string[]): string[] => {
 
 export const listMusicAdd = (id: string, musicInfos: LX.Music.MusicInfo[], addMusicLocationType: LX.AddMusicLocationType): string[] => {
   const targetList = allMusicList.get(id)
-  if (!targetList) return id == loveList.id ? [id] : []
+  if (!targetList) return [id]
 
   const listSet = new Set<string>()
   for (const item of targetList) listSet.add(item.id)

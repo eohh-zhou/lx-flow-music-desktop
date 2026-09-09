@@ -2,7 +2,7 @@ import { toRaw } from '@common/utils/vueTools'
 import { openSaveDir, showSelectDialog } from '@renderer/utils/ipc'
 import { useI18n } from '@renderer/plugins/i18n'
 import { filterFileName, toNewMusicInfo, fixNewMusicInfoQuality, filterMusicList } from '@renderer/utils'
-import { getListMusics, updateUserList, addListMusics, overwriteListMusics, createUserList } from '@renderer/store/list/action'
+import { getListMusics, updateUserList, overwriteListMusics, createUserList } from '@renderer/store/list/action'
 import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import useImportTip from '@renderer/utils/compositions/useImportTip'
 import { dialog } from '@renderer/plugins/Dialog'
@@ -115,14 +115,14 @@ export default () => {
         }
         listData.id += `__${Date.now()}`
       }
-      void createUserList({
+      await createUserList({
         position: index,
         name: listData.name,
         id: listData.id,
         source: (listData as LX.List.UserListInfo).source,
         sourceListId: (listData as LX.List.UserListInfo).sourceListId,
+        list: listData.list.map(m => fixNewMusicInfoQuality(m)),
       })
-      void addListMusics(listData.id, listData.list.map(m => fixNewMusicInfoQuality(m)))
     })
   }
 

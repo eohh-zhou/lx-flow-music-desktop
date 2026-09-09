@@ -1,5 +1,17 @@
 # lx-music-desktop change log
 
+## [2.12.40] - 2026-09-10
+
+### Fixed
+
+- Fixed the songlist detail page bouncing back when using the toolbar back button.
+- Show remaining playlist tracks in the play queue after playing a songlist.
+- Keep songlist page numbers on a single row instead of wrapping vertically.
+- Prevent collecting the same online songlist from creating a duplicate local list.
+- Restore the “我喜欢的音乐” entry in the sidebar.
+- Wait for playlist creation before importing songs so new lists are not empty.
+- Play the selected song from scoped search results instead of the unfiltered index.
+
 ## [2.12.39] - 2026-09-03
 
 ### Fixed

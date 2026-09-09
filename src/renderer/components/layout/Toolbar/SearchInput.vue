@@ -241,7 +241,9 @@ const handleEnter = async() => {
         const list = dom_popup.value?.scopeFiltered ?? []
         const song = list[selectIndex.value]
         if (song) {
-          handlePopupPlaySong({ song, list: dom_popup.value?.scopeAllList ?? list, scopeListId: scopeListId.value, index: selectIndex.value })
+          const allList = dom_popup.value?.scopeAllList ?? list
+          const originalIndex = allList.findIndex(m => m.id == song.id)
+          handlePopupPlaySong({ song, list: allList, scopeListId: scopeListId.value, index: originalIndex < 0 ? selectIndex.value : originalIndex })
           popupVisible.value = false
           return
         }

@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, nextTick } from '@common/utils/vueTools'
+import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from '@common/utils/vueTools'
 import { clearTempPlayeList, getList } from '@renderer/store/player/action'
 import { playList, playNext } from '@renderer/core/player'
 import { playInfo, playMusicInfo, tempPlayList } from '@renderer/store/player/state'
@@ -62,10 +62,30 @@ import { appSetting } from '@renderer/store/setting'
 
 const visible = ref(false)
 const dom_btn = ref<HTMLElement | null>(null)
+const playlistSnapshot = shallowRef<Array<LX.Music.MusicInfo | LX.Download.ListItem>>([])
 
 const getDisplayMusicInfo = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem): LX.Music.MusicInfo => {
   return 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
 }
+
+const refreshPlaylistSnapshot = () => {
+  const listId = playInfo.playerListId
+  playlistSnapshot.value = listId ? getList(listId).slice() : []
+}
+
+watch(() => [playInfo.playerListId, playMusicInfo.musicInfo?.id, playInfo.playerPlayIndex], refreshPlaylistSnapshot, {
+  immediate: true,
+})
+
+const handleListChange = (ids: string[]) => {
+  const listId = playInfo.playerListId
+  if (listId && ids.includes(listId)) refreshPlaylistSnapshot()
+}
+
+window.app_event.on('myListUpdate', handleListChange)
+onBeforeUnmount(() => {
+  window.app_event.off('myListUpdate', handleListChange)
+})
 
 const currentMusic = computed(() => {
   if (!playMusicInfo.musicInfo) return null
@@ -86,7 +106,7 @@ const getPlaylistQueue = (): QueueItem[] => {
   const current = playMusicInfo.musicInfo
   if (!listId || !current) return []
 
-  const list = getList(listId)
+  const list = playlistSnapshot.value
   if (!list.length) return []
 
   // While a manual "play later" song is active, playerPlayIndex still points to
@@ -100,10 +120,16 @@ const getPlaylistQueue = (): QueueItem[] => {
   const indexes: number[] = []
   switch (appSetting['player.togglePlayMethod']) {
     case 'list':
+    case 'none':
       for (let index = currentIndex + 1; index < list.length; index++) indexes.push(index)
       break
     case 'listLoop':
       for (let offset = 1; offset < list.length; offset++) indexes.push((currentIndex + offset) % list.length)
+      break
+    case 'random':
+      for (let index = 0; index < list.length; index++) {
+        if (index != currentIndex) indexes.push(index)
+      }
       break
   }
 

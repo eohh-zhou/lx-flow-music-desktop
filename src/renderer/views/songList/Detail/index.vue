@@ -113,10 +113,16 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
   if (to.query.fromName) window.lx.songListInfo.fromName = to.query.fromName
 }
 
+const leaveDetail = (_to: unknown, _from: unknown, next: () => void) => {
+  setVisibleListDetail(false)
+  window.lx.songListInfo.fromName = ''
+  next()
+}
 
 export default {
   beforeRouteEnter: verifyQueryParams,
   beforeRouteUpdate: verifyQueryParams,
+  beforeRouteLeave: leaveDetail,
   setup() {
     const route = useRoute()
     const router = useRouter()
@@ -165,7 +171,9 @@ export default {
 
     const handleBack = () => {
       setVisibleListDetail(false)
-      if (window.lx.songListInfo.fromName) void router.replace({ name: window.lx.songListInfo.fromName })
+      const fromName = window.lx.songListInfo.fromName
+      window.lx.songListInfo.fromName = ''
+      if (fromName) void router.replace({ name: fromName })
       else router.back()
     }
 

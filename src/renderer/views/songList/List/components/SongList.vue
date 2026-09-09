@@ -105,7 +105,7 @@ defineExpose({
   box-sizing: border-box;
   padding: 18px 20px 0;
 
-  ul {
+  > ul {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 24px 20px;

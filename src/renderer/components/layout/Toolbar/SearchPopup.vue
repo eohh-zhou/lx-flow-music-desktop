@@ -344,7 +344,10 @@ watch(() => _listDetailInfo.list, () => {
 
 // ---------------- 交互 ----------------
 const handlePickKeyword = (kw) => { emit('pick', kw) }
-const handlePickSong = (song, idx) => { emit('play-song', { song, list: scopeAllList.value, scopeListId: props.scopeListId, index: idx }) }
+const handlePickSong = (song, idx) => {
+  const originalIndex = scopeAllList.value.findIndex(m => m.id == song.id)
+  emit('play-song', { song, list: scopeAllList.value, scopeListId: props.scopeListId, index: originalIndex < 0 ? idx : originalIndex })
+}
 const handleRemoveHistory = (idx) => { removeHistoryWord(idx) }
 const handleClearHistory = () => { clearHistoryList() }
 

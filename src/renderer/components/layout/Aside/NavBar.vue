@@ -396,7 +396,7 @@ export default {
         return {
           key: `local_${list.id}`,
           to: { path: '/list', query: { id: list.id } },
-          tips: isFixed ? t(list.name) : list.name,
+          tips: isDefault ? t(defaultList.name) : isLove ? t(loveList.name) : list.name,
           name: 'List',
           listId: list.id,
           showCover: true,

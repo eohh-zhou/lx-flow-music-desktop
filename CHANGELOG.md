@@ -1,5 +1,11 @@
 # lx-music-desktop change log
 
+## [2.12.41] - 2026-09-10
+
+### Fixed
+
+- Fixed a TypeScript build error in the sidebar liked-songs label that blocked the v2.12.40 Windows release.
+
 ## [2.12.40] - 2026-09-10
 
 ### Fixed

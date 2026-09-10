@@ -1,5 +1,11 @@
 # lx-music-desktop change log
 
+## [2.12.46] - 2026-09-10
+
+### Fixed
+
+- Keep the play-bar vinyl cover within the bar height so album art no longer overflows into the page.
+
 ## [2.12.45] - 2026-09-10
 
 ### Changed

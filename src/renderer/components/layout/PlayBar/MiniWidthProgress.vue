@@ -201,6 +201,7 @@ export default {
 .right {
   flex: 1 1 0;
   min-width: 0;
+  height: 100%;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
@@ -211,7 +212,10 @@ export default {
 
 .picContent {
   height: 100%;
+  width: auto;
+  max-height: 100%;
   aspect-ratio: 1 / 1;
+  overflow: hidden;
 
   // color: var(--color-primary);
   // transition: @transition-normal;
@@ -233,8 +237,10 @@ export default {
   //   fill: currentColor;
   // }
   img {
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
     border-radius: 50%;
     border: 3px solid var(--color-950);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);

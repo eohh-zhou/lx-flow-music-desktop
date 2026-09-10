@@ -1,5 +1,11 @@
 # lx-music-desktop change log
 
+## [2.12.43] - 2026-09-10
+
+### Fixed
+
+- Hide the built-in liked songs list from the sidebar, my lists page, and add-to-list dialog.
+
 ## [2.12.42] - 2026-09-10
 
 ### Fixed

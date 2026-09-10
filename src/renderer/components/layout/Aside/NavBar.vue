@@ -78,7 +78,7 @@ import { appSetting } from '@renderer/store/setting'
 import { useI18n } from '@root/lang'
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from '@common/utils/vueTools'
 import { useRouter } from '@common/utils/vueRouter'
-import { defaultList, fetchingListStatus, loveList, userLists } from '@renderer/store/list/state'
+import { defaultList, fetchingListStatus, userLists } from '@renderer/store/list/state'
 import { getListMusics, removeUserList } from '@renderer/store/list/action'
 import { setVisibleListDetail } from '@renderer/store/songList/action'
 import { getPicPath } from '@renderer/core/music'
@@ -128,7 +128,7 @@ export default {
 
     const playlistCovers = reactive<Record<string, string>>({})
     const coverLoading = new Set<string>()
-    const localPlaylistInfos = computed<LX.List.MyListInfo[]>(() => [defaultList, loveList, ...userLists])
+    const localPlaylistInfos = computed<LX.List.MyListInfo[]>(() => [defaultList, ...userLists])
     const loadPlaylistCover = async(listId: string) => {
       if (coverLoading.has(listId)) return
       coverLoading.add(listId)
@@ -379,7 +379,7 @@ export default {
       handleMenuClick: () => {
         handleLocalListMenuClick()
       },
-      fixedListCount: 2,
+      fixedListCount: 1,
     })
 
     watch(() => currentRoute.value.query.id, (listId) => {
@@ -390,20 +390,18 @@ export default {
       const size = 16
       const localPlaylistChildren = localPlaylistInfos.value.map((list, index) => {
         const isDefault = list.id == defaultList.id
-        const isLove = list.id == loveList.id
-        const isFixed = isDefault || isLove
-        const userIndex = isFixed ? undefined : index - 2
+        const userIndex = isDefault ? undefined : index - 1
         return {
           key: `local_${list.id}`,
           to: { path: '/list', query: { id: list.id } },
-          tips: isDefault ? t(defaultList.name) : isLove ? t(loveList.name) : list.name,
+          tips: isDefault ? t(defaultList.name) : list.name,
           name: 'List',
           listId: list.id,
           showCover: true,
           cover: playlistCovers[list.id] ?? '',
-          isDefault: isFixed,
-          isUser: !isFixed,
-          menuIndex: isDefault ? -2 : isLove ? -1 : userIndex,
+          isDefault,
+          isUser: !isDefault,
+          menuIndex: isDefault ? -2 : userIndex,
           userIndex,
         }
       })

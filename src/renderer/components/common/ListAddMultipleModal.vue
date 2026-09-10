@@ -18,7 +18,7 @@
 
 <script>
 import { computed } from '@common/utils/vueTools'
-import { defaultList, loveList, userLists } from '@renderer/store/list/state'
+import { defaultList, userLists } from '@renderer/store/list/state'
 import { addListMusics, moveListMusics, createUserList } from '@renderer/store/list/action'
 import useKeyDown from '@renderer/utils/compositions/useKeyDown'
 import { useI18n } from '@root/lang'
@@ -71,7 +71,6 @@ export default {
     const lists = computed(() => {
       return [
         { ...defaultList, name: t(defaultList.name) },
-        { ...loveList, name: t(loveList.name) },
         ...userLists,
       ].filter(l => !props.excludeListId.includes(l.id))
     })

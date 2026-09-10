@@ -34,24 +34,12 @@
         </span>
       </li>
       <li
-        class="default-list" :class="[$style.listsItem, {[$style.active]: loveList.id == listId}, {[$style.clicked]: rightClickItemIndex == -1}, {[$style.fetching]: fetchingListStatus[loveList.id]}]"
-        :aria-label="$t(loveList.name)" :aria-selected="loveList.id == listId"
-        @contextmenu="handleListsItemRigthClick($event, -1)" @click="handleListToggle(loveList.id)"
-      >
-        <span :class="$style.listsLabel">
-          <transition name="list-active">
-            <svg-icon v-if="loveList.id == listId" name="angle-right-solid" :class="$style.activeIcon" />
-          </transition>
-          {{ $t(loveList.name) }}
-        </span>
-      </li>
-      <li
         v-for="(item, index) in userLists"
         :key="item.id" class="user-list"
         :class="[$style.listsItem, {[$style.active]: item.id == listId}, {[$style.clicked]: rightClickItemIndex == index}, {[$style.fetching]: fetchingListStatus[item.id]}]"
         :data-index="index" :aria-label="item.name" :aria-selected="defaultList.id == listId" @contextmenu="handleListsItemRigthClick($event, index)"
       >
-        <span :class="$style.listsLabel" @click="handleListToggle(item.id, index + 2)">
+        <span :class="$style.listsLabel" @click="handleListToggle(item.id, index + 1)">
           <transition name="list-active">
             <svg-icon v-if="item.id == listId" name="angle-right-solid" :class="$style.activeIcon" />
           </transition>
@@ -90,7 +78,7 @@ import ListUpdateModal from './components/ListUpdateModal.vue'
 import QQMusicSyncModal from './components/QQMusicSyncModal.vue'
 import NeteaseMusicSyncModal from './components/NeteaseMusicSyncModal.vue'
 
-import { defaultList, loveList, userLists, fetchingListStatus } from '@renderer/store/list/state'
+import { defaultList, userLists, fetchingListStatus } from '@renderer/store/list/state'
 import { removeUserList } from '@renderer/store/list/action'
 
 import { ref, watch } from '@common/utils/vueTools'
@@ -223,7 +211,7 @@ export default {
       menuClick(action, index)
     }
 
-    const { isModDown } = useDarg({ dom_lists_list, handleMenuClick, handleSaveListName })
+    const { isModDown } = useDarg({ dom_lists_list, handleMenuClick, handleSaveListName, fixedListCount: 1 })
 
 
     watch(() => props.listId, (listId) => {
@@ -243,7 +231,6 @@ export default {
     return {
       rightClickItemIndex,
       defaultList,
-      loveList,
       userLists,
       fetchingListStatus,
       dom_lists_list,

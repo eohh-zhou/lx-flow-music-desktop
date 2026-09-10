@@ -452,8 +452,8 @@ input, textarea {
 //    规避 Chromium 滚动条滑块不随 :hover 状态重绘、卡在旧状态的问题
 // 注意：不要用 *:hover 之类通配选择器驱动滚动条颜色，会导致显示状态错乱
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 8px;
+  height: 8px;
   background-color: transparent;
 }
 ::-webkit-scrollbar-track {
@@ -475,6 +475,7 @@ input, textarea {
 
 .scroll {
   overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 

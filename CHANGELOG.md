@@ -1,5 +1,11 @@
 # lx-music-desktop change log
 
+## [2.12.48] - 2026-09-10
+
+### Fixed
+
+- Make the playlist scrollbar draggable while still showing it only on hover.
+
 ## [2.12.47] - 2026-09-10
 
 ### Changed

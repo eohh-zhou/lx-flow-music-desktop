@@ -1,7 +1,10 @@
 <template>
+  <teleport to="#root">
   <div
     v-if="visible"
+    ref="dom_popup"
     :class="$style.popup"
+    :style="popupStyle"
     @mousedown.prevent
     @wheel.stop
   >
@@ -186,10 +189,11 @@
       </ul>
     </section>
   </div>
+  </teleport>
 </template>
 
 <script setup>
-import { ref, computed, watch, shallowReactive } from '@common/utils/vueTools'
+import { ref, computed, watch, shallowReactive, nextTick, onMounted, onBeforeUnmount, reactive } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
 import { historyList } from '@renderer/store/search/state'
 import {
@@ -210,12 +214,41 @@ const props = defineProps({
   scopeListId: { type: String, default: '' },
   selectIndex: { type: Number, default: -1 },
   tipList: { type: Array, default: () => [] },
+  anchorEl: { type: Object, default: null },
 })
 
 const emit = defineEmits(['pick', 'play-song', 'play-leaderboard', 'navigate-leaderboard', 'hover-index'])
 
 // 注意：这里不受 search.isShowHistorySearch / search.isShowHotSearch 设置控制
 // 那两个设置只作用于搜索页的空白视图；顶栏弹窗始终展示历史与热搜
+const dom_popup = ref(null)
+const popupStyle = reactive({
+  top: '0px',
+  left: '0px',
+  width: '480px',
+})
+
+const updatePosition = () => {
+  const anchor = props.anchorEl
+  if (!anchor) return
+  const rect = anchor.getBoundingClientRect()
+  const area = document.getElementById('root')?.getBoundingClientRect() ?? {
+    left: 0,
+    right: window.innerWidth,
+    width: window.innerWidth,
+  }
+  const padding = 8
+  const minLeft = area.left + padding
+  const maxRight = area.right - padding
+  const width = Math.min(480, Math.max(240, maxRight - minLeft))
+  let left = rect.left + rect.width / 2 - width / 2
+  if (left < minLeft) left = minLeft
+  if (left + width > maxRight) left = maxRight - width
+  popupStyle.top = `${Math.round(rect.bottom + 6)}px`
+  popupStyle.left = `${Math.round(left)}px`
+  popupStyle.width = `${Math.round(width)}px`
+}
+
 const hotKeywords = ref([])
 const hotSet = computed(() => new Set(hotKeywords.value))
 const boards = shallowReactive([]) // [{ bangid, name, songs: [] }]
@@ -264,7 +297,7 @@ const maxSelectIndex = computed(() => {
 })
 
 // 让父组件可以读取最大索引与 scope 列表（用于键盘命中后回放）
-defineExpose({ maxSelectIndex, hotKeywords, boards, scopeFiltered, scopeAllList })
+defineExpose({ maxSelectIndex, hotKeywords, boards, scopeFiltered, scopeAllList, el: dom_popup })
 
 // 暴露给模板用（@mouseenter 计算全局索引）
 const pickBoardIdx = (bi, si) => boardItemIdx(bi, si)
@@ -320,6 +353,8 @@ const refreshScopeList = () => {
 // ---------------- 监听 ----------------
 watch(() => props.visible, async(v) => {
   if (!v) return
+  await nextTick()
+  updatePosition()
   await getHistoryList()
   if (!hotKeywords.value.length) void loadHotKeywords()
   if (!boards.length) void loadBoards()
@@ -384,18 +419,20 @@ const highlightSegments = (text) => {
   if (lastIndex < text.length) segments.push({ text: text.slice(lastIndex), match: false })
   return segments.length ? segments : [{ text, match: false }]
 }
+
+onMounted(() => {
+  window.addEventListener('resize', updatePosition)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updatePosition)
+})
 </script>
 
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
 
 .popup {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 480px;
-  max-width: calc(100vw - 24px);
+  position: fixed;
   max-height: min(70vh, 600px);
   overflow-y: auto;
   background-color: var(--color-000);
@@ -419,8 +456,8 @@ const highlightSegments = (text) => {
 }
 
 @keyframes popupIn {
-  from { opacity: 0; transform: translate(-50%, -4px); }
-  to   { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .section {

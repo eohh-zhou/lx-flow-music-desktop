@@ -53,6 +53,7 @@
         :scope-list-id="scopeListId"
         :select-index="selectIndex"
         :tip-list="tipList"
+        :anchor-el="dom_root"
         @pick="handlePopupPick"
         @play-song="handlePopupPlaySong"
         @play-leaderboard="handlePopupPlayLeaderboard"
@@ -434,10 +435,10 @@ onBeforeUnmount(() => {
 const handleDocumentMouseDown = (e) => {
   if (!popupVisible.value) return
   const root = dom_root.value
-  if (root && !root.contains(e.target)) {
-    popupVisible.value = false
-    focused.value = false
-  }
+  const popupEl = dom_popup.value?.el
+  if ((root && root.contains(e.target)) || (popupEl && popupEl.contains(e.target))) return
+  popupVisible.value = false
+  focused.value = false
 }
 </script>
 

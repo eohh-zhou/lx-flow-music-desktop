@@ -155,7 +155,7 @@ export default {
   flex-flow: row nowrap;
   align-items: center;
   overflow: visible;
-  padding: 10px 10px 8px;
+  padding: 10px 10px 8px 20px;
   z-index: 2;
   * {
     box-sizing: border-box;
@@ -199,6 +199,9 @@ export default {
   max-height: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
+  border-radius: 50%;
+  border: 3px solid var(--color-950);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
 
   // color: var(--color-primary);
   // transition: @transition-normal;
@@ -225,8 +228,6 @@ export default {
     object-fit: cover;
     display: block;
     border-radius: 50%;
-    border: 3px solid var(--color-950);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
     animation: play-bar-vinyl-rotate 18s linear infinite;
     animation-play-state: paused;
   }
@@ -248,7 +249,6 @@ export default {
     background:
       radial-gradient(120% 120% at 20% 15%, var(--color-primary-light-100) 0%, var(--color-primary) 45%, var(--color-primary-dark-200) 100%);
     border-radius: 50%;
-    border: 3px solid var(--color-950);
     width: 100%;
     height: 100%;
     display: flex;

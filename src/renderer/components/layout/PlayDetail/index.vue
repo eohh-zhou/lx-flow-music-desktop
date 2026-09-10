@@ -145,10 +145,9 @@ export default {
   position: absolute;
   display: flex;
   flex-flow: column nowrap;
-  // 停靠在侧边栏右侧（QQ 音乐式），侧边栏保持可见
-  left: @width-app-left;
+  left: 0;
   top: 0;
-  width: calc(100% - @width-app-left);
+  width: 100%;
   height: 100%;
   background-color: var(--color-content-background);
   z-index: 10;

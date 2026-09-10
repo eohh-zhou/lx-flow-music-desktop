@@ -1,5 +1,17 @@
 # lx-music-desktop change log
 
+## [2.12.47] - 2026-09-10
+
+### Changed
+
+- Make the player detail overlay cover the full window, including the sidebar.
+- Add a little left padding on the play bar so the vinyl cover and song info sit farther from the window edge.
+
+### Fixed
+
+- Keep the search suggestion popup inside the window when the app is narrow, instead of clipping it behind the sidebar.
+- Remove the leftover square frame around the circular play-bar cover.
+
 ## [2.12.46] - 2026-09-10
 
 ### Fixed

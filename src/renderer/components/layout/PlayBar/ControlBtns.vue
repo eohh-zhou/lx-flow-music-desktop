@@ -89,8 +89,8 @@ export default {
 
 .titleBtn {
   flex: none;
-  height: 30px;
-  width: 30px;
+  height: 26px;
+  width: 26px;
   border-radius: @radius-round;
   transition: @transition-fast;
   transition-property: color, opacity, background-color;

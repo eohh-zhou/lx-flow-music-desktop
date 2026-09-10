@@ -3,24 +3,46 @@
     <main :class="$style.main">
       <h2>{{ $t('list_add__' + (isMove ? 'title_first_move' : 'title_first_add')) }}&nbsp;<span :class="$style.name">{{ currentMusicInfo.name }}</span>&nbsp;{{ $t('list_add__title_last') }}</h2>
       <div class="scroll" :class="$style.btnContent">
-        <base-btn v-for="(item, index) in lists" :key="item.id" :class="$style.btn" :aria-label="$t('list_add__btn_title', { name: item.name })" :disabled="item.isExist" @click="handleClick(index)">{{ item.name }}</base-btn>
-        <base-btn :class="[$style.btn, $style.newList, isEditing ? $style.editing : null]" :aria-label="$t('lists__new_list_btn')" @click="handleEditing($event)">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 42 42" space="preserve">
-            <use xlink:href="#icon-addTo" />
-          </svg>
+        <button
+          v-for="(item, index) in lists" :key="item.id" type="button"
+          :class="[$style.card, { [$style.exist]: item.isExist }]"
+          :aria-label="$t('list_add__btn_title', { name: item.name })"
+          :disabled="item.isExist"
+          @click="handleClick(index)"
+        >
+          <span :class="$style.cover">
+            <img v-if="item.cover" :src="item.cover" loading="lazy" decoding="async" alt="">
+            <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve">
+              <use xlink:href="#icon-album" />
+            </svg>
+            <span v-if="item.isExist" :class="$style.check">
+              <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve">
+                <use xlink:href="#icon-check-true" />
+              </svg>
+            </span>
+          </span>
+          <span :class="$style.cardName">{{ item.name }}</span>
+          <span v-if="item.isExist" :class="$style.existTip">{{ $t('list_add__already') }}</span>
+        </button>
+        <button :class="[$style.card, $style.newList, isEditing ? $style.editing : null]" type="button" :aria-label="$t('lists__new_list_btn')" @click="handleEditing($event)">
+          <span :class="$style.cover">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 42 42" space="preserve">
+              <use xlink:href="#icon-addTo" />
+            </svg>
+          </span>
+          <span :class="$style.cardName">{{ $t('lists__new_list_btn') }}</span>
           <base-input :class="$style.newListInput" :value="newListName" :placeholder="$t('lists__new_list_input')" @keyup.enter="handleSaveList($event)" @blur="handleSaveList($event)" />
-        </base-btn>
-        <span v-for="i in spaceNum" :key="i" :class="$style.btn" />
+        </button>
+        <span v-for="i in spaceNum" :key="i" :class="$style.card" />
       </div>
     </main>
   </material-modal>
 </template>
 
 <script>
-// import { mapMutations } from 'vuex'
 import { watch, ref, onBeforeUnmount } from '@common/utils/vueTools'
 import { defaultList, userLists } from '@renderer/store/list/state'
-import { addListMusics, moveListMusics, createUserList, getMusicExistListIds } from '@renderer/store/list/action'
+import { addListMusics, moveListMusics, createUserList, getMusicExistListIds, getListMusics } from '@renderer/store/list/action'
 import useKeyDown from '@renderer/utils/compositions/useKeyDown'
 import { useI18n } from '@root/lang'
 import { dialog } from '@renderer/plugins/Dialog'
@@ -45,10 +67,6 @@ export default {
         return []
       },
     },
-    // listName: {
-    //   type: String,
-    //   default: '',
-    // },
     fromListId: {
       type: String,
       default: null,
@@ -70,6 +88,17 @@ export default {
 
     const currentMusicInfo = ref({})
 
+    const loadCovers = (targetLists) => {
+      void Promise.all(targetLists.map(async(list) => {
+        try {
+          const firstSong = (await getListMusics(list.id))[0]
+          list.cover = firstSong?.meta?.picUrl || ''
+        } catch {
+          list.cover = ''
+        }
+      }))
+    }
+
     const checkMusicExist = (musicInfo) => {
       const mid = musicInfo.id
       void getMusicExistListIds(mid).then(ids => {
@@ -86,8 +115,9 @@ export default {
       lists.value = [
         { ...defaultList, name: t(defaultList.name) },
         ...userLists,
-      ].filter(l => !props.excludeListId.includes(l.id)).map(l => ({ ...l, isExist: false }))
+      ].filter(l => !props.excludeListId.includes(l.id)).map(l => ({ ...l, isExist: false, cover: '' }))
       checkMusicExist(currentMusicInfo.value)
+      loadCovers(lists.value)
     }
 
     watch(() => props.show, show => {
@@ -164,7 +194,6 @@ export default {
     },
     handleEditing(event) {
       if (this.isEditing) return
-      // if (!this.newListName) this.newListName = this.listName
       this.isEditing = true
       this.$nextTick(() => event.currentTarget.querySelector('.' + this.$style.newListInput).focus())
     },
@@ -186,15 +215,10 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 .main {
-  // padding: 15px 0;
-  // max-width: 70%;
-  // min-width: 200px;
   display: flex;
   flex-flow: column nowrap;
   justify-content: center;
   min-height: 0;
-  // max-height: 100%;
-  // overflow: hidden;
   h2 {
     font-size: 13px;
     color: var(--color-font);
@@ -211,41 +235,132 @@ export default {
 .btnContent {
   flex: auto;
   max-height: 100%;
-  padding-right: 15px;
+  padding: 0 15px 8px;
   display: flex;
   flex-flow: row wrap;
   justify-content: space-evenly;
 }
 
 @item-width: (100% / 3);
-.btn {
+.card {
   position: relative;
   box-sizing: border-box;
   margin-left: 15px;
   margin-bottom: 15px;
-  height: 36px;
-  line-height: 36px;
-  padding: 0 10px !important;
   width: calc(@item-width - 15px);
   min-width: 160px;
+  min-height: 64px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background-color: var(--color-050);
+  color: var(--color-font);
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  outline: none;
+  transition: background-color @transition-fast, transform @transition-fast, opacity @transition-fast;
+
+  &:hover:not(:disabled):not(:empty) {
+    background-color: var(--color-100);
+  }
+  &:active:not(:disabled):not(:empty) {
+    transform: scale(.98);
+  }
+  &:empty {
+    background-color: transparent;
+    min-height: 0;
+    padding: 0;
+    pointer-events: none;
+  }
+}
+
+.cover {
+  position: relative;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-500);
+  background-color: var(--color-100);
+
+  img, svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+}
+
+.check {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 10px;
+    height: 10px;
+    fill: currentColor;
+  }
+}
+
+.cardName {
+  flex: auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
   .mixin-ellipsis-1();
 }
 
-.newList {
-  border: 1px dashed var(--color-primary-font-hover);
-  // background-color: var(--color-main-background);
-  color: var(--color-primary-font-hover);
-  opacity: .7;
+.exist {
+  opacity: .55;
+  cursor: default;
 
-  svg {
-    height: 18px;
-    margin-top: 9px;
+  .cardName {
+    font-weight: 500;
+  }
+}
+
+.existTip {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  font-size: 11px;
+  color: var(--color-font-label);
+}
+
+.newList {
+  border: 1px dashed var(--color-primary-alpha-800);
+  background-color: transparent;
+  color: var(--color-primary);
+
+  .cover {
+    background-color: var(--color-primary-alpha-900);
+    color: var(--color-primary);
   }
 
   &.editing {
-    opacity: 1;
-
-    svg {
+    .cover,
+    .cardName {
       display: none;
     }
     .newListInput {
@@ -254,37 +369,34 @@ export default {
   }
 }
 .newListInput {
-  position: absolute;
-  left: 0;
-  top: 0;
+  display: none;
   width: 100%;
-  height: 34px;
-  line-height: 34px;
+  height: 36px;
+  line-height: 36px;
   background: none !important;
   font-size: 14px;
   text-align: center;
   font-family: inherit;
   box-sizing: border-box;
   padding: 0 10px;
-  border-radius: 0;
-  display: none;
+  border-radius: 8px;
 }
 
 @item-width2: (100% / 4);
 @media (min-width: 1920px){
-  .btn {
+  .card {
     width: calc(@item-width2 - 15px);
   }
 }
 @item-width3: (100% / 5);
 @media (min-width: 2560px){
-  .btn {
+  .card {
     width: calc(@item-width3 - 15px);
   }
 }
 @item-width4: (100% / 6);
 @media (min-width: 3840px){
-  .btn {
+  .card {
     width: calc(@item-width4 - 15px);
   }
 }

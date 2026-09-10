@@ -168,15 +168,15 @@ export default {
 .player {
   position: relative;
   height: @height-player;
-  border-top: 1px solid var(--color-100);
+  border-top: 1px solid var(--color-200);
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, .06);
   box-sizing: border-box;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  contain: strict;
-  padding: 6px;
+  contain: layout style;
+  padding: 8px 10px;
   z-index: 2;
-  // box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1);
   * {
     box-sizing: border-box;
   }
@@ -188,7 +188,7 @@ export default {
     width: 100%;
     height: 100%;
     background: linear-gradient(180deg, var(--color-000), var(--color-050));
-    opacity: .92;
+    opacity: .96;
     z-index: -1;
   }
 }
@@ -280,8 +280,8 @@ export default {
 
 .title {
   min-width: 0;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--color-font);
   cursor: pointer;
   .mixin-ellipsis-1();
@@ -425,7 +425,7 @@ export default {
   margin: 0 10px;
   padding: 4px 0;
   .progressBar {
-    height: 3.5px;
+    height: 5px;
   }
 }
 

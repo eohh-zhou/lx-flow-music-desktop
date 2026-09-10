@@ -105,7 +105,15 @@
       </base-virtualized-list>
     </div>
     <div v-show="!displayList.length" :class="$style.noItem">
-      <p v-text="searchKeyword ? $t('search__no_match_in_scope') : $t('no_item')" />
+      <div :class="$style.noItemIcon">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve">
+          <use xlink:href="#icon-album" />
+        </svg>
+      </div>
+      <p>{{ searchKeyword ? $t('search__no_match_in_scope') : $t('no_item') }}</p>
+      <span v-if="!searchKeyword" :class="$style.noItemTip">{{ $t('list_empty__tip') }}</span>
+      <button v-if="searchKeyword" type="button" :class="$style.noItemAction" @click="clearScopeSearch">{{ $t('search__no_match_action') }}</button>
+      <button v-else type="button" :class="$style.noItemAction" @click="goDiscover">{{ $t('list_empty__action') }}</button>
     </div>
     <common-list-add-modal
       v-model:show="isShowListAdd" :is-move="isMove" :from-list-id="listId"
@@ -210,6 +218,9 @@ export default {
       const newQuery = { ...route.query }
       delete newQuery.search
       void router.replace({ path: route.path, query: newQuery }).catch(() => {})
+    }
+    const goDiscover = () => {
+      void router.push('/songList/list').catch(() => {})
     }
 
     const {
@@ -396,6 +407,7 @@ export default {
       srcIndex,
       searchKeyword,
       clearScopeSearch,
+      goDiscover,
       playerInfo,
 
       saveListPosition,
@@ -545,10 +557,53 @@ export default {
   flex-flow: column nowrap;
   justify-content: center;
   align-items: center;
+  gap: 8px;
+  padding: 24px;
 
   p {
-    font-size: 24px;
-    color: var(--color-font-label);
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-font);
+  }
+}
+.noItemIcon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 6px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  background-color: var(--color-primary-alpha-900);
+
+  svg {
+    width: 32px;
+    height: 32px;
+    fill: currentColor;
+    opacity: .9;
+  }
+}
+.noItemTip {
+  font-size: 13px;
+  color: var(--color-font-label);
+}
+.noItemAction {
+  margin-top: 8px;
+  height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 17px;
+  background-color: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+
+  &:hover {
+    background-color: var(--color-primary-dark-100);
   }
 }
 

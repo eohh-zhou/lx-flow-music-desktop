@@ -1,7 +1,7 @@
 <template>
   <div :class="$style.player">
     <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
-      <img v-if="musicInfo.pic" :class="{[$style.rotating]: isPlay}" :src="musicInfo.pic" decoding="async" @error="imgError">
+      <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="imgError">
       <div v-else :class="$style.emptyPic">L<span>X</span></div>
     </div>
     <div :class="$style.infoContent">
@@ -151,13 +151,14 @@ export default {
 .player {
   position: relative;
   height: @height-player;
-  border-top: 1px solid var(--color-100);
+  border-top: 1px solid var(--color-200);
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, .06);
   box-sizing: border-box;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  contain: strict;
-  padding: 6px;
+  contain: layout style;
+  padding: 8px 10px;
   z-index: 2;
   * {
     box-sizing: border-box;
@@ -170,7 +171,7 @@ export default {
     width: 100%;
     height: 100%;
     background: linear-gradient(180deg, var(--color-000), var(--color-050));
-    opacity: .92;
+    opacity: .96;
     z-index: -1;
   }
 }
@@ -199,36 +200,23 @@ export default {
   //   fill: currentColor;
   // }
   img {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
     max-width: 100%;
     max-height: 100%;
     transition: @transition-normal;
     transition-property: border-color, transform, box-shadow;
-    border-radius: @radius-round;
-    border: 3px solid rgba(0, 0, 0, .08);
+    border-radius: 10px;
+    border: 0;
   }
 
   &:hover img {
     transform: scale(1.02);
   }
 
-  .rotating {
-    animation: play-bar-vinyl-rotate 18s linear infinite;
-  }
-
-  @keyframes play-bar-vinyl-rotate {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
   .emptyPic {
     background:
       radial-gradient(120% 120% at 20% 15%, var(--color-primary-light-100) 0%, var(--color-primary) 45%, var(--color-primary-dark-200) 100%);
-    border-radius: @radius-round;
+    border-radius: 10px;
     width: 100%;
     height: 100%;
     display: flex;
@@ -264,7 +252,8 @@ export default {
 
 .title {
   max-width: 100%;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--color-font);
   .mixin-ellipsis-1();
 }
@@ -289,21 +278,13 @@ export default {
   align-items: center;
 }
 .progress {
-  // position: absolute;
-  // top: 0;
-  // left: 0;
-  // width: 100%;
   flex: auto;
-  // width: 160px;
   position: relative;
-  // padding-bottom: 6px;
-  margin: 0 8px;
-  padding: 8px 0;
-  // height: 15px;
-  // .progressBar {
-  //   height: 4px;
-  //   // border-radius: 0;
-  // }
+  margin: 0 10px;
+  padding: 10px 0;
+  .progressBar {
+    height: 5px;
+  }
 }
 .time {
   display: flex;
@@ -324,8 +305,8 @@ export default {
 
 .playBtn {
   flex: none;
-  height: 34px;
-  width: 34px;
+  height: 30px;
+  width: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -338,8 +319,8 @@ export default {
 
   svg {
     fill: currentColor;
-    height: 17px;
-    width: 17px;
+    height: 15px;
+    width: 15px;
   }
   &:hover {
     color: var(--color-1000);

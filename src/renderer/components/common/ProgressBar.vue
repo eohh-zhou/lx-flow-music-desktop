@@ -1,13 +1,14 @@
 <template>
-  <div :class="[$style.progress, className]">
-    <div :class="[$style.progressBar, $style.progressBar2, {[$style.barTransition]: isActiveTransition}]" :style="{ transform: `scaleX(${progress || 0})` }" @transitionend="handleTransitionEnd" />
+  <div :class="[$style.progress, className, {[$style.dragging]: dragging}]">
+    <div :class="[$style.progressBar, $style.progressBar2, {[$style.barTransition]: isActiveTransition && !dragging}]" :style="{ transform: `scaleX(${barProgress})` }" @transitionend="handleTransitionEnd" />
     <div v-show="dragging" :class="[$style.progressBar, $style.progressBar3]" :style="{ transform: `scaleX(${dragProgress || 0})` }" />
+    <div :class="$style.knob" :style="{ left: `${barProgress * 100}%` }" />
   </div>
   <div ref="dom_progress" :class="$style.progressMask" @mousedown="handleMsDown" />
 </template>
 
 <script>
-import { ref, onBeforeUnmount } from '@common/utils/vueTools'
+import { computed, ref, onBeforeUnmount } from '@common/utils/vueTools'
 import { playProgress } from '@renderer/store/player/playProgress'
 
 export default {
@@ -75,15 +76,18 @@ export default {
       window.app_event.setProgress(num)
     }
 
-    // const handleSetProgress = event => {
-    //   // setProgress(event.offsetX / dom_progress.value.clientWidth * playProgress.maxPlayTime)
-    // }
+    const barProgress = computed(() => {
+      const value = dragging.value ? dragProgress.value : props.progress
+      if (value < 0) return 0
+      if (value > 1) return 1
+      return value || 0
+    })
 
     return {
       dom_progress,
-      // handleSetProgress,
       dragging,
       dragProgress,
+      barProgress,
       handleMsDown,
     }
   },
@@ -95,16 +99,16 @@ export default {
 
 .progress {
   width: 100%;
-  height: 4px;
-  overflow: hidden;
+  height: 5px;
+  overflow: visible;
   transition: height .15s ease, background-color @transition-normal;
   background-color: var(--color-primary-light-100-alpha-800);
-  // background-color: #f5f5f5;
   position: relative;
   border-radius: 40px;
 
-  &:hover {
-    height: 7px;
+  &:hover,
+  &.dragging {
+    height: 6px;
   }
 }
 .progressMask {
@@ -122,13 +126,14 @@ export default {
   width: 100%;
   height: 100%;
   transform-origin: 0;
+  border-radius: inherit;
 }
 .progressBar1 {
   background-color: var(--color-primary-light-100-alpha-600);
 }
 
 .progressBar2 {
-  background-color: var(--color-primary-light-100-alpha-400);
+  background-color: var(--color-primary);
   will-change: transform;
 }
 
@@ -136,6 +141,28 @@ export default {
   background-color: var(--color-primary-light-100-alpha-200);
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
   opacity: 0.5;
+}
+
+.knob {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .28);
+  transform: translateY(-50%) scale(.4);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.progress:hover .knob,
+.dragging .knob {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
 }
 
 .barTransition {

@@ -151,13 +151,14 @@ export default {
 .player {
   position: relative;
   height: @height-player;
-  border-top: 1px solid var(--color-100);
+  border-top: 1px solid var(--color-200);
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, .06);
   box-sizing: border-box;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  contain: strict;
-  padding: 8px 6px 6px;
+  contain: layout style;
+  padding: 10px 10px 8px;
   z-index: 2;
   * {
     box-sizing: border-box;
@@ -170,7 +171,7 @@ export default {
     width: 100%;
     height: 100%;
     background: linear-gradient(180deg, var(--color-000), var(--color-050));
-    opacity: .92;
+    opacity: .96;
     z-index: -1;
   }
 }
@@ -179,10 +180,10 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  padding-bottom: 6px;
-  // height: 15px;
+  height: 12px;
+  padding-top: 0;
   .progressBar {
-    height: 2px;
+    height: 5px;
     border-radius: 0;
   }
 }
@@ -211,12 +212,12 @@ export default {
   //   fill: currentColor;
   // }
   img {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
     max-width: 100%;
     max-height: 100%;
     transition: @transition-normal;
     transition-property: border-color, transform, box-shadow;
-    border-radius: @radius-border;
+    border-radius: 10px;
   }
 
   &:hover img {
@@ -226,7 +227,7 @@ export default {
   .emptyPic {
     background:
       radial-gradient(120% 120% at 20% 15%, var(--color-primary-light-100) 0%, var(--color-primary) 45%, var(--color-primary-dark-200) 100%);
-    border-radius: @radius-border;
+    border-radius: 10px;
     width: 100%;
     height: 100%;
     display: flex;
@@ -262,8 +263,8 @@ export default {
 
 .title {
   max-width: 100%;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--color-font);
   .mixin-ellipsis-1();
 }
@@ -297,8 +298,8 @@ export default {
 
 .playBtn {
   flex: none;
-  height: 34px;
-  width: 34px;
+  height: 30px;
+  width: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -311,8 +312,8 @@ export default {
 
   svg {
     fill: currentColor;
-    height: 17px;
-    width: 17px;
+    height: 15px;
+    width: 15px;
   }
   &:hover {
     color: var(--color-1000);

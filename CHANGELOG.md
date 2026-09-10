@@ -1,5 +1,14 @@
 # lx-music-desktop change log
 
+## [2.12.44] - 2026-09-10
+
+### Changed
+
+- Soften the sidebar selected state with a light primary background and a left indicator.
+- Make the play bar read as now playing with a stronger top edge, bolder title, thicker progress, and a hover knob.
+- Replace empty playlist text with an icon, short copy, and a discover action.
+- Restyle the add-to-list dialog as cover-and-name cards, with a dashed new-list card.
+
 ## [2.12.43] - 2026-09-10
 
 ### Fixed

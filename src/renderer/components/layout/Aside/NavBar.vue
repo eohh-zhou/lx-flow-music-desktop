@@ -618,11 +618,11 @@ export default {
 }
 
 .groupLabel {
-  padding: 6px 12px 4px;
-  font-size: 11px;
+  padding: 8px 12px 6px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 1.2px;
-  color: var(--color-400);
+  letter-spacing: .8px;
+  color: var(--color-500);
   user-select: none;
 }
 
@@ -649,6 +649,10 @@ export default {
     color: var(--color-nav-font);
     background-color: transparent;
     font-weight: 500;
+
+    &::before {
+      display: none;
+    }
 
     &>svg {
       opacity: .82;
@@ -731,15 +735,16 @@ export default {
 }
 
 .subLink {
+  position: relative;
   box-sizing: border-box;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  height: 32px;
+  height: 38px;
   margin: 0 4px 0 16px;
-  padding: 0 10px;
+  padding: 0 10px 0 12px;
   gap: 8px;
-  border-radius: 7px;
+  border-radius: 8px;
   text-decoration: none;
   transition: @transition-fast;
   transition-property: background-color, color, transform;
@@ -749,19 +754,31 @@ export default {
   font-weight: 500;
   text-align: left;
   outline: none;
+  overflow: hidden;
 
   .label {
     .mixin-ellipsis-1();
   }
 
   &.active {
-    color: #fff;
-    background-color: var(--color-primary);
+    color: var(--color-primary);
+    background-color: var(--color-primary-alpha-900);
     font-weight: 600;
 
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 0 2px 2px 0;
+      background-color: var(--color-primary);
+    }
+
     &:hover {
-      color: #fff;
-      background-color: var(--color-primary-dark-100);
+      color: var(--color-primary);
+      background-color: var(--color-primary-alpha-800);
     }
   }
 
@@ -779,10 +796,10 @@ export default {
 .newListInput {
   box-sizing: border-box;
   width: calc(100% - 20px);
-  height: 32px;
+  height: 38px;
   margin: 1px 4px 1px 16px;
   padding: 0 8px;
-  border-radius: 7px;
+  border-radius: 8px;
   font-size: 12.5px;
 }
 
@@ -806,9 +823,9 @@ export default {
 
 .subCover {
   flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -825,12 +842,13 @@ export default {
 }
 
 .link {
+  position: relative;
   box-sizing: border-box;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
   gap: 8px;
-  height: 34px;
+  height: 36px;
   padding: 0 12px;
   border: 0;
   border-radius: 8px;
@@ -844,6 +862,7 @@ export default {
   font-weight: 500;
   text-align: left;
   outline: none;
+  overflow: hidden;
 
   &>svg {
     flex: none;
@@ -856,17 +875,28 @@ export default {
   }
 
   &.active {
-    color: #fff;
-    background-color: var(--color-primary);
+    color: var(--color-primary);
+    background-color: var(--color-primary-alpha-900);
     font-weight: 600;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 0 2px 2px 0;
+      background-color: var(--color-primary);
+    }
 
     &>svg {
       opacity: 1;
     }
 
     &:hover {
-      color: #fff;
-      background-color: var(--color-primary-dark-100);
+      color: var(--color-primary);
+      background-color: var(--color-primary-alpha-800);
     }
   }
 

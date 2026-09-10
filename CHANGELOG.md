@@ -1,5 +1,13 @@
 # lx-music-desktop change log
 
+## [2.12.42] - 2026-09-10
+
+### Fixed
+
+- Show GitHub release notes as plain text in the update dialog instead of raw HTML tags.
+- Keep the current-list search text when the search box blurs or the page changes.
+- Select only the currently filtered songs when using Ctrl+A in a playlist.
+
 ## [2.12.41] - 2026-09-10
 
 ### Fixed

@@ -45,7 +45,7 @@ const useKeyEvent = ({ handleSelectAllData, listRef }) => {
   return keyEvent
 }
 
-export default ({ listRef, list }) => {
+export default ({ listRef, list, visibleList }) => {
   const selectedList = ref([])
 
   let lastSelectIndex = -1
@@ -58,7 +58,7 @@ export default ({ listRef, list }) => {
   }
   const handleSelectAllData = () => {
     removeAllSelect()
-    selectedList.value = [...list.value]
+    selectedList.value = [...(visibleList?.value ?? list.value)]
   }
   const keyEvent = useKeyEvent({ listRef, handleSelectAllData })
 
@@ -96,7 +96,7 @@ export default ({ listRef, list }) => {
     }
   }
 
-  watch(list, removeAllSelect)
+  watch(visibleList ?? list, removeAllSelect)
 
   return {
     selectedList,

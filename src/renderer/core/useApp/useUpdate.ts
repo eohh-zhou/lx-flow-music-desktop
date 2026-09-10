@@ -68,9 +68,27 @@ export default () => {
     })
   }
 
+  const decodeHtmlEntities = (text: string) => text
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+
+  const htmlToPlainText = (html: string) => decodeHtmlEntities(
+    html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(?:p|div|h[1-6]|li|ul|ol)>/gi, '\n')
+      .replace(/<li[^>]*>/gi, '- ')
+      .replace(/<[^>]+>/g, ''),
+  ).replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
+
   const getReleaseNotes = (releaseNotes: UpdateInfo['releaseNotes']) => {
-    if (Array.isArray(releaseNotes)) return releaseNotes.map(note => note.note ?? '').filter(Boolean).join('\n\n')
-    return releaseNotes ?? ''
+    const notes = Array.isArray(releaseNotes)
+      ? releaseNotes.map(note => note.note ?? '').filter(Boolean).join('\n\n')
+      : (releaseNotes ?? '')
+    return /<[a-z][\s\S]*>/i.test(notes) ? htmlToPlainText(notes) : notes
   }
 
   const setUpdateInfo = (info: UpdateInfo) => {

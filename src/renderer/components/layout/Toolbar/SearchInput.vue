@@ -139,11 +139,10 @@ watch(keyword, () => {
   }
 })
 
-watch(() => route.name, () => {
-  if (!focused.value) keyword.value = ''
-  if (route.name !== 'Search') {
-    if (appSetting['odc.isAutoClearSearchInput']) keyword.value = ''
-  }
+watch(() => route.name, (name) => {
+  if (name === 'Search') return
+  if (isScopedMode.value) return
+  if (appSetting['odc.isAutoClearSearchInput']) keyword.value = ''
 })
 
 watch(_searchText, (v) => {
@@ -154,9 +153,16 @@ watch(focused, (v) => {
   if (v) popupVisible.value = true
 })
 
-watch(scopeListId, () => {
+watch(scopeListId, (id) => {
   selectIndex.value = keyword.value ? 0 : -1
+  if (id && keyword.value) syncScopeSearchParam()
 })
+
+watch(() => route.query.search, (search) => {
+  if (!isScopedMode.value) return
+  const next = typeof search === 'string' ? search : ''
+  if (keyword.value !== next) keyword.value = next
+}, { immediate: true })
 
 watch(popupVisible, (v) => {
   if (!v && pendingNavTimer) {

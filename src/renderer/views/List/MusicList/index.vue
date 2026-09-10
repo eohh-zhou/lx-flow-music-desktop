@@ -186,12 +186,38 @@ export default {
       excludeListIds,
     } = useListInfo({ props, onLoadedList })
 
+    const route = useRoute()
+    const router = useRouter()
+    const searchKeyword = computed(() => typeof route.query.search === 'string' ? route.query.search : '')
+    const displayData = computed(() => {
+      const kw = searchKeyword.value.trim().toLowerCase()
+      if (!kw) return null
+      const items = []
+      const indexes = []
+      list.value.forEach((m, i) => {
+        if ((m.name || '').toLowerCase().includes(kw) ||
+            (m.singer || '').toLowerCase().includes(kw) ||
+            (m.meta?.albumName || '').toLowerCase().includes(kw)) {
+          items.push(m)
+          indexes.push(i)
+        }
+      })
+      return { items, indexes }
+    })
+    const displayList = computed(() => displayData.value ? displayData.value.items : list.value)
+    const srcIndex = (index) => displayData.value ? displayData.value.indexes[index] : index
+    const clearScopeSearch = () => {
+      const newQuery = { ...route.query }
+      delete newQuery.search
+      void router.replace({ path: route.path, query: newQuery }).catch(() => {})
+    }
+
     const {
       selectedList,
       listItemHeight,
       handleSelectData,
       removeAllSelect,
-    } = useList({ listRef, list })
+    } = useList({ listRef, list, visibleList: displayList })
 
     const {
       handlePlayMusic,
@@ -321,34 +347,6 @@ export default {
     }
     const scrollToTop = () => {
       listRef.value.scrollTo(0, true)
-    }
-
-    // 顶栏搜索框 scope 模式：根据 route.query.search 过滤当前列表
-    const route = useRoute()
-    const router = useRouter()
-    const searchKeyword = computed(() => typeof route.query.search === 'string' ? route.query.search : '')
-    // 过滤态下同时记录「展示索引 -> 原始索引」映射，供播放/选择等基于原始索引的逻辑回查
-    const displayData = computed(() => {
-      const kw = searchKeyword.value.trim().toLowerCase()
-      if (!kw) return null
-      const items = []
-      const indexes = []
-      list.value.forEach((m, i) => {
-        if ((m.name || '').toLowerCase().includes(kw) ||
-            (m.singer || '').toLowerCase().includes(kw) ||
-            (m.meta?.albumName || '').toLowerCase().includes(kw)) {
-          items.push(m)
-          indexes.push(i)
-        }
-      })
-      return { items, indexes }
-    })
-    const displayList = computed(() => displayData.value ? displayData.value.items : list.value)
-    const srcIndex = (index) => displayData.value ? displayData.value.indexes[index] : index
-    const clearScopeSearch = () => {
-      const newQuery = { ...route.query }
-      delete newQuery.search
-      void router.replace({ path: route.path, query: newQuery }).catch(() => {})
     }
 
     return {

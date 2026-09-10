@@ -1,5 +1,5 @@
 import { isEmpty, resumeAudioContext, setPause, setPlay, setResource, setStop } from '@renderer/plugins/player'
-import { isPlay, playedList, playInfo, playMusicInfo, tempPlayList, musicInfo as _musicInfo } from '@renderer/store/player/state'
+import { isPlay, playedList, playInfo, playMusicInfo, tempPlayList, isPlayQueueStopped, musicInfo as _musicInfo } from '@renderer/store/player/state'
 import {
   getList,
   clearPlayedList,
@@ -11,6 +11,7 @@ import {
   removeTempPlayList,
   setPlayListId,
   removePlayedList,
+  setPlayQueueStopped,
 } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 import { getMusicUrl, getPicPath, getLyricInfo } from '../music/index'
@@ -250,6 +251,7 @@ export const playListById = (listId: string, id: string) => {
   setPlayMusicInfo(listId, musicInfo)
   if (appSetting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
   clearTempPlayeList()
+  setPlayQueueStopped(false)
   handlePlay()
 }
 
@@ -265,6 +267,7 @@ export const playList = (listId: string, index: number) => {
   setPlayMusicInfo(listId, getList(listId)[index])
   if (appSetting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
   clearTempPlayeList()
+  setPlayQueueStopped(false)
   handlePlay()
 }
 
@@ -386,6 +389,15 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
     handlePlayNext(playMusicInfo)
     console.log('play temp list')
     return
+  }
+
+  if (isPlayQueueStopped.value) {
+    if (isAutoToggle) {
+      handleToggleStop()
+      console.log('play queue stopped')
+      return
+    }
+    setPlayQueueStopped(false)
   }
 
   if (playMusicInfo.musicInfo == null) {

@@ -12,6 +12,7 @@ import {
   playMusicInfo,
   playedList,
   tempPlayList,
+  isPlayQueueStopped,
 } from './state'
 import { getListMusicsFromCache } from '@renderer/store/list/action'
 import { downloadList } from '@renderer/store/download/state'
@@ -220,11 +221,16 @@ export const clearPlayedList = () => {
   playedList.splice(0, playedList.length)
 }
 
+export const setPlayQueueStopped = (stopped: boolean) => {
+  isPlayQueueStopped.value = stopped
+}
+
 /**
  * 添加歌曲到稍后播放列表
  * @param list 歌曲列表
  */
 export const addTempPlayList = (list: LX.Player.TempPlayListItem[]) => {
+  isPlayQueueStopped.value = false
   const topList: Array<Omit<LX.Player.TempPlayListItem, 'top'>> = []
   const bottomList = list.filter(({ isTop, ...musicInfo }) => {
     if (isTop) {

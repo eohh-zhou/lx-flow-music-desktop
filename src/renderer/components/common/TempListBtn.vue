@@ -13,7 +13,7 @@
         <div :class="$style.header">
           <span :class="$style.title">{{ $t('player__play_queue') }}</span>
           <span v-if="queueCount" :class="$style.count">{{ queueCount }}</span>
-          <button :class="$style.clearBtn" :disabled="!tempPlayList.length" @click="handleClear">{{ $t('player__play_queue_clear') }}</button>
+          <button :class="$style.clearBtn" :disabled="!laterList.length" @click="handleClear">{{ $t('player__play_queue_clear') }}</button>
         </div>
         <div v-if="!currentMusic && !laterList.length" :class="$style.empty">{{ $t('player__play_queue_empty') }}</div>
         <div v-else :class="$style.listContent">
@@ -55,9 +55,9 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from '@common/utils/vueTools'
-import { clearTempPlayeList, getList } from '@renderer/store/player/action'
+import { clearTempPlayeList, getList, setPlayQueueStopped } from '@renderer/store/player/action'
 import { playList, playNext } from '@renderer/core/player'
-import { playInfo, playMusicInfo, tempPlayList } from '@renderer/store/player/state'
+import { isPlayQueueStopped, playInfo, playMusicInfo, tempPlayList } from '@renderer/store/player/state'
 import { appSetting } from '@renderer/store/setting'
 
 const visible = ref(false)
@@ -149,7 +149,7 @@ const laterList = computed<QueueItem[]>(() => [
     type: 'temp' as const,
     tempIndex: index,
   })),
-  ...getPlaylistQueue(),
+  ...(isPlayQueueStopped.value ? [] : getPlaylistQueue()),
 ])
 
 const queueCount = computed(() => laterList.value.length + (currentMusic.value ? 1 : 0))
@@ -176,8 +176,9 @@ const handlePlayLater = (item: QueueItem) => {
 }
 
 const handleClear = () => {
-  if (!tempPlayList.length) return
+  if (!laterList.value.length) return
   clearTempPlayeList()
+  setPlayQueueStopped(true)
 }
 </script>
 

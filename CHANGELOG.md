@@ -1,5 +1,17 @@
 # lx-music-desktop change log
 
+## [2.12.45] - 2026-09-10
+
+### Changed
+
+- Restore the play-bar cover as a circular vinyl that keeps rotating while a song is playing.
+- Move previous, play, and next to the center of the play bar, with a thin NetEase-style progress bar along the top edge.
+- Hovering the play-bar progress now shows a white knob and a current / total time tooltip.
+
+### Fixed
+
+- Enable “清空待播放” when the queue still has later songs, and stop leftover playlist tracks from coming back after that clear.
+
 ## [2.12.44] - 2026-09-10
 
 ### Changed

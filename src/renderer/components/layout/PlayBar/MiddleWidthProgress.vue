@@ -1,25 +1,20 @@
 <template>
   <div :class="$style.player">
-    <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
-      <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="imgError">
-      <div v-else :class="$style.emptyPic">L<span>X</span></div>
+    <div :class="$style.progress">
+      <common-progress-bar v-if="!isShowPlayerDetail" edge :progress="progress" :handle-transition-end="handleTransitionEnd" :is-active-transition="isActiveTransition" />
     </div>
-    <div :class="$style.infoContent">
-      <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
-        {{ title }}
+    <div :class="$style.left">
+      <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
+        <img v-if="musicInfo.pic" :class="{[$style.rotating]: isPlay}" :src="musicInfo.pic" decoding="async" @error="imgError">
+        <div v-else :class="$style.emptyPic">L<span>X</span></div>
       </div>
-      <div :class="$style.status">{{ statusText }}</div>
-    </div>
-    <div :class="$style.timeContent">
-      <span>{{ nowPlayTimeStr }}</span>
-      <div :class="$style.progress">
-        <common-progress-bar v-if="!isShowPlayerDetail" :class-name="$style.progressBar" :progress="progress" :handle-transition-end="handleTransitionEnd" :is-active-transition="isActiveTransition" />
+      <div :class="$style.infoContent">
+        <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
+          {{ title }}
+        </div>
+        <div :class="$style.status">{{ statusText }}</div>
       </div>
-      <!-- <span style="margin: 0 1px;">/</span> -->
-      <span>{{ maxPlayTimeStr }}</span>
     </div>
-    <!-- <play-progress /> -->
-    <control-btns />
     <div :class="$style.playBtnContent">
       <div :class="$style.playBtn" :aria-label="$t('player__prev')" @click="playPrev()">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
@@ -39,6 +34,9 @@
           <use xlink:href="#icon-nextMusic" />
         </svg>
       </div>
+    </div>
+    <div :class="$style.right">
+      <control-btns />
     </div>
   </div>
 </template>
@@ -151,14 +149,13 @@ export default {
 .player {
   position: relative;
   height: @height-player;
-  border-top: 1px solid var(--color-200);
   box-shadow: 0 -10px 28px rgba(0, 0, 0, .06);
   box-sizing: border-box;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  contain: layout style;
-  padding: 8px 10px;
+  overflow: visible;
+  padding: 10px 10px 8px;
   z-index: 2;
   * {
     box-sizing: border-box;
@@ -174,6 +171,25 @@ export default {
     opacity: .96;
     z-index: -1;
   }
+}
+.progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 14px;
+  z-index: 3;
+}
+.left,
+.right {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+}
+.right {
+  justify-content: flex-end;
 }
 
 .picContent {
@@ -200,23 +216,33 @@ export default {
   //   fill: currentColor;
   // }
   img {
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
     max-width: 100%;
     max-height: 100%;
-    transition: @transition-normal;
-    transition-property: border-color, transform, box-shadow;
-    border-radius: 10px;
-    border: 0;
+    border-radius: 50%;
+    border: 3px solid var(--color-950);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+    animation: play-bar-vinyl-rotate 18s linear infinite;
+    animation-play-state: paused;
   }
 
-  &:hover img {
-    transform: scale(1.02);
+  .rotating {
+    animation-play-state: running;
+  }
+
+  @keyframes play-bar-vinyl-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .emptyPic {
     background:
       radial-gradient(120% 120% at 20% 15%, var(--color-primary-light-100) 0%, var(--color-primary) 45%, var(--color-primary-dark-200) 100%);
-    border-radius: 10px;
+    border-radius: 50%;
+    border: 3px solid var(--color-950);
     width: 100%;
     height: 100%;
     display: flex;
@@ -239,7 +265,7 @@ export default {
 
 .infoContent {
   padding: 0 10px;
-  flex: auto;
+  flex: 1 1 auto;
   display: flex;
   flex-flow: column nowrap;
   justify-content: center;
@@ -266,41 +292,15 @@ export default {
   max-width: 100%;
 }
 
-.timeContent {
-  width: 30%;
-  // position: relative;
-  flex: none;
-  color: var(--color-550);
-  font-size: 13px;
-  // padding-left: 10px;
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-}
-.progress {
-  flex: auto;
-  position: relative;
-  margin: 0 10px;
-  padding: 10px 0;
-  .progressBar {
-    height: 5px;
-  }
-}
-.time {
-  display: flex;
-  flex-flow: row nowrap;
-  justify-content: space-between;
-}
-
 .playBtnContent {
   height: 100%;
   flex: none;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  padding-left: 10px;
-  padding-right: 15px;
-  gap: 10px;
+  justify-content: center;
+  padding: 0 16px;
+  gap: 14px;
 }
 
 .playBtn {

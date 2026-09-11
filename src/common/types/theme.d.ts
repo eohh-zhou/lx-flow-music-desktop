@@ -274,6 +274,7 @@ declare namespace LX {
         '--background-image': string
         '--background-image-position': string
         '--background-image-size': string
+        '--blur-glass': string
 
         // 关闭按钮颜色
         '--color-btn-hide': string

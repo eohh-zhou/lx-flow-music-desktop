@@ -1,5 +1,11 @@
 # lx-music-desktop change log
 
+## [3.0.4] - 2026-09-11
+
+### Fixed
+
+- Keep wallpaper themes visible during normal use, not only when a dialog is open.
+
 ## [3.0.3] - 2026-09-11
 
 ### Fixed

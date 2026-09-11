@@ -148,7 +148,7 @@ export default {
         return cachedList[index] = {
           item,
           top,
-          style: { position: 'absolute', left: 0, right: '8px', top: top + 'px', height: props.itemHeight + 'px' },
+          style: { position: 'absolute', left: 0, right: 0, top: top + 'px', height: props.itemHeight + 'px' },
           index,
           key: item[props.keyName],
         }

@@ -452,8 +452,8 @@ input, textarea {
 //    规避 Chromium 滚动条滑块不随 :hover 状态重绘、卡在旧状态的问题
 // 注意：不要用 *:hover 之类通配选择器驱动滚动条颜色，会导致显示状态错乱
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   background-color: transparent;
 }
 ::-webkit-scrollbar-track {
@@ -527,9 +527,6 @@ table {
     box-sizing: border-box;
     font-size: 13px;
 
-    &.zebra {
-      background-color: var(--color-050);
-    }
     &:hover {
       background-color: var(--color-primary-background-hover);
 

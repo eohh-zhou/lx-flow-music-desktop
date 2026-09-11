@@ -1,5 +1,12 @@
 # lx-music-desktop change log
 
+## [2.12.50] - 2026-09-11
+
+### Changed
+
+- Remove the alternating gray row background on playlist detail lists.
+- Make the playlist scrollbar slightly thinner and reduce the extra right-side gap.
+
 ## [2.12.49] - 2026-09-10
 
 ### Fixed

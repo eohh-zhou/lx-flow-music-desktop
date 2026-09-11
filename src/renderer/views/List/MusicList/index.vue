@@ -41,7 +41,7 @@
         @scroll="saveListPosition" @contextmenu.capture="handleListRightClick"
       >
         <div
-          class="list-item" :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === srcIndex(index) }, { selected: selectedIndex == srcIndex(index) || rightClickSelectedIndex == srcIndex(index) }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }, { zebra: index % 2 == 1 }]"
+          class="list-item" :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === srcIndex(index) }, { selected: selectedIndex == srcIndex(index) || rightClickSelectedIndex == srcIndex(index) }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }]"
           @click="handleListItemClick($event, srcIndex(index))" @contextmenu="handleListItemRightClick($event, srcIndex(index))"
         >
           <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
@@ -77,7 +77,7 @@
       >
         <div
           class="list-item"
-          :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === srcIndex(index) }, { selected: selectedIndex == srcIndex(index) || rightClickSelectedIndex == srcIndex(index) }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }, { zebra: index % 2 == 1 }]"
+          :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === srcIndex(index) }, { selected: selectedIndex == srcIndex(index) || rightClickSelectedIndex == srcIndex(index) }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }]"
           @click="handleListItemClick($event, srcIndex(index))" @contextmenu="handleListItemRightClick($event, srcIndex(index))"
         >
           <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">

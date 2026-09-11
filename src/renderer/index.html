@@ -12,7 +12,7 @@
       <path id="logo-path-2" d="M301.061 223.876h-50.994c-3.911 0-7.574.95-10.889 2.523-8.616 4.09-14.615 12.798-14.615 22.973v76.51h-37.708c-14.082 0-17.428 8.071-7.466 18.029l46.893 46.898 31.25 31.246a25.424 25.424 0 0 0 18.033 7.474c6.523 0 13.052-2.484 18.029-7.474l78.152-78.145c9.951-9.958 6.608-18.029-7.47-18.029h-37.71v-76.51c.001-14.078-11.42-25.495-25.505-25.495z"/>
     </svg>
   </div> -->
-  <div id="root" style="display: none;">
+  <div id="root">
   </div>
   <script>
     const formatLang = (lang = 'en') => {
@@ -34,11 +34,12 @@
 
     window.setTheme = colors => {
       window.dom_style.innerText = `:root {${(Object.entries(colors)).map(([key, value]) => `${key}:${value};`).join('')}}`
+      document.documentElement.classList.toggle('has-wallpaper', !!(colors['--background-image'] && colors['--background-image'] !== 'none'))
     }
     const applyThemeColor = (theme) => {
       theme = JSON.parse(decodeURIComponent(theme))
       window.setTheme(theme.colors)
-      document.body.appendChild(window.dom_style)
+      document.head.appendChild(window.dom_style)
     }
     if (/theme=(.+)(#|$)/.test(window.location.search)) applyThemeColor(RegExp.$1)
   </script>

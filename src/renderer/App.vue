@@ -27,7 +27,7 @@ import useApp from '@renderer/core/useApp'
 useApp()
 
 onMounted(() => {
-  document.getElementById('root').style.display = 'block'
+  document.getElementById('root').style.display = ''
 
   // const styles = getComputedStyle(document.documentElement)
   // window.lxData.bubbleCursor = new BubbleCursor({
@@ -49,6 +49,11 @@ onMounted(() => {
 
 html {
   height: 100vh;
+  background-color: var(--color-content-background);
+  background-image: var(--background-image);
+  background-position: var(--background-image-position);
+  background-repeat: no-repeat;
+  background-size: var(--background-image-size);
 }
 html, body {
   // overflow: hidden;
@@ -58,6 +63,7 @@ html, body {
 body {
   user-select: none;
   height: 100%;
+  background: transparent;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -71,10 +77,7 @@ body {
   position: relative;
   overflow: hidden;
   color: var(--color-font);
-  background: var(--background-image) var(--background-image-position) no-repeat;
-  background-size: var(--background-image-size);
-  transition: background-color @transition-normal;
-  background-color: var(--color-content-background);
+  background: transparent;
   box-sizing: border-box;
 }
 
@@ -128,6 +131,10 @@ body {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
   }
+}
+html.has-wallpaper.disableTransparent,
+html.has-wallpaper.fullscreen {
+  background-color: transparent;
 }
 
 #container {

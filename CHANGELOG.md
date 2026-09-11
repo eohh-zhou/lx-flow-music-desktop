@@ -1,5 +1,12 @@
 # lx-music-desktop change log
 
+## [3.0.2] - 2026-09-11
+
+### Fixed
+
+- Show wallpaper themes as soon as the app opens, without needing to reselect the theme.
+- Soften the sidebar and list overlays so the wallpaper stays visible on both sides.
+
 ## [3.0.1] - 2026-09-11
 
 ### Changed

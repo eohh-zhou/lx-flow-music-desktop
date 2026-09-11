@@ -1,5 +1,13 @@
 # lx-music-desktop change log
 
+## [2.12.51] - 2026-09-11
+
+### Changed
+
+- Add more solid themes with a cleaner gray-white base so the accent color no longer tints the whole window.
+- Let wallpaper themes show through the sidebar and lists with frosted-glass panels.
+- Add wallpaper themes: Rain, Dusk Sea, Aurora, Lake, Meadow, and Cottage.
+
 ## [2.12.50] - 2026-09-11
 
 ### Changed

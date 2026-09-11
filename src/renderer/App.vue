@@ -155,6 +155,8 @@ body {
   flex-flow: column nowrap;
   transition: background-color @transition-normal;
   background-color: var(--color-main-background);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
 
   border-top-left-radius: @radius-card;
   overflow: hidden;

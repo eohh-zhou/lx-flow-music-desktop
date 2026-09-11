@@ -167,8 +167,9 @@ export default {
     top: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, var(--color-000), var(--color-050));
-    opacity: .96;
+    background-color: var(--color-main-background);
+    backdrop-filter: var(--blur-glass);
+    -webkit-backdrop-filter: var(--blur-glass);
     z-index: -1;
   }
 }

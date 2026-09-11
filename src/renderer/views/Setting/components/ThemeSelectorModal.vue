@@ -115,9 +115,10 @@ export default {
 
     const setLightId = (id) => {
       if (appSetting['theme.lightId'] == id && !(props.immediate && appSetting['theme.id'] != id)) return
-      updateSetting({ 'theme.lightId': id })
+      const setting = { 'theme.lightId': id }
+      if (props.immediate) setting['theme.id'] = id
+      updateSetting(setting)
       if (props.immediate) {
-        updateSetting({ 'theme.id': id })
         applyTheme(id, id, appSetting['theme.darkId'], dataPath)
       } else if (appSetting['theme.id'] == 'auto') {
         applyTheme('auto', id, appSetting['theme.darkId'], dataPath)
@@ -125,9 +126,10 @@ export default {
     }
     const setDarkId = (id) => {
       if (appSetting['theme.darkId'] == id && !(props.immediate && appSetting['theme.id'] != id)) return
-      updateSetting({ 'theme.darkId': id })
+      const setting = { 'theme.darkId': id }
+      if (props.immediate) setting['theme.id'] = id
+      updateSetting(setting)
       if (props.immediate) {
-        updateSetting({ 'theme.id': id })
         applyTheme(id, appSetting['theme.lightId'], id, dataPath)
       } else if (appSetting['theme.id'] == 'auto') {
         applyTheme('auto', appSetting['theme.lightId'], id, dataPath)

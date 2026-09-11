@@ -109,16 +109,10 @@ export default () => {
   })
 
   const rThemeChange = onThemeChange(({ params: setting }) => {
-    // console.log(setting)
-    if (themeShouldUseDarkColors.value == setting.shouldUseDarkColors) {
-      if (themeId.value == setting.theme.id) return
-      themeId.value = setting.theme.id
-    } else {
-      themeShouldUseDarkColors.value = setting.shouldUseDarkColors
-      if (themeId.value != 'auto') return
-    }
+    themeShouldUseDarkColors.value = setting.shouldUseDarkColors
+    if (themeId.value != setting.theme.id) themeId.value = setting.theme.id
     getThemes(({ dataPath }) => {
-      applyTheme('auto', appSetting['theme.lightId'], appSetting['theme.darkId'], dataPath)
+      applyTheme(appSetting['theme.id'], appSetting['theme.lightId'], appSetting['theme.darkId'], dataPath)
     })
   })
 

@@ -1,5 +1,12 @@
 # lx-music-desktop change log
 
+## [3.0.3] - 2026-09-11
+
+### Fixed
+
+- Keep a selected dark theme instead of reverting to the system light theme.
+- Reduce frosted-glass blur so wallpaper themes stay readable on the home page.
+
 ## [3.0.2] - 2026-09-11
 
 ### Fixed

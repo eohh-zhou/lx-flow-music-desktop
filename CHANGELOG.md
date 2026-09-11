@@ -1,5 +1,12 @@
 # lx-music-desktop change log
 
+## [3.0.1] - 2026-09-11
+
+### Changed
+
+- Frost wallpaper themes more strongly on the sidebar so navigation text stays readable.
+- Thin the right-panel overlay so wallpaper remains visible across every picture theme.
+
 ## [2.12.51] - 2026-09-11
 
 ### Changed

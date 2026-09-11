@@ -93,9 +93,7 @@ onMounted(updateNavState)
   padding: 0 15px;
   -webkit-app-region: drag;
   z-index: 2;
-  background-color: var(--color-main-background);
-  backdrop-filter: var(--blur-glass);
-  -webkit-backdrop-filter: var(--blur-glass);
+  background-color: transparent;
 
   &.fullscreen {
     -webkit-app-region: no-drag;

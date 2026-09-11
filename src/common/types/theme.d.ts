@@ -268,6 +268,7 @@ declare namespace LX {
       themeColors: ThemeColors
       extInfo: {
         '--color-app-background': string
+        '--color-nav-background': string
         '--color-main-background': string
         '--color-nav-font': string
         '--background-image': string

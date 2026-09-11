@@ -148,6 +148,11 @@ body {
 #left {
   flex: none;
   width: @width-app-left;
+  position: relative;
+  z-index: 1;
+  background-color: var(--color-nav-background);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
 }
 #right {
   flex: auto;

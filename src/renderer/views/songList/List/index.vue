@@ -130,20 +130,29 @@ export default {
   width: 100%;
   display: flex;
   flex-flow: row nowrap;
-  // padding-right: 5px;
-  // box-sizing: border-box;
+  align-items: center;
+  min-height: 36px;
   padding-bottom: 5px;
 }
 .left {
   flex: auto;
+  min-width: 0;
   display: flex;
   flex-flow: row nowrap;
+  align-items: center;
 }
 
 .btn {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 1;
   color: var(--color-font);
   transition: color @transition-fast;
   background: none !important;
+  transform: none !important;
   &:hover {
     color: var(--color-primary-font-hover);
   }
@@ -154,7 +163,10 @@ export default {
   font-size: 12px;
   width: auto;
   flex: none;
+  height: 28px;
   padding: 0 5px;
+  display: flex;
+  align-items: center;
 
   &:hover {
     :global(.icon) {

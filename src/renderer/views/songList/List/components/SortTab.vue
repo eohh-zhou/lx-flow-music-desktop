@@ -54,6 +54,28 @@ watch(() => props.source, async(source) => {
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
 
+.tab {
+  height: 28px;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 12px;
+  gap: 18px;
+
+  :global(li) {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    line-height: 1;
+  }
+  :global(span) {
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    height: 28px;
+  }
+}
+
 .tagList {
   font-size: 12px;
   position: relative;

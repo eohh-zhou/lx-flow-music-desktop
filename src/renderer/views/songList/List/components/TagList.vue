@@ -140,7 +140,8 @@ onBeforeUnmount(() => {
 }
 
 .label {
-  padding: 8px 15px;
+  height: 28px;
+  padding: 0 12px;
   // background-color: var(--color-button-background);
   transition: color @transition-normal;
   // border-top: 2px solid @color-tab-border-bottom;
@@ -150,16 +151,21 @@ onBeforeUnmount(() => {
   // border-top-left-radius: 3px;
   color: var(--color-font);
   cursor: pointer;
+  line-height: 1;
 
   display: flex;
+  align-items: center;
 
   span {
     flex: auto;
+    line-height: 1;
   }
   .icon {
     flex: none;
     margin-left: 7px;
     line-height: 0;
+    display: flex;
+    align-items: center;
     svg {
       width: .8em;
       transition: transform .2s ease;

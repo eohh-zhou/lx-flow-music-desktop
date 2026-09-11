@@ -1,5 +1,11 @@
 # lx-music-desktop change log
 
+## [2.12.49] - 2026-09-10
+
+### Fixed
+
+- Align the songlist page header controls on one baseline.
+
 ## [2.12.48] - 2026-09-10
 
 ### Fixed

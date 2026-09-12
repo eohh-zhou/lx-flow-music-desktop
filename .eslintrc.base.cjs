@@ -1,3 +1,4 @@
+// LX Flow Music
 const baseRule = {
   'no-new': 'off',
   camelcase: 'off',

@@ -1,3 +1,4 @@
+// LX Flow Music
 const { base, typescript } = require('./.eslintrc.base.cjs')
 
 module.exports = {

@@ -1,4 +1,4 @@
-This project is issued based on the Apache License 2.0 license. The following agreements are supplemental to the Apache License 2.0. In the event of a conflict, the following agreements shall prevail.
+This project (LX Flow Music) is issued based on the Apache License 2.0 license. The following agreements are supplemental to the Apache License 2.0. In the event of a conflict, the following agreements shall prevail.
 
 DEFINITIONS:
 

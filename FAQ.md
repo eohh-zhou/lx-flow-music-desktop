@@ -1,4 +1,4 @@
-# lx-music-desktop 常见问题
+# LX Flow Music 常见问题
 
 本文档已迁移至：<https://lyswhut.github.io/lx-music-doc/desktop/faq>
 

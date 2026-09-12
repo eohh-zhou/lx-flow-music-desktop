@@ -5,10 +5,10 @@ LX Flow Music publishes Windows installer updates through GitHub Releases. The r
 1. Update `version` in `package.json` and `package-lock.json`.
 2. Add a matching entry to `CHANGELOG.md`.
 3. Commit and push the changes to GitHub.
-4. Create and push a matching tag, for example `v2.12.4`.
+4. Create and push a matching tag, for example `v3.0.5`.
 
 ```powershell
-git tag v2.12.4
+git tag v3.0.5
 git push origin HEAD --tags
 ```
 

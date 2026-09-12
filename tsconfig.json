@@ -1,4 +1,5 @@
 {
+  // LX Flow Music
   // https://github.com/tsconfig/bases#recommended-tsconfigjson
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {

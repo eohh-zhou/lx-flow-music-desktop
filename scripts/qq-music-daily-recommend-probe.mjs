@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// 企鹅音乐每日推荐探测脚本
 
 const MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// 企鹅音乐最近播放探测脚本
 
 const MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
 const DEFAULT_SONG_MID = '0034Ge6Q2b504d'

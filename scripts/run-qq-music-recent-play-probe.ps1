@@ -1,3 +1,4 @@
+# 企鹅音乐最近播放探测脚本
 param(
   [string]$SongMid = '0034Ge6Q2b504d',
   [switch]$Write,

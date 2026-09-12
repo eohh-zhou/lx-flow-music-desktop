@@ -1,6 +1,6 @@
 import { httpFetch } from '../../request'
 import { decodeName } from '../../index'
-import { formatSinger, objStr2JSON } from './util'
+import { formatSinger, objStr2JSON, getSearchPicUrl, normalizeKwPicUrl } from './util'
 
 // let requestObj_list
 export default {
@@ -58,7 +58,7 @@ export default {
         songmid: item.id,
         source: 'kw',
         interval: null,
-        img: item.pic,
+        img: getSearchPicUrl(item),
         lrc: null,
         otherSource: null,
         types,
@@ -93,7 +93,7 @@ export default {
         source: 'kw',
         info: {
           name: body.name,
-          img: body.img || body.hts_img,
+          img: normalizeKwPicUrl(body.img || body.hts_img),
           desc: decodeName(body.info),
           author: decodeName(body.artist),
           // play_count: this.formatPlayCount(body.playnum),

@@ -37,6 +37,25 @@ export const objStr2JSON = str => {
 
 export const formatSinger = rawData => rawData.replace(/&/g, '、')
 
+export const normalizeKwPicUrl = (url) => {
+  if (!url) return null
+  let s = String(url).trim()
+  if (!s) return null
+  if (s.startsWith('//')) s = 'https:' + s
+  if (!/^https?:/i.test(s)) {
+    if (/^\d+\//.test(s)) {
+      return `https://img2.kuwo.cn/star/albumcover/${s.replace(/^120\//, '500/')}`
+    }
+    return null
+  }
+  s = s.replace(/^http:\/\//i, 'https://')
+  s = s.replace(/img\d+\.kwcdn\.kuwo\.cn/i, 'img2.kuwo.cn')
+  s = s.replace(/img1\.kuwo\.cn/i, 'img2.kuwo.cn')
+  s = s.replace(/\/albumcover\/120\//, '/albumcover/500/')
+  s = s.replace(/\/starheads\/120\//, '/starheads/500/')
+  return s
+}
+
 export const getSearchPicUrl = (info) => {
   const album = info.web_albumpic_short
   if (album) {
@@ -48,7 +67,7 @@ export const getSearchPicUrl = (info) => {
     const path = String(artist).replace(/^120\//, '500/')
     return `https://img2.kuwo.cn/star/starheads/${path}`
   }
-  return null
+  return normalizeKwPicUrl(info.albumpic || info.albumPic || info.pic || info.hts_img || info.img)
 }
 
 export const matchToken = headers => {

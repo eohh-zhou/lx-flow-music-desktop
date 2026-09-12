@@ -1,5 +1,11 @@
 # lx-music-desktop change log
 
+## [3.0.8] - 2026-09-12
+
+### Fixed
+
+- Show song covers in Kuwo, Kugou, and Migu playlist details, plus matching leaderboard and album lists.
+
 ## [3.0.7] - 2026-09-12
 
 ### Fixed

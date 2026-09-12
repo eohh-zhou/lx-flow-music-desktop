@@ -2,6 +2,15 @@ import { sizeFormate, formatPlayTime } from '../../index'
 import { createHttpFetch } from './utils'
 import { formatSingerName } from '../utils'
 
+const formatMgPicUrl = (item) => {
+  let img = item.img3 || item.img2 || item.img1 || item.albumImgs?.[0]?.img || item.mediumPic || item.largePic || null
+  if (img && !/^https?:/i.test(img)) {
+    if (img.startsWith('//')) img = 'http:' + img
+    else img = 'http://d.musicapp.migu.cn' + (img.startsWith('/') ? img : '/' + img)
+  }
+  return img
+}
+
 const createGetMusicInfosTask = (ids) => {
   let list = ids
   let tasks = []
@@ -73,7 +82,7 @@ export const filterMusicInfoList = (rawList) => {
       copyrightId: item.copyrightId,
       source: 'mg',
       interval: intervalTest ? RegExp.$1 : null,
-      img: item.albumImgs?.length ? item.albumImgs[0].img : null,
+      img: formatMgPicUrl(item),
       lrc: null,
       lrcUrl: item.lrcUrl,
       mrcUrl: item.mrcUrl,
@@ -139,7 +148,7 @@ export const filterMusicInfoListV5 = (rawList) => {
       copyrightId: item.copyrightId,
       source: 'mg',
       interval: formatPlayTime(item.duration),
-      img: item.img3 || item.img2 || item.img1 || null,
+      img: formatMgPicUrl(item),
       lrc: null,
       lrcUrl: item.lrcUrl,
       mrcUrl: item.mrcUrl,

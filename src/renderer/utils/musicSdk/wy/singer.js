@@ -137,7 +137,7 @@ export default {
         songmid: item.id,
         source: 'wy',
         interval: formatPlayTime(item.duration),
-        img: null,
+        img: item.album?.picUrl ?? item.al?.picUrl ?? null,
         lrc: null,
         otherSource: null,
         types,

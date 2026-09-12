@@ -1,6 +1,6 @@
 import { httpFetch } from '../../request'
 import { formatPlayTime, decodeName } from '../../index'
-import { formatSinger, objStr2JSON } from './util'
+import { formatSinger, objStr2JSON, getSearchPicUrl } from './util'
 import album from './album'
 
 export default {
@@ -266,7 +266,7 @@ export default {
         songmid: item.id,
         source: 'kw',
         interval: formatPlayTime(item.duration),
-        img: item.albumPic,
+        img: getSearchPicUrl(item) || item.albumPic,
         releaseDate: item.releaseDate,
         lrc: null,
         otherSource: null,
@@ -435,7 +435,7 @@ export default {
         songmid: item.id,
         source: 'kw',
         interval: formatPlayTime(parseInt(item.duration)),
-        img: null,
+        img: getSearchPicUrl(item),
         lrc: null,
         otherSource: null,
         types,

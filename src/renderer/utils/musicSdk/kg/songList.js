@@ -1,7 +1,7 @@
 import { httpFetch } from '../../request'
 import { decodeName, formatPlayTime, sizeFormate, dateFormat, formatPlayCount } from '../../index'
 import infSign from '@renderer/utils/musicSdk/kg/vendors/infSign.min'
-import { signatureParams } from './util'
+import { signatureParams, getKgPicUrl } from './util'
 
 const handleSignature = (id, page, limit) => new Promise((resolve, reject) => {
   infSign({ appid: 1058, type: 0, module: 'playlist', page, pagesize: limit, specialid: id }, null, {
@@ -292,7 +292,7 @@ export default {
       dfid: '-',
       clienttime: Date.now(),
       key: 'OIlwieks28dk2k092lksi2UIkp',
-      fields: 'album_info,author_name,audio_info,ori_audio_name,base,songname',
+      fields: 'album_info,author_name,audio_info,ori_audio_name,base,songname,classification',
     }
     let list = hashs
     let tasks = []
@@ -742,7 +742,7 @@ export default {
         songmid: item.audio_id,
         source: 'kg',
         interval: formatPlayTime(item.duration / 1000),
-        img: null,
+        img: getKgPicUrl(item),
         lrc: null,
         hash: item.hash,
         types,
@@ -865,7 +865,7 @@ export default {
         songmid: item.audio_info.audio_id,
         source: 'kg',
         interval: formatPlayTime(parseInt(item.audio_info.timelength) / 1000),
-        img: null,
+        img: getKgPicUrl(item),
         lrc: null,
         hash: item.audio_info.hash,
         otherSource: null,

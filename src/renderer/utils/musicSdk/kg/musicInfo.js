@@ -1,5 +1,5 @@
 import { decodeName, formatPlayTime, sizeFormate } from '../../index'
-import { createHttpFetch } from './util'
+import { createHttpFetch, getKgPicUrl } from './util'
 
 const createGetMusicInfosTask = (hashs) => {
   let data = {
@@ -87,7 +87,7 @@ export const filterMusicInfoList = (rawList) => {
       songmid: item.audio_info.audio_id,
       source: 'kg',
       interval: formatPlayTime(parseInt(item.audio_info.timelength) / 1000),
-      img: null,
+      img: getKgPicUrl(item),
       lrc: null,
       hash: item.audio_info.hash,
       otherSource: null,

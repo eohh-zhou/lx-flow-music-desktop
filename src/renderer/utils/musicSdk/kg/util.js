@@ -1,6 +1,31 @@
 import { toMD5 } from '../utils'
 import { httpFetch } from '../../request'
 
+export const getKgPicUrl = (item) => {
+  if (!item) return null
+  const albumInfo = item.album_info || {}
+  const transParam = item.trans_param || albumInfo.trans_param || {}
+  const candidates = [
+    albumInfo.sizable_cover,
+    albumInfo.union_cover,
+    albumInfo.cover,
+    item.sizable_cover,
+    item.album_sizable_cover,
+    transParam.union_cover,
+    item.union_cover,
+    item.imgurl,
+    item.album_img,
+    item.Image,
+    item.image,
+    item.img,
+  ]
+  for (const raw of candidates) {
+    if (!raw) continue
+    return String(raw).replace('{size}', '240')
+  }
+  return null
+}
+
 // s.content[0].lyricContent.forEach(([str]) => {
 //   console.log(str)
 // })

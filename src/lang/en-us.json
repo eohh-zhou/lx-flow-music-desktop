@@ -885,6 +885,8 @@
   "theme_selector_modal__theme_name": "Theme name",
   "theme_selector_modal__title": "Follow System Theme Options",
   "theme_selector_modal__title_tip": "NOTE: You can set a light theme and a dark theme in advance, and then it will automatically switch to the corresponding theme you set in advance according to the light and dark theme colors of the system.",
+  "theme_selector_modal__skin_title": "Choose a skin",
+  "theme_selector_modal__skin_tip": "Click a theme to apply it immediately. Light and dark themes both take effect now, not just as follow-system presets.",
   "toggle_source_failed": "Failed to change the source. Please try to manually search for the song on the search page by specifying another service.",
   "toggle_source_try": "Try switching to another source...",
   "update__downgrade_tip": "We found that you have downgraded the version ({ver}). If you encounter problems when using the new version, please read the FAQ first. If the problem you encounter is not documented in the FAQ or cannot be resolved, you can give us feedback through the feedback channels mentioned in the document😘!\n\nNOTE: When downgrading from the new version to the old version, it is recommended to backup the playlist first. If there is an exception, it can be resolved by cleaning the data. The data directory path can be found in the document.",

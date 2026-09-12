@@ -271,7 +271,7 @@ export const getTheme = () => {
             : `url(file:///${encodePath(joinPath(global.lxDataPath, 'theme_images', theme.config.extInfo['--background-image']))})`
       }
     } else {
-      themeId = global.lx.appSetting['theme.id'] == 'auto' && shouldUseDarkColors ? 'black' : 'green'
+      themeId = global.lx.appSetting['theme.id'] == 'auto' && shouldUseDarkColors ? 'red_dark' : 'red_light'
       theme = themes.find(theme => theme.id == themeId) as LX.Theme
     }
   }

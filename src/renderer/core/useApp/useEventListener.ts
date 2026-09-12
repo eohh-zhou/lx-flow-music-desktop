@@ -111,6 +111,10 @@ export default () => {
   const rThemeChange = onThemeChange(({ params: setting }) => {
     themeShouldUseDarkColors.value = setting.shouldUseDarkColors
     if (themeId.value != setting.theme.id) themeId.value = setting.theme.id
+    if (setting.theme?.colors) {
+      window.setTheme(setting.theme.colors)
+      return
+    }
     getThemes(({ dataPath }) => {
       applyTheme(appSetting['theme.id'], appSetting['theme.lightId'], appSetting['theme.darkId'], dataPath)
     })

@@ -885,6 +885,8 @@
   "theme_selector_modal__theme_name": "主題名稱",
   "theme_selector_modal__title": "跟隨系統主題設定",
   "theme_selector_modal__title_tip": "註：你可以預先設定一個亮色主題及暗色主題，此後將根據系統的亮、暗主題色自動切換為你預先設定的相應主題。",
+  "theme_selector_modal__skin_title": "選擇皮膚",
+  "theme_selector_modal__skin_tip": "點擊即可立即切換目前皮膚。亮色、暗色主題都會立刻生效，不再只作為跟隨系統的預設。",
   "toggle_source_failed": "變更來源失敗，請嘗試手動在搜尋頁指定其他音樂串流平台搜尋該歌曲播放",
   "toggle_source_try": "嘗試變更到其他來源...",
   "update__downgrade_tip": "我們發現你降級了版本（{ver}），若使用新版本時遇到問題，請先嘗試閱讀常見問題解決，若你遇到的問題在常見問題中未記錄或無法解決，可以透過教學文件中提到的回報管道向我們回報😘！\n\n注意：從新版本降級舊版時建議先備份歌單，若出現異常則可透過清理資料解決，資料目錄路徑在教學文件有記錄。",

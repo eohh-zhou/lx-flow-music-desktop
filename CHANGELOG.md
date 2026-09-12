@@ -1,5 +1,12 @@
 # lx-music-desktop change log
 
+## [3.0.5] - 2026-09-12
+
+### Fixed
+
+- Apply the selected skin immediately from the toolbar picker instead of only updating the follow-system light preset.
+- Keep a readable wallpaper overlay with a lighter frosted-glass blur.
+
 ## [3.0.4] - 2026-09-11
 
 ### Fixed

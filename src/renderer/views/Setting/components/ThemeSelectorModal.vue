@@ -1,7 +1,7 @@
 <template>
   <material-modal :show="modelValue" bg-close="bg-close" :teleport="teleport" @close="$emit('update:modelValue', false)">
     <main :class="$style.main">
-      <h2>{{ $t('theme_selector_modal__title') }}</h2>
+      <h2>{{ $t(immediate ? 'theme_selector_modal__skin_title' : 'theme_selector_modal__title') }}</h2>
       <div class="scroll" :class="$style.content">
         <div>
           <h3>{{ $t('theme_selector_modal__light_title') }}</h3>
@@ -9,7 +9,7 @@
             <li
               v-for="theme in themeInfo.themeLights" :key="theme.id"
               :style="theme.styles" :aria-label="theme.name"
-              :class="[{[$style.active]: appSetting['theme.lightId'] == theme.id}]" @click="setLightId(theme.id)"
+              :class="[{[$style.active]: isLightActive(theme.id)}]" @click="setLightId(theme.id)"
             >
               <span :class="$style.bg" />
               <label>{{ theme.name }}</label>
@@ -22,7 +22,7 @@
             <li
               v-for="theme in themeInfo.themeDarks" :key="theme.id"
               :style="theme.styles" :aria-label="theme.name"
-              :class="[{[$style.active]: appSetting['theme.darkId'] == theme.id}]" @click="setDarkId(theme.id)"
+              :class="[{[$style.active]: isDarkActive(theme.id)}]" @click="setDarkId(theme.id)"
             >
               <span :class="$style.bg" />
               <label>{{ theme.name }}</label>
@@ -31,7 +31,7 @@
         </div>
       </div>
       <div :class="$style.note">
-        <p>{{ $t('theme_selector_modal__title_tip') }}</p>
+        <p>{{ $t(immediate ? 'theme_selector_modal__skin_tip' : 'theme_selector_modal__title_tip') }}</p>
       </div>
     </main>
   </material-modal>
@@ -40,6 +40,7 @@
 <script>
 import { markRaw, reactive, watch } from '@common/utils/vueTools'
 import { appSetting, updateSetting } from '@renderer/store/setting'
+import { themeId, themeShouldUseDarkColors } from '@renderer/store'
 import { applyTheme, getThemes, buildBgUrl } from '@renderer/store/utils'
 
 export default {
@@ -113,31 +114,51 @@ export default {
       })
     })
 
+    const currentThemeId = () => {
+      if (appSetting['theme.id'] != 'auto') return appSetting['theme.id']
+      return themeShouldUseDarkColors.value ? appSetting['theme.darkId'] : appSetting['theme.lightId']
+    }
+    const isLightActive = (id) => {
+      if (props.immediate) return currentThemeId() == id
+      return appSetting['theme.lightId'] == id
+    }
+    const isDarkActive = (id) => {
+      if (props.immediate) return currentThemeId() == id
+      return appSetting['theme.darkId'] == id
+    }
     const setLightId = (id) => {
-      if (appSetting['theme.lightId'] == id && !(props.immediate && appSetting['theme.id'] != id)) return
-      const setting = { 'theme.lightId': id }
-      if (props.immediate) setting['theme.id'] = id
-      updateSetting(setting)
       if (props.immediate) {
+        if (appSetting['theme.id'] == id) return
+        themeId.value = id
         applyTheme(id, id, appSetting['theme.darkId'], dataPath)
-      } else if (appSetting['theme.id'] == 'auto') {
+        updateSetting({ 'theme.id': id, 'theme.lightId': id })
+        return
+      }
+      if (appSetting['theme.lightId'] == id) return
+      updateSetting({ 'theme.lightId': id })
+      if (appSetting['theme.id'] == 'auto') {
         applyTheme('auto', id, appSetting['theme.darkId'], dataPath)
       }
     }
     const setDarkId = (id) => {
-      if (appSetting['theme.darkId'] == id && !(props.immediate && appSetting['theme.id'] != id)) return
-      const setting = { 'theme.darkId': id }
-      if (props.immediate) setting['theme.id'] = id
-      updateSetting(setting)
       if (props.immediate) {
+        if (appSetting['theme.id'] == id) return
+        themeId.value = id
         applyTheme(id, appSetting['theme.lightId'], id, dataPath)
-      } else if (appSetting['theme.id'] == 'auto') {
+        updateSetting({ 'theme.id': id, 'theme.darkId': id })
+        return
+      }
+      if (appSetting['theme.darkId'] == id) return
+      updateSetting({ 'theme.darkId': id })
+      if (appSetting['theme.id'] == 'auto') {
         applyTheme('auto', appSetting['theme.lightId'], id, dataPath)
       }
     }
     return {
       appSetting,
       themeInfo,
+      isLightActive,
+      isDarkActive,
       setLightId,
       setDarkId,
     }

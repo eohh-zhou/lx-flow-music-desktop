@@ -137,6 +137,10 @@ watch(keyword, () => {
   // scope 模式下，输入即写入 route.query.search（实时过滤）
   if (isScopedMode.value && !pendingNavTimer) {
     syncScopeSearchParam()
+    return
+  }
+  if (!keyword.value && route.name === 'Search' && (_searchText.value || route.query.text)) {
+    goSearchHome()
   }
 })
 
@@ -199,9 +203,26 @@ const handleBlur = () => {
   }, 120)
 }
 
-const handleClear = () => {
+const goSearchHome = () => {
+  setSearchText('')
+  if (route.name !== 'Search') return
+  const newQuery = { ...route.query }
+  delete newQuery.text
+  delete newQuery.page
+  void router.replace({ path: route.path, query: newQuery }).catch(() => {})
+}
+
+const clearSearchHome = () => {
   keyword.value = ''
-  if (isScopedMode.value) syncScopeSearchParam()
+  if (isScopedMode.value) {
+    syncScopeSearchParam()
+    return
+  }
+  goSearchHome()
+}
+
+const handleClear = () => {
+  clearSearchHome()
   focusInput()
 }
 
@@ -321,7 +342,11 @@ const submitKeyword = async(text, fromEnter = false) => {
   await new Promise(resolve => setTimeout(resolve, 30))
   await router.replace({
     path: '/search',
-    query: { text },
+    query: {
+      ...route.name === 'Search' ? route.query : {},
+      text,
+      page: 1,
+    },
   }).catch(() => {})
 }
 
@@ -341,8 +366,7 @@ const handleKeydown = (e) => {
 
 const handleEsc = () => {
   if (keyword.value) {
-    keyword.value = ''
-    if (isScopedMode.value) syncScopeSearchParam()
+    clearSearchHome()
   } else {
     popupVisible.value = false
     focused.value = false

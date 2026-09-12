@@ -29,7 +29,7 @@ import { historyList } from '@renderer/store/search/state'
 import { getHistoryList, removeHistoryWord, clearHistoryList } from '@renderer/store/search/action'
 import { getList } from '@renderer/store/hotSearch'
 import { appSetting } from '@renderer/store/setting'
-import { useRouter } from '@common/utils/vueRouter'
+import { useRouter, useRoute } from '@common/utils/vueRouter'
 
 const props = defineProps({
   visible: Boolean,
@@ -65,11 +65,15 @@ if (appSetting['search.isShowHistorySearch']) {
 }
 
 const router = useRouter()
+const route = useRoute()
 const handleSearch = (text) => {
   void router.replace({
     path: '/search',
     query: {
+      ...route.query,
+      source: props.source,
       text,
+      page: 1,
     },
   })
 }

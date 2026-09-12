@@ -1,5 +1,12 @@
 # lx-music-desktop change log
 
+## [3.0.7] - 2026-09-12
+
+### Fixed
+
+- Use the QQ Music desktop search API to reduce intermittent search failures.
+- Return to the search home page after clearing the search box.
+
 ## [3.0.6] - 2026-09-12
 
 ### Fixed

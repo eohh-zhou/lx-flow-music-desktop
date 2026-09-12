@@ -49,9 +49,11 @@ const verifyQueryParams = async(to, from, next) => {
 
   if (_page) page.value = parseInt(_page)
 
-  if (to.query.text != null) {
+  if (to.query.text != null && to.query.text !== '') {
     searchText.value = to.query.text
     if (!_page) page.value = 1
+  } else {
+    searchText.value = ''
   }
   next()
   void setSearchSetting({ source: _source, type: _type })

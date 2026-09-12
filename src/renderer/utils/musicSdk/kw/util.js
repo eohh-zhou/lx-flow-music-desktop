@@ -37,6 +37,20 @@ export const objStr2JSON = str => {
 
 export const formatSinger = rawData => rawData.replace(/&/g, '、')
 
+export const getSearchPicUrl = (info) => {
+  const album = info.web_albumpic_short
+  if (album) {
+    const path = String(album).replace(/^120\//, '500/')
+    return `https://img2.kuwo.cn/star/albumcover/${path}`
+  }
+  const artist = info.web_artistpic_short
+  if (artist) {
+    const path = String(artist).replace(/^120\//, '500/')
+    return `https://img2.kuwo.cn/star/starheads/${path}`
+  }
+  return null
+}
+
 export const matchToken = headers => {
   try {
     return headers['set-cookie'][0].match(/kw_token=(\w+)/)[1]

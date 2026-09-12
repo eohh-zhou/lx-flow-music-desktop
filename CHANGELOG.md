@@ -1,5 +1,11 @@
 # lx-music-desktop change log
 
+## [3.0.6] - 2026-09-12
+
+### Fixed
+
+- Show Kuwo and Kugou album covers in search results.
+
 ## [3.0.5] - 2026-09-12
 
 ### Fixed

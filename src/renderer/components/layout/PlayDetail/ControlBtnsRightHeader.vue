@@ -102,43 +102,51 @@ const fullscreenExit = () => {
 
   .controBtn {
     position: absolute;
-    top: 0;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
     display: flex;
+    align-items: center;
+    gap: 4px;
     -webkit-app-region: no-drag;
 
     button {
       display: flex;
       position: relative;
+      width: 28px;
+      height: 26px;
       background: none;
       border: none;
       outline: none;
-      padding: 1px;
+      padding: 0;
       cursor: pointer;
-      display: flex;
       justify-content: center;
       align-items: center;
+      border-radius: 8px;
+      color: var(--color-650);
+      transition: @transition-fast;
+      transition-property: background-color, color, transform;
+
+      svg {
+        fill: currentColor;
+      }
+
+      &.hover {
+        color: var(--color-primary);
+        background-color: var(--color-primary-alpha-900);
+
+        &.close {
+          color: #fff;
+          background-color: var(--color-btn-close);
+        }
+      }
+      &:active {
+        transform: scale(.92);
+      }
     }
 
     .fullscreenExit {
       display: none;
-    }
-  }
-
-  .controBtn {
-    right: 0;
-    button {
-      width: 46px;
-      height: 30px;
-      color: var(--color-font-label);
-      transition: background-color 0.2s ease-in-out;
-
-      &.hover {
-        background-color: var(--color-button-background-hover);
-
-        &.close {
-          background-color: var(--color-btn-close);
-        }
-      }
     }
   }
 }

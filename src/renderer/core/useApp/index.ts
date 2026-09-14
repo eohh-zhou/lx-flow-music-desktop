@@ -14,6 +14,7 @@ import useDeeplink from './useDeeplink'
 import usePlayer from './usePlayer'
 import useSettingSync from './useSettingSync'
 import useScrollbarHover from './useScrollbarHover'
+import useThemeOpacity from './useThemeOpacity'
 import { useRouter } from '@common/utils/vueRouter'
 import handleListAutoUpdate from './listAutoUpdate'
 
@@ -25,6 +26,7 @@ export default () => {
   proxy.port = appSetting['network.proxy.port']
   isFullscreen.value = appSetting['common.startInFullscreen']
   themeId.value = appSetting['theme.id']
+  useThemeOpacity()
 
   const router = useRouter()
   const initSyncService = useSync()

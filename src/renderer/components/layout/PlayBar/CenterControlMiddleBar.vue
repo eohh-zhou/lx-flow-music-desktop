@@ -1,25 +1,28 @@
 <template>
   <div :class="$style.player">
-    <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
-      <img v-if="musicInfo.pic" :class="{[$style.rotating]: isPlay}" :src="musicInfo.pic" decoding="async" @error="imgError">
-      <div v-else :class="$style.emptyPic">L<span>X</span></div>
-    </div>
-    <div :class="$style.infoContent">
-      <div :class="$style.titleRow">
+    <div :class="$style.left">
+      <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
+        <img v-if="musicInfo.pic" :class="{[$style.rotating]: isPlay}" :src="musicInfo.pic" decoding="async" @error="imgError">
+        <div v-else :class="$style.emptyPic">L<span>X</span></div>
+      </div>
+      <div :class="$style.infoContent">
         <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
           {{ title }}
         </div>
-        <button :class="[$style.commentBtn, {[$style.commentActive]: isShowPlayComment}]" :aria-label="$t('comment__show')" :title="$t('comment__show')" ignore-tip @click="toggleVisibleComment">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve">
-            <use xlink:href="#icon-comment" />
-          </svg>
-        </button>
+        <div :class="$style.status">{{ statusText }}</div>
       </div>
-      <div :class="$style.status">{{ singer || statusText }}</div>
     </div>
-    <play-progress />
-    <control-btns />
     <play-btns />
+    <div :class="$style.right">
+      <div :class="$style.timeContent">
+        <span>{{ nowPlayTimeStr }}</span>
+        <div :class="$style.progress">
+          <common-progress-bar v-if="!isShowPlayerDetail" :class-name="$style.progressBar" :progress="progress" :handle-transition-end="handleTransitionEnd" :is-active-transition="isActiveTransition" />
+        </div>
+        <span>{{ maxPlayTimeStr }}</span>
+      </div>
+      <control-btns />
+    </div>
   </div>
 </template>
 
@@ -29,13 +32,12 @@ import { useRouter } from '@common/utils/vueRouter'
 import { clipboardWriteText } from '@common/utils/electron'
 import ControlBtns from './ControlBtns.vue'
 import PlayBtns from './PlayBtns.vue'
-import PlayProgress from './PlayProgress.vue'
+import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 // import { lyric } from '@renderer/core/share/lyric'
 import {
   statusText,
   musicInfo,
   isShowPlayerDetail,
-  isShowPlayComment,
   isPlay,
   playInfo,
   playMusicInfo,
@@ -43,7 +45,6 @@ import {
 import {
   setMusicInfo,
   setShowPlayerDetail,
-  setShowPlayComment,
 } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 import { LIST_IDS } from '@common/constants'
@@ -54,19 +55,21 @@ export default {
   components: {
     ControlBtns,
     PlayBtns,
-    PlayProgress,
   },
   setup() {
     const router = useRouter()
 
+    const {
+      nowPlayTimeStr,
+      maxPlayTimeStr,
+      progress,
+      isActiveTransition,
+      handleTransitionEnd,
+    } = usePlayProgress()
+
     const showPlayerDetail = () => {
       if (!playMusicInfo.musicInfo) return
       setShowPlayerDetail(true)
-    }
-    const toggleVisibleComment = () => {
-      if (!playMusicInfo.musicInfo) return
-      if (!isShowPlayerDetail.value) setShowPlayerDetail(true)
-      setShowPlayComment(!isShowPlayComment.value)
     }
     const handleCopy = (text) => {
       clipboardWriteText(text)
@@ -96,24 +99,25 @@ export default {
         : ''
     })
 
-    const singer = computed(() => musicInfo.singer || '')
-
     // onBeforeUnmount(() => {
     // window.eventHub.emit(eventPlayerNames.setTogglePlay)
     // })
 
     return {
       musicInfo,
+      nowPlayTimeStr,
+      maxPlayTimeStr,
+      progress,
+      isActiveTransition,
+      handleTransitionEnd,
       handleCopy,
       imgError,
       statusText,
       title,
-      singer,
       showPlayerDetail,
-      isShowPlayComment,
-      toggleVisibleComment,
-      handleToMusicLocation,
       isPlay,
+      handleToMusicLocation,
+      isShowPlayerDetail,
     }
   },
 }
@@ -150,6 +154,36 @@ export default {
     z-index: -1;
   }
 }
+.left,
+.right {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+}
+.right {
+  justify-content: flex-end;
+}
+.timeContent {
+  display: flex;
+  flex: auto;
+  min-width: 0;
+  flex-flow: row nowrap;
+  align-items: center;
+  padding-left: 10px;
+  color: var(--color-550);
+  font-size: 13px;
+}
+.progress {
+  position: relative;
+  flex: auto;
+  min-width: 0;
+  padding: 8px 0;
+  margin: 0 8px;
+}
+
 .picContent {
   height: 100%;
   width: auto;
@@ -213,7 +247,7 @@ export default {
     justify-content: center;
     color: rgba(255, 255, 255, .95);
     user-select: none;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 800;
     letter-spacing: 1px;
     font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -227,118 +261,32 @@ export default {
 }
 
 .infoContent {
-  flex: 1 1 auto;
-  min-width: 0;
   padding: 0 10px;
+  flex: 1 1 auto;
   display: flex;
   flex-flow: column nowrap;
   justify-content: center;
   align-items: flex-start;
   font-size: 13px;
   color: var(--color-font);
+  min-width: 0;
   line-height: 1.5;
 }
 
-.titleRow {
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-  gap: 7px;
-  max-width: 100%;
-  min-width: 0;
-}
-
 .title {
-  min-width: 0;
+  max-width: 100%;
   font-size: 14px;
   font-weight: 700;
   color: var(--color-font);
-  cursor: pointer;
   .mixin-ellipsis-1();
 }
-
-.commentBtn {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  border: none;
-  border-radius: @radius-round;
-  background-color: transparent;
-  color: var(--color-450);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  cursor: pointer;
-  outline: none;
-  transition: @transition-fast;
-  transition-property: color, background-color, transform;
-
-  svg {
-    fill: currentColor;
-  }
-
-  &:hover {
-    color: var(--color-primary);
-    background-color: var(--color-primary-alpha-900);
-  }
-  &:active {
-    transform: scale(.9);
-  }
-}
-
-.commentActive {
-  color: var(--color-primary);
-}
 .status {
-  margin-top: 1px;
-  min-width: 0;
-  height: 17px;
+  padding-top: 3px;
+  height: 23px;
   font-size: 11.5px;
   color: var(--color-font-label);
   .mixin-ellipsis-1();
   max-width: 100%;
 }
 
-// .timeContainer {
-//   flex: none;
-//   padding: 15px 0;
-//   &:hover {
-//     .progress {
-//       opacity: 1;
-//     }
-//   }
-// }
-// .timeContent {
-//   // width: 30%;
-//   position: relative;
-//   // flex: none;
-//   color: var(--color-300);
-//   font-size: 13px;
-//   // padding-left: 10px;
-//   // display: flex;
-//   // flex-flow: column nowrap;
-//   // align-items: center;
-//   padding-bottom: 3px;
-// }
-// .progress {
-//   position: absolute;
-//   top: 100%;
-//   left: 0;
-//   width: 100%;
-//   flex: auto;
-//   // width: 160px;
-//   // position: relative;
-//   // padding-bottom: 6px;
-//   // margin: 0 8px;
-//   padding: 2px 0;
-//   height: 8px;
-//   transition: opacity @transition-normal;
-//   opacity: .24;
-
-//   .progressBar {
-//     height: 2px;
-//     border-radius: 0;
-//   }
-// }
-	</style>
+</style>

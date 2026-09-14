@@ -3,41 +3,18 @@
     <div :class="$style.progress">
       <common-progress-bar v-if="!isShowPlayerDetail" edge :progress="progress" :handle-transition-end="handleTransitionEnd" :is-active-transition="isActiveTransition" />
     </div>
-    <div :class="$style.left">
-      <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
-        <img v-if="musicInfo.pic" :class="{[$style.rotating]: isPlay}" :src="musicInfo.pic" decoding="async" @error="imgError">
-        <div v-else :class="$style.emptyPic">L<span>X</span></div>
-      </div>
-      <div :class="$style.infoContent">
-        <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
-          {{ title }}
-        </div>
-        <div :class="$style.status">{{ statusText }}</div>
-      </div>
+    <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
+      <img v-if="musicInfo.pic" :class="{[$style.rotating]: isPlay}" :src="musicInfo.pic" decoding="async" @error="imgError">
+      <div v-else :class="$style.emptyPic">L<span>X</span></div>
     </div>
-    <div :class="$style.playBtnContent">
-      <div :class="$style.playBtn" :aria-label="$t('player__prev')" @click="playPrev()">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
-          <use xlink:href="#icon-prevMusic" />
-        </svg>
+    <div :class="$style.infoContent">
+      <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
+        {{ title }}
       </div>
-      <div :class="[$style.playBtn, $style.mainBtn]" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
-        <svg v-if="isPlay" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
-          <use xlink:href="#icon-pause" />
-        </svg>
-        <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
-          <use xlink:href="#icon-play" />
-        </svg>
-      </div>
-      <div :class="$style.playBtn" :aria-label="$t('player__next')" @click="playNext()">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
-          <use xlink:href="#icon-nextMusic" />
-        </svg>
-      </div>
+      <div :class="$style.status">{{ statusText }}</div>
     </div>
-    <div :class="$style.right">
-      <control-btns />
-    </div>
+    <control-btns />
+    <play-btns />
   </div>
 </template>
 
@@ -46,7 +23,7 @@ import { computed } from '@common/utils/vueTools'
 import { useRouter } from '@common/utils/vueRouter'
 import { clipboardWriteText } from '@common/utils/electron'
 import ControlBtns from './ControlBtns.vue'
-// import PlayProgress from './PlayProgress'
+import PlayBtns from './PlayBtns.vue'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 // import { lyric } from '@renderer/core/share/lyric'
 import {
@@ -62,7 +39,6 @@ import {
   setShowPlayerDetail,
 } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
-import { togglePlay, playNext, playPrev } from '@renderer/core/player'
 import { LIST_IDS } from '@common/constants'
 import { formatMusicName } from '@renderer/utils'
 
@@ -70,14 +46,12 @@ export default {
   name: 'CorePlayBar',
   components: {
     ControlBtns,
-    // PlayProgress,
+    PlayBtns,
   },
   setup() {
     const router = useRouter()
 
     const {
-      nowPlayTimeStr,
-      maxPlayTimeStr,
       progress,
       isActiveTransition,
       handleTransitionEnd,
@@ -121,8 +95,6 @@ export default {
 
     return {
       musicInfo,
-      nowPlayTimeStr,
-      maxPlayTimeStr,
       progress,
       isActiveTransition,
       handleTransitionEnd,
@@ -132,9 +104,6 @@ export default {
       title,
       showPlayerDetail,
       isPlay,
-      togglePlay,
-      playNext,
-      playPrev,
       handleToMusicLocation,
       isShowPlayerDetail,
     }
@@ -181,19 +150,6 @@ export default {
   height: 14px;
   z-index: 3;
 }
-.left,
-.right {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 100%;
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-}
-.right {
-  justify-content: flex-end;
-}
-
 .picContent {
   height: 100%;
   width: auto;
@@ -297,69 +253,6 @@ export default {
   color: var(--color-font-label);
   .mixin-ellipsis-1();
   max-width: 100%;
-}
-
-.playBtnContent {
-  height: 100%;
-  flex: none;
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-  justify-content: center;
-  padding: 0 16px;
-  gap: 14px;
-}
-
-.playBtn {
-  flex: none;
-  height: 30px;
-  width: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: @radius-round;
-  transition: @transition-fast;
-  transition-property: color, background-color, opacity, transform;
-  color: var(--color-700);
-  opacity: 1;
-  cursor: pointer;
-
-  svg {
-    fill: currentColor;
-    height: 15px;
-    width: 15px;
-  }
-  &:hover {
-    color: var(--color-1000);
-    background-color: var(--color-100);
-    transform: scale(1.05);
-  }
-  &:active {
-    transform: scale(.95);
-  }
-}
-
-.mainBtn {
-  height: 40px;
-  width: 40px;
-  color: #fff;
-  background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary-dark-100));
-  box-shadow: 0 4px 14px var(--color-primary-alpha-500);
-
-  svg {
-    height: 20px;
-    width: 20px;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .15));
-  }
-  &:hover {
-    color: #fff;
-    background: linear-gradient(145deg, var(--color-primary), var(--color-primary-dark-100));
-    box-shadow: 0 6px 18px var(--color-primary-alpha-400);
-    transform: scale(1.06);
-  }
-  &:active {
-    transform: scale(.94);
-  }
 }
 
 </style>

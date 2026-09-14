@@ -71,7 +71,7 @@ declare global {
       /**
        * 播放栏进度条样式
        */
-      'common.playBarProgressStyle': 'mini' | 'full' | 'middle'
+      'common.playBarProgressStyle': 'mini' | 'full' | 'middle' | 'centerControl' | 'centerControlMiddle' | 'centerControlFull'
 
       /**
        * 启用透明窗口
@@ -607,6 +607,21 @@ declare global {
        * 暗色主题id
        */
       'theme.darkId': string
+
+      /**
+       * 左侧栏透明度（百分比）。-1 表示使用当前皮肤自带值
+       */
+      'theme.navOpacity': number
+
+      /**
+       * 右侧栏透明度（百分比）。-1 表示使用当前皮肤自带值
+       */
+      'theme.mainOpacity': number
+
+      /**
+       * 毛玻璃模糊强度（px）。-1 表示使用当前皮肤自带值
+       */
+      'theme.glassBlur': number
 
       /**
        * 是否显示热门搜索

@@ -158,9 +158,8 @@ watch(focused, (v) => {
   if (v) popupVisible.value = true
 })
 
-watch(scopeListId, (id) => {
+watch(scopeListId, () => {
   selectIndex.value = keyword.value ? 0 : -1
-  if (id && keyword.value) syncScopeSearchParam()
 })
 
 watch(() => route.query.search, (search) => {

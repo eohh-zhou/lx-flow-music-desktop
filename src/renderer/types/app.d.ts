@@ -22,6 +22,7 @@ interface Lx {
   isProd: boolean
   songListInfo: {
     fromName: string
+    fromQuery: Record<string, string | (string | null)[] | null> | null
     searchKey: string | null
     searchPosition?: number
     songlistKey: string | null

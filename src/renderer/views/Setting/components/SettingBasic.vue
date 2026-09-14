@@ -58,20 +58,15 @@ dd
       @update:model-value="updateSetting({'common.windowSizeId': $event})")
 
 dd
-  h3#basic_font_size {{ $t('setting__basic_font_size') }}
-  div
-    //- base-selection.gap-teft(:list="fontSizeList" :model-value="appSetting['common.fontSize']" @update:model-value="updateSetting({'common.fontSize': $event})")
-    base-checkbox.gap-left(
-      v-for="item in fontSizeList" :id="`setting_basic_font_size_${item.id}`" :key="item.id"
-      name="setting_basic_font_size" need :model-value="appSetting['common.fontSize']" :value="item.id"
-      :label="item.label" :disabled="isFullscreen" @update:model-value="updateSetting({'common.fontSize': $event})")
-
-dd
   h3#basic_font {{ $t('setting__basic_font') }}
-  div(style="--selection-width: 12rem;")
-    base-selection.gap-left(:list="fontList" :model-value="fonts[0]" item-key="id" item-name="label" @update:model-value="updateFonts($event, fonts[1])")
-    base-selection.gap-left(v-if="fonts[0]" :list="fontList" :model-value="fonts[1]" item-key="id" item-name="label" @update:model-value="updateFonts(fonts[0], $event)")
-    //- base-selection.gap-teft(:list="fontList" :model-value="appSetting['common.font']" item-key="id" item-name="label" @update:model-value="updateSetting({'common.font': $event})")
+  div(:class="$style.fontSettings")
+    .item
+      span {{ $t('setting__basic_font_family') }}
+      base-selection(:list="fontList" :model-value="fonts[0]" item-key="id" item-name="label" :class="$style.fontFamilySelect" @update:model-value="updateFonts($event, fonts[1])")
+      base-selection(v-if="fonts[0]" :list="fontList" :model-value="fonts[1]" item-key="id" item-name="label" :class="$style.fontFamilySelect" @update:model-value="updateFonts(fonts[0], $event)")
+    .item
+      span {{ $t('setting__basic_font_size') }}
+      base-selection(:list="fontSizeList" :model-value="appSetting['common.fontSize']" item-key="id" item-name="label" :disabled="isFullscreen" :class="$style.fontSizeSelect" @update:model-value="updateSetting({'common.fontSize': $event})")
 
 dd
   h3#basic_lang {{ $t('setting__basic_lang') }}
@@ -94,16 +89,25 @@ dd
       name="setting_basic_control_btn_position" need :model-value="appSetting['common.controlBtnPosition']" :value="item.id" :label="item.name" @update:model-value="updateSetting({'common.controlBtnPosition': $event})")
 dd
   h3#basic_playbar_progress_style {{ $t('setting__basic_playbar_progress_style') }}
-  div
-    base-checkbox.gap-left(
+  div(:class="$style.playBarProgressStyles")
+    base-checkbox(
       id="setting_basic_playbar_progress_style_mini" name="setting_basic_playbar_progress_style"
       need :model-value="appSetting['common.playBarProgressStyle']" value="mini" :label="$t('setting__basic_playbar_progress_style_mini')" @update:model-value="updateSetting({'common.playBarProgressStyle': $event})")
-    base-checkbox.gap-left(
+    base-checkbox(
       id="setting_basic_playbar_progress_style_middle" name="setting_basic_playbar_progress_style"
       need :model-value="appSetting['common.playBarProgressStyle']" value="middle" :label="$t('setting__basic_playbar_progress_style_middle')" @update:model-value="updateSetting({'common.playBarProgressStyle': $event})")
-    base-checkbox.gap-left(
+    base-checkbox(
       id="setting_basic_playbar_progress_style_full" name="setting_basic_playbar_progress_style"
       need :model-value="appSetting['common.playBarProgressStyle']" value="full" :label="$t('setting__basic_playbar_progress_style_full')" @update:model-value="updateSetting({'common.playBarProgressStyle': $event})")
+    base-checkbox(
+      id="setting_basic_playbar_progress_style_center_control" name="setting_basic_playbar_progress_style"
+      need :model-value="appSetting['common.playBarProgressStyle']" value="centerControl" :label="$t('setting__basic_playbar_progress_style_center_control')" @update:model-value="updateSetting({'common.playBarProgressStyle': $event})")
+    base-checkbox(
+      id="setting_basic_playbar_progress_style_center_control_middle" name="setting_basic_playbar_progress_style"
+      need :model-value="appSetting['common.playBarProgressStyle']" value="centerControlMiddle" :label="$t('setting__basic_playbar_progress_style_center_control_middle')" @update:model-value="updateSetting({'common.playBarProgressStyle': $event})")
+    base-checkbox(
+      id="setting_basic_playbar_progress_style_center_control_full" name="setting_basic_playbar_progress_style"
+      need :model-value="appSetting['common.playBarProgressStyle']" value="centerControlFull" :label="$t('setting__basic_playbar_progress_style_center_control_full')" @update:model-value="updateSetting({'common.playBarProgressStyle': $event})")
 
 ThemeSelectorModal(v-model="isShowThemeSelectorModal")
 ThemeEditModal(v-model="isShowThemeEditModal" :theme-id="editThemeId" @submit="handleRefreshTheme")
@@ -314,14 +318,10 @@ export default {
       updateSetting({ 'common.font': font.join(', ') })
     }
     const fontSizeList = computed(() => {
-      return [
-        { id: 14, label: t('setting__basic_font_size_14px') },
-        { id: 15, label: t('setting__basic_font_size_15px') },
-        { id: 16, label: t('setting__basic_font_size_16px') },
-        { id: 17, label: t('setting__basic_font_size_17px') },
-        { id: 18, label: t('setting__basic_font_size_18px') },
-        { id: 19, label: t('setting__basic_font_size_19px') },
-      ]
+      return [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].map((size) => ({
+        id: size,
+        label: String(size),
+      }))
     })
 
 
@@ -533,6 +533,34 @@ export default {
       }
     }
   }
+}
+
+.fontSettings {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 25px;
+  padding-top: 5px;
+
+  .item {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 6px;
+  }
+}
+.fontFamilySelect {
+  --selection-width: 11rem;
+}
+.fontSizeSelect {
+  --selection-width: 3.75rem;
+}
+
+.playBarProgressStyles {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 10px 20px;
 }
 
 .sourceLabel {

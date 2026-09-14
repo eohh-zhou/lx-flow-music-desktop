@@ -1,25 +1,29 @@
 <template>
   <div :class="$style.player">
-    <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
-      <img v-if="musicInfo.pic" :class="{[$style.rotating]: isPlay}" :src="musicInfo.pic" decoding="async" @error="imgError">
-      <div v-else :class="$style.emptyPic">L<span>X</span></div>
-    </div>
-    <div :class="$style.infoContent">
-      <div :class="$style.titleRow">
-        <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
-          {{ title }}
-        </div>
-        <button :class="[$style.commentBtn, {[$style.commentActive]: isShowPlayComment}]" :aria-label="$t('comment__show')" :title="$t('comment__show')" ignore-tip @click="toggleVisibleComment">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve">
-            <use xlink:href="#icon-comment" />
-          </svg>
-        </button>
+    <div :class="$style.left">
+      <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
+        <img v-if="musicInfo.pic" :class="{[$style.rotating]: isPlay}" :src="musicInfo.pic" decoding="async" @error="imgError">
+        <div v-else :class="$style.emptyPic">L<span>X</span></div>
       </div>
-      <div :class="$style.status">{{ singer || statusText }}</div>
+      <div :class="$style.infoContent">
+        <div :class="$style.titleRow">
+          <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
+            {{ title }}
+          </div>
+          <button :class="[$style.commentBtn, {[$style.commentActive]: isShowPlayComment}]" :aria-label="$t('comment__show')" :title="$t('comment__show')" ignore-tip @click="toggleVisibleComment">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve">
+              <use xlink:href="#icon-comment" />
+            </svg>
+          </button>
+        </div>
+        <div :class="$style.status">{{ singer || statusText }}</div>
+      </div>
     </div>
-    <play-progress />
-    <control-btns />
     <play-btns />
+    <div :class="$style.right">
+      <play-progress />
+      <control-btns />
+    </div>
   </div>
 </template>
 
@@ -112,8 +116,8 @@ export default {
       showPlayerDetail,
       isShowPlayComment,
       toggleVisibleComment,
-      handleToMusicLocation,
       isPlay,
+      handleToMusicLocation,
     }
   },
 }
@@ -150,6 +154,19 @@ export default {
     z-index: -1;
   }
 }
+.left,
+.right {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+}
+.right {
+  justify-content: flex-end;
+}
+
 .picContent {
   height: 100%;
   width: auto;
@@ -341,4 +358,10 @@ export default {
 //     border-radius: 0;
 //   }
 // }
-	</style>
+// .time {
+//   display: flex;
+//   flex-flow: row nowrap;
+//   justify-content: space-between;
+// }
+
+</style>

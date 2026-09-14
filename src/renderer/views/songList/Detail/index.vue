@@ -78,7 +78,7 @@ interface Query {
   fromName?: string
 }
 
-const verifyQueryParams = async function(this: any, to: { query: Query, path: string }, from: any, next: (route?: { path: string, query: Query }) => void) {
+const verifyQueryParams = async function(this: any, to: { query: Query, path: string }, from: { name?: unknown, query?: Record<string, unknown> }, next: (route?: { path: string, query: Query }) => void) {
   let _source = to.query.source
   let _id = to.query.id
   let _page: string | undefined = to.query.page
@@ -110,12 +110,18 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
   page.value = _page ? parseInt(_page) : 1
   picUrl.value = _picUrl ?? ''
   refresh.value = _refresh ? _refresh == 'true' : false
-  if (to.query.fromName) window.lx.songListInfo.fromName = to.query.fromName
+  if (from?.name && from.name !== 'SongListDetail') {
+    window.lx.songListInfo.fromName = to.query.fromName || String(from.name)
+    window.lx.songListInfo.fromQuery = { ...from.query }
+  } else if (to.query.fromName) {
+    window.lx.songListInfo.fromName = to.query.fromName
+  }
 }
 
 const leaveDetail = (_to: unknown, _from: unknown, next: () => void) => {
   setVisibleListDetail(false)
   window.lx.songListInfo.fromName = ''
+  window.lx.songListInfo.fromQuery = null
   next()
 }
 
@@ -172,9 +178,14 @@ export default {
     const handleBack = () => {
       setVisibleListDetail(false)
       const fromName = window.lx.songListInfo.fromName
+      const fromQuery = window.lx.songListInfo.fromQuery
       window.lx.songListInfo.fromName = ''
-      if (fromName) void router.replace({ name: fromName })
-      else router.back()
+      window.lx.songListInfo.fromQuery = null
+      if (fromName) {
+        void router.replace({ name: fromName, query: fromQuery || {} }).catch(() => { router.back() })
+      } else {
+        router.back()
+      }
     }
 
     useKeyBack(handleBack)

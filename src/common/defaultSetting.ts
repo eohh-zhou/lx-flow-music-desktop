@@ -5,7 +5,7 @@ const isMac = process.platform == 'darwin'
 const isWin = process.platform == 'win32'
 
 const defaultSetting: LX.AppSetting = {
-  version: '2.1.0',
+  version: '2.2.2',
 
   'common.windowSizeId': 3,
   'common.windowBounds': '1103,740',
@@ -19,7 +19,7 @@ const defaultSetting: LX.AppSetting = {
   'common.randomAnimate': true,
   'common.isAgreePact': false,
   'common.controlBtnPosition': 'right',
-  'common.playBarProgressStyle': 'middle',
+  'common.playBarProgressStyle': 'centerControlFull',
   'common.transparentWindow': true,
   'common.tryAutoUpdate': true,
   'common.showChangeLog': true,
@@ -156,6 +156,9 @@ const defaultSetting: LX.AppSetting = {
   'theme.id': 'red_light',
   'theme.lightId': 'red_light',
   'theme.darkId': 'red_dark',
+  'theme.navOpacity': -1,
+  'theme.mainOpacity': -1,
+  'theme.glassBlur': -1,
 
   'odc.isAutoClearSearchInput': false,
   'odc.isAutoClearSearchList': false,

@@ -140,6 +140,35 @@ export default (setting: any): Partial<LX.AppSetting> => {
     setting.version = '2.1.0'
   }
 
+  // 播放栏六种样式：旧的 mini/middle/full 对应居中控制按钮布局
+  if (compareVer(setting.version, '2.2.0') < 0) {
+    const playBarStyleMap = {
+      mini: 'centerControl',
+      middle: 'centerControlFull',
+      full: 'centerControlFull',
+    } as const
+    const currentStyle = setting['common.playBarProgressStyle'] as keyof typeof playBarStyleMap
+    if (playBarStyleMap[currentStyle]) {
+      setting['common.playBarProgressStyle'] = playBarStyleMap[currentStyle]
+    }
+    setting.version = '2.2.0'
+  }
+
+  // 旧默认 middle 实际是全宽居中播放栏，纠正已迁成中等右进度条的配置
+  if (compareVer(setting.version, '2.2.1') < 0) {
+    if (setting['common.playBarProgressStyle'] == 'centerControlMiddle') {
+      setting['common.playBarProgressStyle'] = 'centerControlFull'
+    }
+    setting.version = '2.2.1'
+  }
+
+  if (compareVer(setting.version, '2.2.2') < 0) {
+    setting['theme.navOpacity'] ??= -1
+    setting['theme.mainOpacity'] ??= -1
+    setting['theme.glassBlur'] ??= -1
+    setting.version = '2.2.2'
+  }
+
 
   return setting
 }

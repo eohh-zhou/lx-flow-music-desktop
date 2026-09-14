@@ -29,6 +29,23 @@
             </li>
           </ul>
         </div>
+        <div :class="$style.opacitySettings">
+          <div :class="$style.opacityItem">
+            <span :class="$style.opacityLabel">{{ $t('theme_selector_modal__nav_opacity') }}</span>
+            <base-slider-bar :class="$style.opacitySlider" :value="navOpacityValue" :min="0" :max="100" :step="1" @change="setNavOpacity" />
+            <span :class="$style.opacityValue">{{ navOpacityValue }}%</span>
+          </div>
+          <div :class="$style.opacityItem">
+            <span :class="$style.opacityLabel">{{ $t('theme_selector_modal__main_opacity') }}</span>
+            <base-slider-bar :class="$style.opacitySlider" :value="mainOpacityValue" :min="0" :max="100" :step="1" @change="setMainOpacity" />
+            <span :class="$style.opacityValue">{{ mainOpacityValue }}%</span>
+          </div>
+          <div :class="$style.opacityItem">
+            <span :class="$style.opacityLabel">{{ $t('theme_selector_modal__glass_blur') }}</span>
+            <base-slider-bar :class="$style.opacitySlider" :value="glassBlurValue" :min="0" :max="20" :step="1" @change="setGlassBlur" />
+            <span :class="$style.opacityValue">{{ glassBlurValue }}px</span>
+          </div>
+        </div>
       </div>
       <div :class="$style.note">
         <p>{{ $t(immediate ? 'theme_selector_modal__skin_tip' : 'theme_selector_modal__title_tip') }}</p>
@@ -38,10 +55,11 @@
 </template>
 
 <script>
-import { markRaw, reactive, watch } from '@common/utils/vueTools'
-import { appSetting, updateSetting } from '@renderer/store/setting'
+import { computed, markRaw, reactive, watch } from '@common/utils/vueTools'
+import { appSetting, mergeSetting, updateSetting } from '@renderer/store/setting'
 import { themeId, themeShouldUseDarkColors } from '@renderer/store'
 import { applyTheme, getThemes, buildBgUrl } from '@renderer/store/utils'
+import { alphaPercent, getLastRawThemeColors, parseBlurPx } from '@renderer/utils/themeOpacity'
 
 export default {
   name: 'ThemeSelectorModal',
@@ -67,10 +85,24 @@ export default {
       themeLights: [],
       themeDarks: [],
     })
+    const themeDefaults = reactive({
+      navOpacity: 94,
+      mainOpacity: 94,
+      glassBlur: 8,
+    })
     let dataPath = ''
+
+    const readThemeDefaults = () => {
+      const colors = getLastRawThemeColors()
+      const styles = getComputedStyle(document.documentElement)
+      themeDefaults.navOpacity = alphaPercent(colors['--color-nav-background'] || styles.getPropertyValue('--color-nav-background'))
+      themeDefaults.mainOpacity = alphaPercent(colors['--color-main-background'] || styles.getPropertyValue('--color-main-background'))
+      themeDefaults.glassBlur = parseBlurPx(colors['--blur-glass'] || styles.getPropertyValue('--blur-glass'))
+    }
 
     watch(() => props.modelValue, (val) => {
       if (!val) return
+      readThemeDefaults()
       getThemes((info) => {
       // console.log(info)
         const themes = [...info.themes, ...info.userThemes]
@@ -132,12 +164,14 @@ export default {
         themeId.value = id
         applyTheme(id, id, appSetting['theme.darkId'], dataPath)
         updateSetting({ 'theme.id': id, 'theme.lightId': id })
+        window.setTimeout(readThemeDefaults, 0)
         return
       }
       if (appSetting['theme.lightId'] == id) return
       updateSetting({ 'theme.lightId': id })
       if (appSetting['theme.id'] == 'auto') {
         applyTheme('auto', id, appSetting['theme.darkId'], dataPath)
+        window.setTimeout(readThemeDefaults, 0)
       }
     }
     const setDarkId = (id) => {
@@ -146,14 +180,32 @@ export default {
         themeId.value = id
         applyTheme(id, appSetting['theme.lightId'], id, dataPath)
         updateSetting({ 'theme.id': id, 'theme.darkId': id })
+        window.setTimeout(readThemeDefaults, 0)
         return
       }
       if (appSetting['theme.darkId'] == id) return
       updateSetting({ 'theme.darkId': id })
       if (appSetting['theme.id'] == 'auto') {
         applyTheme('auto', appSetting['theme.lightId'], id, dataPath)
+        window.setTimeout(readThemeDefaults, 0)
       }
     }
+    const navOpacityValue = computed(() => {
+      return appSetting['theme.navOpacity'] >= 0 ? appSetting['theme.navOpacity'] : themeDefaults.navOpacity
+    })
+    const mainOpacityValue = computed(() => {
+      return appSetting['theme.mainOpacity'] >= 0 ? appSetting['theme.mainOpacity'] : themeDefaults.mainOpacity
+    })
+    const glassBlurValue = computed(() => {
+      return appSetting['theme.glassBlur'] >= 0 ? appSetting['theme.glassBlur'] : themeDefaults.glassBlur
+    })
+    const persistOpacity = (setting) => {
+      mergeSetting(setting)
+      updateSetting(setting)
+    }
+    const setNavOpacity = (value) => persistOpacity({ 'theme.navOpacity': value })
+    const setMainOpacity = (value) => persistOpacity({ 'theme.mainOpacity': value })
+    const setGlassBlur = (value) => persistOpacity({ 'theme.glassBlur': value })
     return {
       appSetting,
       themeInfo,
@@ -161,6 +213,12 @@ export default {
       isDarkActive,
       setLightId,
       setDarkId,
+      navOpacityValue,
+      mainOpacityValue,
+      glassBlurValue,
+      setNavOpacity,
+      setMainOpacity,
+      setGlassBlur,
     }
   },
 }
@@ -259,6 +317,37 @@ export default {
       font-size: 14px;
     }
   }
+}
+
+.opacitySettings {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 12px;
+  padding-top: 4px;
+}
+.opacityItem {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-font);
+}
+.opacityLabel {
+  flex: none;
+  width: 7.5em;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.opacitySlider {
+  flex: auto !important;
+  width: auto !important;
+}
+.opacityValue {
+  flex: none;
+  width: 3.2em;
+  text-align: right;
+  font-size: 13px;
+  opacity: .7;
 }
 
 .note {

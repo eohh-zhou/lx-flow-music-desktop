@@ -45,6 +45,7 @@ export const playSongListDetail = async(id: string, source: LX.OnlineSource, lis
     playList(LIST_IDS.TEMP, index)
     isPlayingList = true
   }
+  if (source == 'wy' && id.startsWith('netease_recommend_')) return
   const fullList = await getListDetailAll(id, source)
   if (!fullList.length) return
   if (isPlayingList) {

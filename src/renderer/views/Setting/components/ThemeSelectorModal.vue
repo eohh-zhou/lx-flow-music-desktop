@@ -41,9 +41,14 @@
             <span :class="$style.opacityValue">{{ mainOpacityValue }}%</span>
           </div>
           <div :class="$style.opacityItem">
-            <span :class="$style.opacityLabel">{{ $t('theme_selector_modal__glass_blur') }}</span>
-            <base-slider-bar :class="$style.opacitySlider" :value="glassBlurValue" :min="0" :max="20" :step="1" @change="setGlassBlur" />
-            <span :class="$style.opacityValue">{{ glassBlurValue }}px</span>
+            <span :class="$style.opacityLabel">{{ $t('theme_selector_modal__nav_glass_blur') }}</span>
+            <base-slider-bar :class="$style.opacitySlider" :value="navGlassBlurValue" :min="0" :max="20" :step="0.5" @change="setNavGlassBlur" />
+            <span :class="$style.opacityValue">{{ navGlassBlurValue }}px</span>
+          </div>
+          <div :class="$style.opacityItem">
+            <span :class="$style.opacityLabel">{{ $t('theme_selector_modal__main_glass_blur') }}</span>
+            <base-slider-bar :class="$style.opacitySlider" :value="mainGlassBlurValue" :min="0" :max="20" :step="0.5" @change="setMainGlassBlur" />
+            <span :class="$style.opacityValue">{{ mainGlassBlurValue }}px</span>
           </div>
         </div>
       </div>
@@ -59,7 +64,7 @@ import { computed, markRaw, reactive, watch } from '@common/utils/vueTools'
 import { appSetting, mergeSetting, updateSetting } from '@renderer/store/setting'
 import { themeId, themeShouldUseDarkColors } from '@renderer/store'
 import { applyTheme, getThemes, buildBgUrl } from '@renderer/store/utils'
-import { alphaPercent, getLastRawThemeColors, parseBlurPx } from '@renderer/utils/themeOpacity'
+import { alphaPercent, getLastRawThemeColors, parseBlurPx, snapBlurPx } from '@renderer/utils/themeOpacity'
 
 export default {
   name: 'ThemeSelectorModal',
@@ -88,7 +93,8 @@ export default {
     const themeDefaults = reactive({
       navOpacity: 94,
       mainOpacity: 94,
-      glassBlur: 8,
+      navGlassBlur: 8,
+      mainGlassBlur: 8,
     })
     let dataPath = ''
 
@@ -97,7 +103,9 @@ export default {
       const styles = getComputedStyle(document.documentElement)
       themeDefaults.navOpacity = alphaPercent(colors['--color-nav-background'] || styles.getPropertyValue('--color-nav-background'))
       themeDefaults.mainOpacity = alphaPercent(colors['--color-main-background'] || styles.getPropertyValue('--color-main-background'))
-      themeDefaults.glassBlur = parseBlurPx(colors['--blur-glass'] || styles.getPropertyValue('--blur-glass'))
+      const glassBlur = parseBlurPx(colors['--blur-glass'] || styles.getPropertyValue('--blur-glass'))
+      themeDefaults.navGlassBlur = glassBlur
+      themeDefaults.mainGlassBlur = glassBlur
     }
 
     watch(() => props.modelValue, (val) => {
@@ -196,8 +204,15 @@ export default {
     const mainOpacityValue = computed(() => {
       return appSetting['theme.mainOpacity'] >= 0 ? appSetting['theme.mainOpacity'] : themeDefaults.mainOpacity
     })
-    const glassBlurValue = computed(() => {
-      return appSetting['theme.glassBlur'] >= 0 ? appSetting['theme.glassBlur'] : themeDefaults.glassBlur
+    const navGlassBlurValue = computed(() => {
+      if (appSetting['theme.navGlassBlur'] >= 0) return appSetting['theme.navGlassBlur']
+      if (appSetting['theme.glassBlur'] >= 0) return appSetting['theme.glassBlur']
+      return themeDefaults.navGlassBlur
+    })
+    const mainGlassBlurValue = computed(() => {
+      if (appSetting['theme.mainGlassBlur'] >= 0) return appSetting['theme.mainGlassBlur']
+      if (appSetting['theme.glassBlur'] >= 0) return appSetting['theme.glassBlur']
+      return themeDefaults.mainGlassBlur
     })
     const persistOpacity = (setting) => {
       mergeSetting(setting)
@@ -205,7 +220,8 @@ export default {
     }
     const setNavOpacity = (value) => persistOpacity({ 'theme.navOpacity': value })
     const setMainOpacity = (value) => persistOpacity({ 'theme.mainOpacity': value })
-    const setGlassBlur = (value) => persistOpacity({ 'theme.glassBlur': value })
+    const setNavGlassBlur = (value) => persistOpacity({ 'theme.navGlassBlur': snapBlurPx(value) })
+    const setMainGlassBlur = (value) => persistOpacity({ 'theme.mainGlassBlur': snapBlurPx(value) })
     return {
       appSetting,
       themeInfo,
@@ -215,10 +231,12 @@ export default {
       setDarkId,
       navOpacityValue,
       mainOpacityValue,
-      glassBlurValue,
+      navGlassBlurValue,
+      mainGlassBlurValue,
       setNavOpacity,
       setMainOpacity,
-      setGlassBlur,
+      setNavGlassBlur,
+      setMainGlassBlur,
     }
   },
 }
@@ -334,7 +352,7 @@ export default {
 }
 .opacityLabel {
   flex: none;
-  width: 7.5em;
+  width: 8.5em;
   font-size: 13px;
   line-height: 1.3;
 }

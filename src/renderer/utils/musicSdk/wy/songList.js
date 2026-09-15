@@ -86,9 +86,24 @@ export default {
   },
   async getListDetail(rawId, page, tryNum = 0) { // 获取歌曲列表内的音乐
     if (String(rawId).startsWith('neteaseaccount_')) return this.getAccountPlaylist(String(rawId).slice('neteaseaccount_'.length))
+    if (String(rawId).startsWith('netease_recommend_')) {
+      return {
+        list: [],
+        page: 1,
+        limit: 1,
+        total: 0,
+        source: 'wy',
+        info: {},
+      }
+    }
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
 
     const { id, cookie } = await this.getListId(rawId)
+    if (/^\d+$/.test(String(id))) {
+      try {
+        return await this.getAccountPlaylist(id)
+      } catch {}
+    }
     if (cookie) this.cookie = cookie
 
     const requestObj_listDetail = httpFetch('https://music.163.com/api/linux/forward', {

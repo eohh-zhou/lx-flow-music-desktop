@@ -624,6 +624,16 @@ declare global {
       'theme.glassBlur': number
 
       /**
+       * 左侧栏毛玻璃模糊强度（px）。-1 表示使用当前皮肤自带值
+       */
+      'theme.navGlassBlur': number
+
+      /**
+       * 右侧栏毛玻璃模糊强度（px）。-1 表示使用当前皮肤自带值
+       */
+      'theme.mainGlassBlur': number
+
+      /**
        * 是否显示热门搜索
        */
       'search.isShowHotSearch': boolean

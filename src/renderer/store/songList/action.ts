@@ -21,7 +21,8 @@ const cache = new Map<string, any>()
 
 // Personalized recommendations and authenticated account playlists must not use the generic detail cache.
 const isDynamicQQRecommendation = (id: string, source: LX.OnlineSource) =>
-  (source == 'tx' && (id == 'daily30' || id.startsWith('qqradio_') || id.startsWith('qqnew_') || id.startsWith('qqaccount_'))) || (source == 'wy' && id.startsWith('neteaseaccount_'))
+  (source == 'tx' && (id == 'daily30' || id.startsWith('qqradio_') || id.startsWith('qqnew_') || id.startsWith('qqaccount_'))) ||
+  (source == 'wy' && (id.startsWith('neteaseaccount_') || id.startsWith('netease_recommend_')))
 
 export const setTags = (tagInfo: TagInfo, source: LX.OnlineSource) => {
   tags[source] = markRaw(tagInfo)

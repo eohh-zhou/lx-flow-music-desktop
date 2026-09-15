@@ -5,7 +5,7 @@ const isMac = process.platform == 'darwin'
 const isWin = process.platform == 'win32'
 
 const defaultSetting: LX.AppSetting = {
-  version: '2.2.2',
+  version: '2.2.3',
 
   'common.windowSizeId': 3,
   'common.windowBounds': '1103,740',
@@ -159,6 +159,8 @@ const defaultSetting: LX.AppSetting = {
   'theme.navOpacity': -1,
   'theme.mainOpacity': -1,
   'theme.glassBlur': -1,
+  'theme.navGlassBlur': -1,
+  'theme.mainGlassBlur': -1,
 
   'odc.isAutoClearSearchInput': false,
   'odc.isAutoClearSearchList': false,

@@ -1,7 +1,7 @@
 <template>
   <div :class="$style.btnContent">
     <button
-      ref="dom_btn" :class="$style.btn" :aria-label="$t('player__play_queue')" :title="$t('player__play_queue')"
+      ref="dom_btn" :class="$style.btn" :aria-label="$t('player__play_queue')"
       @click.stop="toggleVisible"
     >
       <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="80%" viewBox="0 0 24 24" space="preserve">

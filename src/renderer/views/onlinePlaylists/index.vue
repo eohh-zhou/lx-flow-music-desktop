@@ -5,9 +5,9 @@
       <base-btn v-if="configured" :class="$style.refreshBtn" outline min :disabled="loading" @click="load()">{{ $t(`${prefix}_refresh`) }}</base-btn>
     </header>
     <main :class="$style.content">
-      <div v-if="!statusChecked || loading" :class="$style.state"><p>{{ $t(`${prefix}_loading`) }}</p></div>
+      <div v-if="!statusChecked || loading" :class="$style.state"><p>{{ $t(`${prefix}_playlists_loading`) }}</p></div>
       <div v-else-if="!configured" :class="$style.state"><p>{{ $t(`${prefix}_not_configured`) }}</p><base-btn @click="openSettings">{{ $t(`${prefix}_configure`) }}</base-btn></div>
-      <div v-else-if="error" :class="$style.state"><p>{{ $t(`${prefix}_load_failed`) }}</p><base-btn @click="load()">{{ $t(`${prefix}_retry`) }}</base-btn></div>
+      <div v-else-if="error" :class="$style.state"><p>{{ $t(`${prefix}_playlists_load_failed`) }}</p><base-btn @click="load()">{{ $t(`${prefix}_retry`) }}</base-btn></div>
       <song-list v-else :list-info="listInfo" />
     </main>
   </div>

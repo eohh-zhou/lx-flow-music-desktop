@@ -199,8 +199,16 @@ const parseNeteaseResponseBody = (body: unknown): Record<string, any> => {
   throw new Error('网易云音乐响应格式异常')
 }
 
-const requestNetease = async(path: string, params: Record<string, any> = {}) => {
-  const cookie = getRequiredCookie()
+const buildNeteaseCookie = (cookie: string, extra: Record<string, string> = {}) => {
+  const cookies = parseCookies(cookie)
+  if (!cookies.has('os')) cookies.set('os', extra.os ?? 'pc')
+  if (!cookies.has('appver')) cookies.set('appver', extra.appver ?? '2.9.7')
+  for (const [name, value] of Object.entries(extra)) cookies.set(name, value)
+  return Array.from(cookies.entries()).map(([name, value]) => `${name}=${value}`).join('; ')
+}
+
+const requestNetease = async(path: string, params: Record<string, any> = {}, extraCookie: Record<string, string> = {}) => {
+  const cookie = buildNeteaseCookie(getRequiredCookie(), extraCookie)
   const cookies = parseCookies(cookie)
   const response = await request<Record<string, any>>(`${NETEASE_API_URL}${path}`, {
     method: 'POST',
@@ -221,10 +229,22 @@ const requestNetease = async(path: string, params: Record<string, any> = {}) => 
   })
   if (response.statusCode != 200) throw new Error(`网易云音乐 HTTP ${response.statusCode}`)
   const body = parseNeteaseResponseBody(response.body)
-  if (Number(body.code ?? -1) != 200) {
-    throw new Error(`网易云音乐接口返回 code ${body.code ?? -1}`)
-  }
+  const code = Number(body.code ?? body.data?.code ?? -1)
+  if (code == 301 || code == 302) throw new Error('网易云音乐登录已失效，请重新登录')
+  if (code != 200) throw new Error(`网易云音乐接口返回 code ${code}`)
   return body
+}
+
+const requestNeteaseFirst = async(paths: string[], params: Record<string, any> = {}, extraCookie: Record<string, string> = {}) => {
+  let lastError: unknown
+  for (const path of paths) {
+    try {
+      return await requestNetease(path, params, extraCookie)
+    } catch (error) {
+      lastError = error
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('网易云音乐接口请求失败')
 }
 
 const formatTime = (milliseconds: unknown) => {
@@ -275,10 +295,25 @@ const mapSongs = (items: unknown[]) => items.map(item => {
   return toOldSong(raw.song ?? raw, raw.privilege ?? raw.song?.privilege ?? {})
 }).filter(Boolean) as Array<Record<string, any>>
 
-const getDailyRecommend = async() => {
-  const body = await requestNetease('/weapi/v1/discovery/recommend/songs', { limit: 30, offset: 0, total: true })
+const mapDailyRecommendSongs = (body: Record<string, any>) => {
   const data = body.data ?? body
-  const list = mapSongs(data.dailySongs ?? data.recommend ?? body.dailySongs ?? [])
+  const songs = data.dailySongs ?? data.recommend ?? body.dailySongs ?? body.recommend ?? []
+  return mapSongs(Array.isArray(songs) ? songs : [])
+}
+
+const getDailyRecommend = async() => {
+  const iosCookie = { os: 'ios', appver: '9.0.65' }
+  let list: Array<Record<string, any>> = []
+  try {
+    list = mapDailyRecommendSongs(await requestNetease('/weapi/v3/discovery/recommend/songs', {}, iosCookie))
+  } catch {}
+  if (!list.length) {
+    list = mapDailyRecommendSongs(await requestNetease('/weapi/v1/discovery/recommend/songs', {
+      limit: 30,
+      offset: 0,
+      total: true,
+    }, iosCookie))
+  }
   return {
     info: { name: '网易云每日推荐', desc: '每天更新的个性化歌曲', img: String(list[0]?.img ?? '') },
     list,
@@ -321,13 +356,10 @@ const getNewSongs = async() => {
 
 const getNeteaseMusicAccountPlaylists = async() => {
   const uid = await getNeteaseAccountUid()
-  const body = await requestNetease('/weapi/user/playlist', {
-    uid: Number(uid),
-    limit: 1000,
-    offset: 0,
-    includeVideo: true,
-  })
-  const playlists = Array.isArray(body.playlist) ? body.playlist as Array<Record<string, any>> : []
+  const body = await requestNeteaseUserPlaylists(uid)
+  const playlists = Array.isArray(body.playlist)
+    ? body.playlist as Array<Record<string, any>>
+    : Array.isArray(body.data?.playlist) ? body.data.playlist as Array<Record<string, any>> : []
   const list = playlists.map((item): LX.NeteaseMusic.AccountPlaylistItem => {
     const creator = item.creator && typeof item.creator == 'object' ? item.creator : {}
     const ownerId = String(item.userId ?? creator.userId ?? '')
@@ -543,22 +575,48 @@ const previewPlaylistSync = async(request: LX.NeteaseMusic.PlaylistSyncPreviewRe
   } satisfies LX.NeteaseMusic.PlaylistSyncPreview
 }
 
+const pickNeteaseUid = (body: Record<string, any>) => {
+  const profile = body.profile ?? body.data?.profile ?? {}
+  const account = body.account ?? body.data?.account ?? {}
+  return String(profile.userId ?? profile.userid ?? account.id ?? account.userId ?? body.userId ?? body.data?.userId ?? '')
+}
+
 const getNeteaseAccountUid = async() => {
-  const body = await requestNetease('/weapi/w/nuser/account/get')
-  const uid = String(body.profile?.userId ?? body.account?.id ?? '')
-  if (!/^\d+$/.test(uid) || uid == '0') throw new Error('网易云音乐登录状态缺少账号标识，请重新登录')
-  return uid
+  const cookieUid = parseCookies(getRequiredCookie()).get('uid') ?? parseCookies(getRequiredCookie()).get('uin') ?? ''
+  if (/^\d+$/.test(cookieUid) && cookieUid != '0') return cookieUid
+
+  const bodies = [
+    () => requestNeteaseFirst(['/weapi/nuser/account/get', '/weapi/w/nuser/account/get']),
+    () => requestNeteaseFirst(['/weapi/login/status', '/weapi/w/login/status']),
+  ]
+  for (const load of bodies) {
+    try {
+      const uid = pickNeteaseUid(await load())
+      if (/^\d+$/.test(uid) && uid != '0') return uid
+    } catch {}
+  }
+  throw new Error('网易云音乐登录状态缺少账号标识，请重新登录')
+}
+
+const requestNeteaseUserPlaylists = async(uid: string) => {
+  const params = { uid: Number(uid), limit: 1000, offset: 0, includeVideo: true }
+  try {
+    return await requestNetease('/weapi/user/playlist', params)
+  } catch {
+    return await requestNetease('/weapi/user/playlist', {
+      uid: Number(uid),
+      limit: 1000,
+      offset: 0,
+    })
+  }
 }
 
 const getNeteasePlaylistSummaries = async() => {
   const uid = await getNeteaseAccountUid()
-  const body = await requestNetease('/weapi/user/playlist', {
-    uid: Number(uid),
-    limit: 1000,
-    offset: 0,
-    includeVideo: true,
-  })
-  const playlists = Array.isArray(body.playlist) ? body.playlist as Array<Record<string, any>> : []
+  const body = await requestNeteaseUserPlaylists(uid)
+  const playlists = Array.isArray(body.playlist)
+    ? body.playlist as Array<Record<string, any>>
+    : Array.isArray(body.data?.playlist) ? body.data.playlist as Array<Record<string, any>> : []
   return playlists.map(item => ({
     id: String(item.id ?? ''),
     name: String(item.name ?? ''),

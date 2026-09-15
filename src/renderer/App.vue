@@ -158,8 +158,8 @@ html.has-wallpaper.fullscreen {
   position: relative;
   z-index: 1;
   background-color: var(--color-nav-background);
-  backdrop-filter: var(--blur-glass);
-  -webkit-backdrop-filter: var(--blur-glass);
+  backdrop-filter: var(--blur-nav-glass);
+  -webkit-backdrop-filter: var(--blur-nav-glass);
 }
 #right {
   flex: auto;
@@ -167,8 +167,8 @@ html.has-wallpaper.fullscreen {
   flex-flow: column nowrap;
   transition: background-color @transition-normal;
   background-color: var(--color-main-background);
-  backdrop-filter: var(--blur-glass);
-  -webkit-backdrop-filter: var(--blur-glass);
+  backdrop-filter: var(--blur-main-glass);
+  -webkit-backdrop-filter: var(--blur-main-glass);
 
   border-top-left-radius: @radius-card;
   overflow: hidden;

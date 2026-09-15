@@ -19,8 +19,15 @@ export const toNewMusicInfo = (oldMusicInfo: any): LX.Music.MusicInfo => {
     meta.filePath = oldMusicInfo.filePath ?? oldMusicInfo.songmid ?? ''
     meta.ext = oldMusicInfo.ext ?? /\.(\w+)$/.exec(meta.filePath)?.[1] ?? ''
   } else {
-    meta.qualitys = oldMusicInfo.types
-    meta._qualitys = oldMusicInfo._types
+    meta.qualitys = Array.isArray(oldMusicInfo.types)
+      ? oldMusicInfo.types.map((item: any) => ({ type: item?.type, size: item?.size ?? null }))
+      : []
+    meta._qualitys = {}
+    if (oldMusicInfo._types && typeof oldMusicInfo._types == 'object') {
+      for (const [key, value] of Object.entries(oldMusicInfo._types as Record<string, any>)) {
+        meta._qualitys[key] = value && typeof value == 'object' ? { size: value.size ?? null } : value
+      }
+    }
     meta.albumId = oldMusicInfo.albumId
     if (meta._qualitys.flac32bit && !meta._qualitys.flac24bit) {
       meta._qualitys.flac24bit = meta._qualitys.flac32bit

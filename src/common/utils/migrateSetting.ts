@@ -169,6 +169,13 @@ export default (setting: any): Partial<LX.AppSetting> => {
     setting.version = '2.2.2'
   }
 
+  if (compareVer(setting.version, '2.2.3') < 0) {
+    const glassBlur = typeof setting['theme.glassBlur'] == 'number' ? setting['theme.glassBlur'] : -1
+    setting['theme.navGlassBlur'] ??= glassBlur
+    setting['theme.mainGlassBlur'] ??= glassBlur
+    setting.version = '2.2.3'
+  }
+
 
   return setting
 }

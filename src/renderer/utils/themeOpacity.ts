@@ -40,10 +40,15 @@ export const alphaPercent = (color?: string | null) => {
   return Math.round(parsed.a * 100)
 }
 
+export const snapBlurPx = (px: number) => {
+  const value = Math.round(clamp(px, 0, 20) * 2) / 2
+  return Number(value.toFixed(1))
+}
+
 export const parseBlurPx = (filter?: string | null) => {
   const match = filter?.match(/blur\(\s*([\d.]+)px\s*\)/)
   if (!match) return 8
-  return Math.round(Number(match[1]))
+  return snapBlurPx(Number(match[1]))
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
@@ -74,7 +79,7 @@ const setColorAlpha = (color: string | undefined, alpha: number, fallback: [numb
 }
 
 const setBlurPx = (filter: string | undefined, px: number) => {
-  const value = Math.round(clamp(px, 0, 20))
+  const value = snapBlurPx(px)
   if (!filter?.trim()) return `saturate(140%) blur(${value}px)`
   if (/blur\([^)]*\)/.test(filter)) return filter.replace(/blur\([^)]*\)/, `blur(${value}px)`)
   return `${filter} blur(${value}px)`
@@ -94,11 +99,15 @@ export const applyThemeOpacityColors = (
     navOpacity: number
     mainOpacity: number
     glassBlur: number
+    navGlassBlur: number
+    mainGlassBlur: number
   },
 ) => {
   const next = { ...colors }
   const navFallback = pickFallbackRgb(colors, DEFAULT_NAV_FALLBACK)
   const mainFallback = pickFallbackRgb(colors, DEFAULT_MAIN_FALLBACK)
+  const navBlur = setting.navGlassBlur >= 0 ? setting.navGlassBlur : setting.glassBlur
+  const mainBlur = setting.mainGlassBlur >= 0 ? setting.mainGlassBlur : setting.glassBlur
 
   if (setting.navOpacity >= 0) {
     next['--color-nav-background'] = setColorAlpha(colors['--color-nav-background'], setting.navOpacity / 100, navFallback)
@@ -106,8 +115,8 @@ export const applyThemeOpacityColors = (
   if (setting.mainOpacity >= 0) {
     next['--color-main-background'] = setColorAlpha(colors['--color-main-background'], setting.mainOpacity / 100, mainFallback)
   }
-  if (setting.glassBlur >= 0) {
-    next['--blur-glass'] = setBlurPx(colors['--blur-glass'], setting.glassBlur)
-  }
+  next['--blur-nav-glass'] = navBlur >= 0 ? setBlurPx(colors['--blur-glass'], navBlur) : (colors['--blur-glass'] ?? 'saturate(140%) blur(8px)')
+  next['--blur-main-glass'] = mainBlur >= 0 ? setBlurPx(colors['--blur-glass'], mainBlur) : (colors['--blur-glass'] ?? 'saturate(140%) blur(8px)')
+  if (mainBlur >= 0) next['--blur-glass'] = next['--blur-main-glass']
   return next
 }

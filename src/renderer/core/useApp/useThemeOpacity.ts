@@ -13,6 +13,8 @@ export default () => {
       navOpacity: appSetting['theme.navOpacity'],
       mainOpacity: appSetting['theme.mainOpacity'],
       glassBlur: appSetting['theme.glassBlur'],
+      navGlassBlur: appSetting['theme.navGlassBlur'],
+      mainGlassBlur: appSetting['theme.mainGlassBlur'],
     }))
   }
 
@@ -32,6 +34,8 @@ export default () => {
     appSetting['theme.navOpacity'],
     appSetting['theme.mainOpacity'],
     appSetting['theme.glassBlur'],
+    appSetting['theme.navGlassBlur'],
+    appSetting['theme.mainGlassBlur'],
   ], () => {
     applyOverlay()
   })

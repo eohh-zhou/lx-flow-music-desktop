@@ -36,6 +36,7 @@
                         <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" :height="14" :width="14" space="preserve">
                           <use xlink:href="#icon-album" />
                         </svg>
+                        <common-playing-indicator v-if="isPlayingList(child.listId)" cover />
                       </span>
                       <span :class="$style.label">{{ child.tips }}</span>
                     </router-link>
@@ -80,6 +81,7 @@ import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from '@comm
 import { useRouter } from '@common/utils/vueRouter'
 import { defaultList, fetchingListStatus, userLists } from '@renderer/store/list/state'
 import { getListMusics, removeUserList } from '@renderer/store/list/action'
+import { playMusicInfo } from '@renderer/store/player/state'
 import { setVisibleListDetail } from '@renderer/store/songList/action'
 import { getPicPath } from '@renderer/core/music'
 import { dialog } from '@renderer/plugins/Dialog'
@@ -543,6 +545,7 @@ export default {
     const isChildActive = (child: { name: string, listId?: string }) => child.listId
       ? currentRoute.value.meta.name == 'List' && currentRoute.value.query.id == child.listId
       : isMenuActive(child.name)
+    const isPlayingList = (listId?: string) => !!listId && playMusicInfo.listId == listId
     const isGroupActive = (item: { children: Array<{ name: string, listId?: string }> }) => item.children.some(isChildActive)
     return {
       appSetting,
@@ -579,6 +582,7 @@ export default {
       isMenuActive,
       handleNavClick,
       isChildActive,
+      isPlayingList,
       isGroupActive,
     }
   },
@@ -822,6 +826,7 @@ export default {
 }
 
 .subCover {
+  position: relative;
   flex: none;
   width: 28px;
   height: 28px;

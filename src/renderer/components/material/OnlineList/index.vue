@@ -30,10 +30,15 @@
           <base-virtualized-list v-if="actionButtonsVisible" ref="listRef" :list="list" key-name="id" :item-height="listItemHeight" container-class="scroll" content-class="list" @contextmenu.capture="handleListRightClick">
             <template #default="{ item, index }">
               <div
-                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
+                class="list-item" :class="[{ [$style.playing]: isCurrentPlay(item) }, { selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
                 @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
               >
-                <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>{{ index + 1 }}</div>
+                <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;" @click.stop>
+                  <transition name="play-active">
+                    <common-playing-indicator v-if="isCurrentPlay(item)" />
+                    <div v-else class="num">{{ index + 1 }}</div>
+                  </transition>
+                </div>
                 <div class="list-item-cell no-select" :class="$style.cover" style="flex: 0 0 7%;">
                   <img v-if="item.meta.picUrl" :src="item.meta.picUrl" loading="lazy" decoding="async" alt="">
                   <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve"><use xlink:href="#icon-album" /></svg>
@@ -62,10 +67,15 @@
           <base-virtualized-list v-else ref="listRef" :list="list" key-name="id" :item-height="listItemHeight" container-class="scroll" content-class="list" @contextmenu.capture="handleListRightClick">
             <template #default="{ item, index }">
               <div
-                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
+                class="list-item" :class="[{ [$style.playing]: isCurrentPlay(item) }, { selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
                 @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
               >
-                <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>{{ index + 1 }}</div>
+                <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;" @click.stop>
+                  <transition name="play-active">
+                    <common-playing-indicator v-if="isCurrentPlay(item)" />
+                    <div v-else class="num">{{ index + 1 }}</div>
+                  </transition>
+                </div>
                 <div class="list-item-cell no-select" :class="$style.cover" style="flex: 0 0 7%;">
                   <img v-if="item.meta.picUrl" :src="item.meta.picUrl" loading="lazy" decoding="async" alt="">
                   <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve"><use xlink:href="#icon-album" /></svg>
@@ -112,6 +122,7 @@
 import { clipboardWriteText } from '@common/utils/electron'
 import { assertApiSupport } from '@renderer/store/utils'
 import { ref } from '@common/utils/vueTools'
+import { playMusicInfo } from '@renderer/store/player/state'
 import useList from './useList'
 import useMenu from './useMenu'
 import usePlay from './usePlay'
@@ -240,6 +251,8 @@ export default {
         clipboardWriteText(str)
       })
     }
+    const isCurrentPlay = (item) => playMusicInfo.musicInfo?.id == item.id
+
     const handleListBtnClick = ({ action, index }) => {
       switch (action) {
         case 'download':
@@ -289,6 +302,7 @@ export default {
 
       scrollToTop,
       actionButtonsVisible,
+      isCurrentPlay,
     }
   },
 }
@@ -316,6 +330,16 @@ export default {
   font-size: 14px;
 }
 
+.playing {
+  color: var(--color-button-font);
+}
+.num {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
 .cover {
   height: 100%;
   display: flex;

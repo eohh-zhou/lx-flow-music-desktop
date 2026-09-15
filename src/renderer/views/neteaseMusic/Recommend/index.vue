@@ -90,7 +90,7 @@ const loadActiveTab = async(force = false) => {
       if (fmResult.status == 'fulfilled') { personalFm.value = fmResult.value; loadedTabs.add('personalFm') }
       if (playlistResult.status == 'fulfilled') { playlists.value = playlistResult.value.list; loadedTabs.add('playlists') }
       if (newSongResult.status == 'fulfilled') { setNewSongs(newSongResult.value); loadedTabs.add('newSongs') }
-      if ([dailyResult, fmResult, playlistResult, newSongResult].every(item => item.status == 'rejected')) {
+      if (dailyResult.status == 'rejected' && fmResult.status == 'rejected' && playlistResult.status == 'rejected' && newSongResult.status == 'rejected') {
         throw dailyResult.reason
       }
     } else if (tab == 'daily') daily.value = await getNeteaseMusicDailyRecommend()

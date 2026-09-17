@@ -7,7 +7,7 @@
   <a href="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml"><img src="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml/badge.svg" alt="Build status"></a>
 </p>
 
-<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.0.11。专注于企鹅音乐与网易云音乐的账号推荐、歌单联动，以及更干净的桌面播放界面。</p>
+<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.1.0。专注于企鹅音乐与网易云音乐的账号推荐、歌单联动，以及更干净的桌面播放界面。</p>
 
 ## 个人使用版说明
 
@@ -42,12 +42,12 @@
 
 ## 下载与更新
 
-请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.0.11](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.0.11)。
+请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.1.0](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.1.0)。
 
 | 包类型 | 文件名示例 | 适用场景 |
 | --- | --- | --- |
-| Setup 安装版 | `LXFlowMusic-v3.0.11-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
-| 绿色免安装版 | `LXFlowMusic-v3.0.11-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
+| Setup 安装版 | `LXFlowMusic-v3.1.0-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
+| 绿色免安装版 | `LXFlowMusic-v3.1.0-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
 
 从绿色版迁移到支持自动更新的版本时，只需安装一次 Setup 安装版。
 

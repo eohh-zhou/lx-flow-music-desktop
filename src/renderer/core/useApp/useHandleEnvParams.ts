@@ -69,7 +69,10 @@ const useInitEnvParamPlay = () => {
       case 'tx':
       case 'mg':
       case 'wy':
-        void playSongListDetail(params.source, params.link, parseInt(params.index))
+        {
+          const playIndex = params.index == null ? NaN : parseInt(params.index)
+          void playSongListDetail(params.source, params.link, Number.isFinite(playIndex) ? playIndex : undefined)
+        }
         break
     }
   }

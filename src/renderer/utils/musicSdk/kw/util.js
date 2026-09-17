@@ -31,7 +31,22 @@ import { toMD5 } from '../utils'
 // }
 
 export const objStr2JSON = str => {
-  return JSON.parse(str.replace(/('(?=(,\s*')))|('(?=:))|((?<=([:,]\s*))')|((?<={)')|('(?=}))/g, '"'))
+  if (str && typeof str === 'object') return str
+  return JSON.parse(String(str).replace(/('(?=(,\s*')))|('(?=:))|((?<=([:,]\s*))')|((?<={)')|('(?=}))/g, '"'))
+}
+
+export const parseKwSearchBody = (body) => {
+  if (body && typeof body === 'object') return body
+  const text = String(body || '').replace(/&nbsp;/g, ' ')
+  try {
+    return objStr2JSON(text)
+  } catch {
+    try {
+      return JSON.parse(text)
+    } catch {
+      return {}
+    }
+  }
 }
 
 
@@ -51,8 +66,8 @@ export const normalizeKwPicUrl = (url) => {
   s = s.replace(/^http:\/\//i, 'https://')
   s = s.replace(/img\d+\.kwcdn\.kuwo\.cn/i, 'img2.kuwo.cn')
   s = s.replace(/img1\.kuwo\.cn/i, 'img2.kuwo.cn')
-  s = s.replace(/\/albumcover\/120\//, '/albumcover/500/')
-  s = s.replace(/\/starheads\/120\//, '/starheads/500/')
+  s = s.replace(/\/albumcover\/(?:120|240)\//, '/albumcover/500/')
+  s = s.replace(/\/starheads\/(?:120|240)\//, '/starheads/500/')
   return s
 }
 

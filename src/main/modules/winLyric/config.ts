@@ -1,5 +1,5 @@
 import { isLinux } from '@common/utils'
-import { closeWindow, createWindow, getBounds, isExistWindow, alwaysOnTopTools, setBounds, setIgnoreMouseEvents, setSkipTaskbar } from './main'
+import { closeWindow, createWindow, getBounds, isExistWindow, isLyricMenuOverlayOpen, alwaysOnTopTools, setBounds, setIgnoreMouseEvents, setSkipTaskbar } from './main'
 import { sendConfigChange, sendMouseLeave } from './rendererEvent'
 import { buildLyricConfig, getLyricWindowBounds, initWindowSize, watchConfigKeys } from './utils'
 import { mouseCheckTools } from './mouseCheckTools'
@@ -11,6 +11,7 @@ let isAlwaysOnTopLoop: boolean
 let isShowTaskbar: boolean
 let isLockScreen: boolean
 let isHoverHide: boolean
+let isCollapsingLyricWindow = false
 
 
 export const setLrcConfig = (keys: Array<keyof LX.AppSetting>, setting: Partial<LX.AppSetting>) => {
@@ -41,10 +42,9 @@ export const setLrcConfig = (keys: Array<keyof LX.AppSetting>, setting: Partial<
     }
     if (keys.includes('desktopLyric.isAlwaysOnTop') && isAlwaysOnTop != global.lx.appSetting['desktopLyric.isAlwaysOnTop']) {
       isAlwaysOnTop = global.lx.appSetting['desktopLyric.isAlwaysOnTop']
-      alwaysOnTopTools.setAlwaysOnTop(global.lx.appSetting['desktopLyric.isAlwaysOnTopLoop'])
-      if (isAlwaysOnTop && global.lx.appSetting['desktopLyric.isAlwaysOnTopLoop']) {
-        alwaysOnTopTools.startLoop()
-      } else alwaysOnTopTools.clearLoop()
+      alwaysOnTopTools.setAlwaysOnTop(true)
+      if (isAlwaysOnTop) alwaysOnTopTools.startLoop()
+      else alwaysOnTopTools.clearLoop()
     }
     if (keys.includes('desktopLyric.isShowTaskbar') && isShowTaskbar != global.lx.appSetting['desktopLyric.isShowTaskbar']) {
       isShowTaskbar = global.lx.appSetting['desktopLyric.isShowTaskbar']
@@ -77,6 +77,30 @@ export const setLrcConfig = (keys: Array<keyof LX.AppSetting>, setting: Partial<
         global.lx.appSetting['desktopLyric.width'],
         global.lx.appSetting['desktopLyric.height'],
       ))
+    }
+    const bounds = getBounds()
+    const needCollapse = !isCollapsingLyricWindow && !isLyricMenuOverlayOpen() && (
+      (bounds != null && bounds.height > 140) ||
+      global.lx.appSetting['desktopLyric.height'] > 140 ||
+      global.lx.appSetting['desktopLyric.height'] < 110 ||
+      global.lx.appSetting['desktopLyric.direction'] != 'horizontal'
+    )
+    if (needCollapse) {
+      isCollapsingLyricWindow = true
+      const winSize = initWindowSize(bounds?.x ?? null, bounds?.y ?? null, 860, 120)
+      global.lx.event_app.update_config({
+        'desktopLyric.x': winSize.x,
+        'desktopLyric.y': winSize.y,
+        'desktopLyric.width': winSize.width,
+        'desktopLyric.height': winSize.height,
+        'desktopLyric.direction': 'horizontal',
+        'desktopLyric.isAlwaysOnTop': true,
+        'desktopLyric.isAlwaysOnTopLoop': true,
+      })
+      setBounds(winSize)
+      alwaysOnTopTools.setAlwaysOnTop(true)
+      alwaysOnTopTools.startLoop()
+      isCollapsingLyricWindow = false
     }
   }
   if (keys.includes('desktopLyric.enable') && isEnable != global.lx.appSetting['desktopLyric.enable']) {

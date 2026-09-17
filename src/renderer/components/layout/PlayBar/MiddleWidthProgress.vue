@@ -265,13 +265,13 @@ export default {
   color: var(--color-font);
   .mixin-ellipsis-1();
 }
-	.status {
-	  padding-top: 3px;
-	  height: 23px;
-	  font-size: 11.5px;
-	  color: var(--color-font-label);
-	  .mixin-ellipsis-1();
-	  max-width: 100%;
-	}
+.status {
+  padding-top: 3px;
+  height: 23px;
+  font-size: 11.5px;
+  color: var(--color-font-label);
+  .mixin-ellipsis-1();
+  max-width: 100%;
+}
 
-	</style>
+</style>

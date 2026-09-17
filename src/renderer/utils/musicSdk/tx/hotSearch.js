@@ -2,16 +2,24 @@ import { httpFetch } from '../../request'
 
 export default {
   _requestObj: null,
-  async getList(retryNum = 0) {
-    if (this._requestObj) this._requestObj.cancelHttp()
+  _rawList: null,
+  _rawPromise: null,
+  async getList(retryNum = 0, type) {
     if (retryNum > 2) return Promise.reject(new Error('try max num'))
+    try {
+      const rawList = await this.getRawList()
+      return { source: 'tx', list: this.filterList(rawList, type) }
+    } catch (err) {
+      this._rawList = null
+      this._rawPromise = null
+      return this.getList(retryNum + 1, type)
+    }
+  },
+  async getRawList() {
+    if (Array.isArray(this._rawList) && this._rawList.length) return this._rawList
+    if (this._rawPromise) return this._rawPromise
 
-    // const _requestObj = httpFetch('https://c.y.qq.com/splcloud/fcgi-bin/gethotkey.fcg', {
-    //   method: 'get',
-    //   headers: {
-    //     Referer: 'https://y.qq.com/portal/player.html',
-    //   },
-    // })
+    if (this._requestObj) this._requestObj.cancelHttp()
     const _requestObj = httpFetch('https://u.y.qq.com/cgi-bin/musicu.fcg', {
       method: 'post',
       body: {
@@ -42,13 +50,23 @@ export default {
         Referer: 'https://y.qq.com/portal/player.html',
       },
     })
-    const { body, statusCode } = await _requestObj.promise
-    // console.log(body)
-    if (statusCode != 200 || body.code !== 0) throw new Error('获取热搜词失败')
-    // console.log(body)
-    return { source: 'tx', list: this.filterList(body.hotkey.data.vec_hotkey) }
+    this._requestObj = _requestObj
+    this._rawPromise = _requestObj.promise.then(({ body, statusCode }) => {
+      if (statusCode != 200 || body.code !== 0) throw new Error('获取热搜词失败')
+      const rawList = body.hotkey?.data?.vec_hotkey
+      if (!Array.isArray(rawList)) throw new Error('获取热搜词失败')
+      this._rawList = rawList
+      return rawList
+    }).finally(() => {
+      this._rawPromise = null
+    })
+    return this._rawPromise
   },
-  filterList(rawList) {
-    return rawList.map(item => item.query)
+  filterList(rawList, type) {
+    let list = rawList
+    if (type == 'singer') list = rawList.filter(item => item.kind == 1)
+    else if (type == 'music') list = rawList.filter(item => item.kind == 2)
+    else if (type == 'songlist' || type == 'album') return []
+    return list.map(item => item.query).filter(Boolean)
   },
 }

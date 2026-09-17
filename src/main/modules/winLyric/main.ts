@@ -10,6 +10,10 @@ import { encodePath } from '@common/utils/electron'
 
 let browserWindow: Electron.BrowserWindow | null = null
 let isWinBoundsUpdateing = false
+let isLyricOverlayOpen = false
+let overlayOriginBounds: Electron.Rectangle | null = null
+const LYRIC_STRIP_HEIGHT = 120
+const LYRIC_OVERLAY_HEIGHT = 400
 
 const saveBoundsConfig = debounce((config: Partial<LX.AppSetting>) => {
   global.lx.event_app.update_config(config)
@@ -34,14 +38,16 @@ const winEvent = () => {
     // bounds = browserWindow.getBounds()
     // console.log('move', isWinBoundsUpdateing)
     if (isWinBoundsUpdateing) {
-      const bounds = browserWindow!.getBounds()
-      saveBoundsConfig({
-        'desktopLyric.x': bounds.x,
-        'desktopLyric.y': bounds.y,
-        'desktopLyric.width': bounds.width,
-        'desktopLyric.height': bounds.height,
-      })
-    } else if (isWin) { // Linux 不允许将窗口设置出屏幕之外，MacOS未知，故只在Windows下执行强制设置
+      if (!isLyricOverlayOpen) {
+        const bounds = browserWindow!.getBounds()
+        saveBoundsConfig({
+          'desktopLyric.x': bounds.x,
+          'desktopLyric.y': bounds.y,
+          'desktopLyric.width': bounds.width,
+          'desktopLyric.height': bounds.height,
+        })
+      }
+    } else if (isWin && !isLyricOverlayOpen) { // Linux 不允许将窗口设置出屏幕之外，MacOS未知，故只在Windows下执行强制设置
       // 非主动调整窗口触发的窗口位置变化将重置回设置值
       browserWindow!.setBounds({
         x: global.lx.appSetting['desktopLyric.x'] ?? 0,
@@ -57,12 +63,19 @@ const winEvent = () => {
     // console.log(bounds)
     isWinBoundsUpdateing = true
     const bounds = browserWindow!.getBounds()
-    saveBoundsConfig({
-      'desktopLyric.x': bounds.x,
-      'desktopLyric.y': bounds.y,
-      'desktopLyric.width': bounds.width,
-      'desktopLyric.height': bounds.height,
-    })
+    if (!isLyricOverlayOpen && bounds.height > 140) {
+      bounds.width = 860
+      bounds.height = LYRIC_STRIP_HEIGHT
+      browserWindow!.setBounds(bounds)
+    }
+    if (!isLyricOverlayOpen) {
+      saveBoundsConfig({
+        'desktopLyric.x': bounds.x,
+        'desktopLyric.y': bounds.y,
+        'desktopLyric.width': bounds.width,
+        'desktopLyric.height': bounds.height,
+      })
+    }
   })
 
   // browserWindow.on('restore', () => {
@@ -81,7 +94,7 @@ const winEvent = () => {
     // if (isLinux && global.lx.appSetting['desktopLyric.isAlwaysOnTop']) {
     //   browserWindow!.setAlwaysOnTop(global.lx.appSetting['desktopLyric.isAlwaysOnTop'], 'screen-saver')
     // }
-    if (global.lx.appSetting['desktopLyric.isAlwaysOnTop'] && global.lx.appSetting['desktopLyric.isAlwaysOnTopLoop']) alwaysOnTopTools.startLoop()
+    if (global.lx.appSetting['desktopLyric.isAlwaysOnTop']) alwaysOnTopTools.startLoop()
     browserWindow!.blur()
   })
 }
@@ -93,7 +106,13 @@ export const createWindow = () => {
   let y = global.lx.appSetting['desktopLyric.y']
   let width = global.lx.appSetting['desktopLyric.width']
   let height = global.lx.appSetting['desktopLyric.height']
-  let isAlwaysOnTop = global.lx.appSetting['desktopLyric.isAlwaysOnTop']
+  let isAlwaysOnTop = true
+  // 旧版自由面板 / 纵向滚动会一次铺整页歌词，打开时收成网易云式单行条
+  // 120：上方工具栏 + 下方当前句，避免工具栏盖住歌词
+  width = 860
+  height = 120
+  x = null
+  y = null
   // let isLockScreen = global.lx.appSetting['desktopLyric.isLockScreen']
   let isShowTaskbar = global.lx.appSetting['desktopLyric.isShowTaskbar']
   // let { width: screenWidth, height: screenHeight } = global.envParams.workAreaSize
@@ -103,6 +122,9 @@ export const createWindow = () => {
     'desktopLyric.y': winSize.y,
     'desktopLyric.width': winSize.width,
     'desktopLyric.height': winSize.height,
+    'desktopLyric.isAlwaysOnTop': true,
+    'desktopLyric.isAlwaysOnTopLoop': true,
+    'desktopLyric.direction': 'horizontal',
   })
 
   const { shouldUseDarkColors, theme } = global.lx.theme
@@ -117,13 +139,14 @@ export const createWindow = () => {
     y: winSize.y,
     minWidth,
     minHeight,
+    maxHeight: LYRIC_OVERLAY_HEIGHT,
     useContentSize: true,
     frame: false,
     transparent: true,
     hasShadow: false,
     // enableRemoteModule: false,
     // icon: join(global.__static, isWin ? 'icons/256x256.ico' : 'icons/512x512.png'),
-    resizable: isWin,
+    resizable: false,
     minimizable: false,
     maximizable: false,
     fullscreenable: false,
@@ -147,10 +170,15 @@ export const createWindow = () => {
   void browserWindow.loadURL(winURL + `?os=${getPlatform()}&dark=${shouldUseDarkColors}&theme=${encodeURIComponent(JSON.stringify(theme))}`)
 
   winEvent()
+  if (isAlwaysOnTop) {
+    browserWindow.setAlwaysOnTop(true, 'screen-saver')
+    alwaysOnTopTools.startLoop()
+  }
   // browserWindow.webContents.openDevTools()
   global.lx.event_app.desktop_lyric_window_created(browserWindow)
 }
 export const isExistWindow = (): boolean => !!browserWindow
+export const isLyricMenuOverlayOpen = (): boolean => isLyricOverlayOpen
 
 export const closeWindow = () => {
   if (!browserWindow) return
@@ -187,6 +215,39 @@ export const setBounds = (bounds: Electron.Rectangle) => {
 export const setIgnoreMouseEvents = (ignore: boolean, options?: Electron.IgnoreMouseEventsOptions) => {
   if (!browserWindow) return
   browserWindow.setIgnoreMouseEvents(ignore, options)
+}
+
+export const setLyricOverlay = (open: boolean) => {
+  if (!browserWindow) return
+  const bounds = browserWindow.getBounds()
+  if (open) {
+    if (isLyricOverlayOpen) return
+    overlayOriginBounds = { ...bounds }
+    isLyricOverlayOpen = true
+    isWinBoundsUpdateing = true
+    browserWindow.setMaximumSize(Math.max(bounds.width, 860), LYRIC_OVERLAY_HEIGHT)
+    const extra = LYRIC_OVERLAY_HEIGHT - bounds.height
+    const nearTop = bounds.y <= 48
+    browserWindow.setBounds({
+      x: bounds.x,
+      y: nearTop ? bounds.y : Math.max(0, bounds.y - extra),
+      width: bounds.width,
+      height: LYRIC_OVERLAY_HEIGHT,
+    })
+    return
+  }
+  if (!isLyricOverlayOpen) return
+  isLyricOverlayOpen = false
+  isWinBoundsUpdateing = true
+  const origin = overlayOriginBounds ?? {
+    x: bounds.x,
+    y: bounds.y + (LYRIC_OVERLAY_HEIGHT - LYRIC_STRIP_HEIGHT),
+    width: 860,
+    height: LYRIC_STRIP_HEIGHT,
+  }
+  overlayOriginBounds = null
+  browserWindow.setMaximumSize(Math.max(origin.width, 860), 140)
+  browserWindow.setBounds(origin)
 }
 
 export const setSkipTaskbar = (skip: boolean) => {

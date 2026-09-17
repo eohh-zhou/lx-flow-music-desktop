@@ -6,6 +6,7 @@ import { setStatusText } from '@renderer/store/player/action'
 import { markRawList } from '@common/utils/vueTools'
 import { appSetting } from '@renderer/store/setting'
 import { onNewDesktopLyricProcess, focusWindow } from '@renderer/utils/ipc'
+import { playNext, playPrev, togglePlay } from '@renderer/core/player'
 
 const getCurrentTime = () => {
   return getPlayerCurrentTime() * 1000
@@ -50,6 +51,15 @@ const handleDesktopLyricMessage = (action: LX.DesktopLyric.WinMainActions) => {
       void import('@renderer/router').then(({ default: router }) => {
         void router.push({ path: '/setting', query: { name: 'SettingDesktopLyric' } }).catch(_ => _)
       })
+      break
+    case 'toggle_play':
+      togglePlay()
+      break
+    case 'play_prev':
+      void playPrev()
+      break
+    case 'play_next':
+      void playNext()
       break
     case 'get_info':
       sendDesktopLyricInfo({

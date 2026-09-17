@@ -191,6 +191,8 @@ const modules = {
     main_window_inited: 'main_window_inited',
     set_win_bounds: 'set_win_bounds',
     set_win_resizeable: 'set_win_resizeable',
+    set_ignore_mouse: 'set_ignore_mouse',
+    set_win_overlay: 'set_win_overlay',
     key_down: 'key_down',
     request_main_window_channel: 'request_main_window_channel',
     provide_main_window_channel: 'provide_main_window_channel',

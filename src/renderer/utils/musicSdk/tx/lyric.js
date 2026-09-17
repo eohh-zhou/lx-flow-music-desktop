@@ -105,7 +105,7 @@ const parseTools = {
     let arr = interval.split(/:|\./)
     while (arr.length < 3) arr.unshift('0')
     const [m, s, ms] = arr
-    return parseInt(m) * 3600000 + parseInt(s) * 1000 + parseInt(ms)
+    return parseInt(m) * 60000 + parseInt(s) * 1000 + parseInt(ms)
   },
   fixRlrcTimeTag(rlrc, lrc) {
     // console.log(lrc)
@@ -203,8 +203,12 @@ export default {
     if (songIdMap.has(songmid)) return songIdMap.get(songmid)
     if (promises.has(songmid)) return (await promises.get(songmid)).songId
     const promise = getMusicInfo(songmid)
-    promises.set(promise)
+    promises.set(songmid, promise)
     const info = await promise
+    if (!info) {
+      promises.delete(songmid)
+      throw new Error('获取歌曲信息失败')
+    }
     songIdMap.set(songmid, info.songId)
     promises.delete(songmid)
     return info.songId

@@ -218,10 +218,10 @@ export default {
       mergeSetting(setting)
       updateSetting(setting)
     }
-    const setNavOpacity = (value) => persistOpacity({ 'theme.navOpacity': value })
-    const setMainOpacity = (value) => persistOpacity({ 'theme.mainOpacity': value })
-    const setNavGlassBlur = (value) => persistOpacity({ 'theme.navGlassBlur': snapBlurPx(value) })
-    const setMainGlassBlur = (value) => persistOpacity({ 'theme.mainGlassBlur': snapBlurPx(value) })
+    const setNavOpacity = (value) => { persistOpacity({ 'theme.navOpacity': value }) }
+    const setMainOpacity = (value) => { persistOpacity({ 'theme.mainOpacity': value }) }
+    const setNavGlassBlur = (value) => { persistOpacity({ 'theme.navGlassBlur': snapBlurPx(value) }) }
+    const setMainGlassBlur = (value) => { persistOpacity({ 'theme.mainGlassBlur': snapBlurPx(value) }) }
     return {
       appSetting,
       themeInfo,

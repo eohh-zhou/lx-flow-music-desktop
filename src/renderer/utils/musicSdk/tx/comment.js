@@ -82,8 +82,12 @@ export default {
     if (songIdMap.has(songmid)) return songIdMap.get(songmid)
     if (promises.has(songmid)) return (await promises.get(songmid)).songId
     const promise = getMusicInfo(songmid)
-    promises.set(promise)
+    promises.set(songmid, promise)
     const info = await promise
+    if (!info) {
+      promises.delete(songmid)
+      throw new Error('获取歌曲信息失败')
+    }
     songIdMap.set(songmid, info.songId)
     promises.delete(songmid)
     return info.songId

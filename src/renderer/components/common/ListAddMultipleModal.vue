@@ -92,7 +92,7 @@ export default {
       void Promise.all(targetLists.map(async(list) => {
         try {
           const firstSong = (await getListMusics(list.id))[0]
-          covers[list.id] = firstSong?.meta?.picUrl || ''
+          covers[list.id] = firstSong?.meta?.picUrl ?? ''
         } catch {
           covers[list.id] = ''
         }

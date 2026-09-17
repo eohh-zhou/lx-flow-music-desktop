@@ -34,7 +34,13 @@ const handle_focus = () => {
     node.classList.remove(cssModule.hover)
   }
 }
-const getBtnEl = (el) => el.tagName == 'BUTTON' || !el ? el : getBtnEl(el.parentNode)
+const getBtnEl = (el) => {
+  while (el && el !== dom_btns.value) {
+    if (el.tagName == 'BUTTON') return el
+    el = el.parentNode
+  }
+  return null
+}
 const handle_mouseover = (event) => {
   const btn = getBtnEl(event.target)
   if (!btn) return

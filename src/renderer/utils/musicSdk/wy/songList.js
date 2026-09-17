@@ -10,6 +10,8 @@ import musicDetailApi from './musicDetail'
 import { eapiRequest } from './utils/index'
 import { formatSingerName } from '../utils'
 import { getNeteaseMusicAccountPlaylistDetail } from '@renderer/utils/ipc'
+import singer from './singer'
+import album from './album'
 
 export default {
   _requestObj_tags: null,
@@ -85,6 +87,8 @@ export default {
     return { id, cookie }
   },
   async getListDetail(rawId, page, tryNum = 0) { // 获取歌曲列表内的音乐
+    if (String(rawId).startsWith('album_')) return album.getAlbumDetail(String(rawId).slice(6), page)
+    if (String(rawId).startsWith('singer_')) return singer.getSearchDetail(String(rawId).slice(7), page)
     if (String(rawId).startsWith('neteaseaccount_')) return this.getAccountPlaylist(String(rawId).slice('neteaseaccount_'.length))
     if (String(rawId).startsWith('netease_recommend_')) {
       return {

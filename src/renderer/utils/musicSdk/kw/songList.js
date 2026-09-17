@@ -2,6 +2,7 @@ import { httpFetch } from '../../request'
 import { formatPlayTime, decodeName } from '../../index'
 import { formatSinger, objStr2JSON, getSearchPicUrl } from './util'
 import album from './album'
+import singer from './singer'
 
 export default {
   _requestObj_tags: null,
@@ -191,17 +192,17 @@ export default {
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
     const requestObj = httpFetch(`http://qukudata.kuwo.cn/q.k?op=query&cont=ninfo&node=${id}&pn=0&rn=1&fmt=json&src=mbox&level=2`)
     return requestObj.promise.then(({ statusCode, body }) => {
-      if (statusCode != 200 || !body.child) return this.getListDetail(id, ++tryNum)
+      if (statusCode != 200 || !body.child) return this.getListDetailDigest5Info(id, ++tryNum)
       // console.log(body)
       return body.child.length ? body.child[0].sourceid : null
     })
   },
   getListDetailDigest5Music(id, page, tryNum = 0) {
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
-    const requestObj = httpFetch(`http://nplserver.kuwo.cn/pl.svc?op=getlistinfo&pid=${id}&pn=${page - 1}}&rn=${this.limit_song}&encode=utf-8&keyset=pl2012&identity=kuwo&pcmp4=1`)
+    const requestObj = httpFetch(`http://nplserver.kuwo.cn/pl.svc?op=getlistinfo&pid=${id}&pn=${page - 1}&rn=${this.limit_song}&encode=utf-8&keyset=pl2012&identity=kuwo&pcmp4=1`)
     return requestObj.promise.then(({ body }) => {
       // console.log(body)
-      if (body.result !== 'ok') return this.getListDetail(id, page, ++tryNum)
+      if (body.result !== 'ok') return this.getListDetailDigest5Music(id, page, ++tryNum)
       return {
         list: this.filterListDetail(body.musiclist),
         page,
@@ -372,6 +373,8 @@ export default {
     // console.log(id)
     // https://h5app.kuwo.cn/m/bodian/collection.html?uid=000&playlistId=000&source=5&ownerId=000
     // https://h5app.kuwo.cn/m/bodian/collection.html?uid=000&playlistId=000&source=4&ownerId=
+    if (String(id).startsWith('album_')) return album.getAlbumListDetail(String(id).slice(6), page, retryNum)
+    if (String(id).startsWith('singer_')) return singer.getSearchDetail(String(id).slice(7), page)
     if (/\/bodian\//.test(id)) return this.getListDetailMusicListByBD(id, page)
     if ((/[?&:/]/.test(id))) id = id.replace(this.regExps.listDetailLink, '$1')
     else if (/^digest-/.test(id)) {

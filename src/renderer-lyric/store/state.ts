@@ -3,13 +3,13 @@ import { ref, shallowReactive } from '@common/utils/vueTools'
 export const setting = shallowReactive<LX.DesktopLyric.Config>({
   'desktopLyric.enable': false,
   'desktopLyric.isLock': false,
-  'desktopLyric.isAlwaysOnTop': false,
-  'desktopLyric.isAlwaysOnTopLoop': false,
-  'desktopLyric.isShowTaskbar': true,
+  'desktopLyric.isAlwaysOnTop': true,
+  'desktopLyric.isAlwaysOnTopLoop': true,
+  'desktopLyric.isShowTaskbar': false,
   'desktopLyric.pauseHide': false,
   'desktopLyric.audioVisualization': false,
-  'desktopLyric.width': 450,
-  'desktopLyric.height': 300,
+  'desktopLyric.width': 860,
+  'desktopLyric.height': 120,
   'desktopLyric.x': null,
   'desktopLyric.y': null,
   'desktopLyric.isLockScreen': true,
@@ -19,17 +19,17 @@ export const setting = shallowReactive<LX.DesktopLyric.Config>({
   'desktopLyric.direction': 'horizontal',
   'desktopLyric.style.align': 'center',
   'desktopLyric.style.lyricUnplayColor': 'rgba(255, 255, 255, 1)',
-  'desktopLyric.style.lyricPlayedColor': 'rgba(7, 197, 86, 1)',
-  'desktopLyric.style.lyricShadowColor': 'rgba(0, 0, 0, 0.14)',
+  'desktopLyric.style.lyricPlayedColor': 'rgba(236, 65, 65, 1)',
+  'desktopLyric.style.lyricShadowColor': 'rgba(0, 0, 0, 0.35)',
   'desktopLyric.style.font': '',
-  'desktopLyric.style.fontSize': 20,
-  'desktopLyric.style.lineGap': 15,
+  'desktopLyric.style.fontSize': 26,
+  'desktopLyric.style.lineGap': 10,
   // 'desktopLyric.style.fontWeight': true,
-  'desktopLyric.style.opacity': 95,
-  'desktopLyric.style.ellipsis': false,
-  'desktopLyric.style.isFontWeightFont': false,
-  'desktopLyric.style.isFontWeightLine': false,
-  'desktopLyric.style.isFontWeightExtended': false,
+  'desktopLyric.style.opacity': 100,
+  'desktopLyric.style.ellipsis': true,
+  'desktopLyric.style.isFontWeightFont': true,
+  'desktopLyric.style.isFontWeightLine': true,
+  'desktopLyric.style.isFontWeightExtended': true,
   'desktopLyric.style.isZoomActiveLrc': true,
   'common.langId': 'zh-cn',
   'player.isShowLyricTranslation': false,
@@ -86,6 +86,9 @@ export const setting = shallowReactive<LX.DesktopLyric.Config>({
 
 // export const status = ref<Status>('stopped')
 export const isPlay = ref(false)
+export const isDoubleLine = ref(false)
+export const isLyricMenuOpen = ref(false)
+export const isLyricBarBelow = ref(window.screenY <= 36)
 
 export const musicInfo = shallowReactive<{
   id: string | null

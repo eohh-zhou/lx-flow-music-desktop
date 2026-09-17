@@ -27,7 +27,7 @@ export const getProxy = () => {
       port: global.lx.appSetting['network.proxy.port'],
     }
   }
-  const envProxy = envParams.cmdParams['proxy-server']
+  const envProxy = global.envParams.cmdParams['proxy-server']
   if (envProxy) {
     if (envProxy && typeof envProxy == 'string') {
       const [host, port = ''] = envProxy.split(':')

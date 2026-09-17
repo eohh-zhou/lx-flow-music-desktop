@@ -3,7 +3,8 @@ import { decodeName } from '../../index'
 
 export default {
   _requestObj: null,
-  async getList(retryNum = 0) {
+  async getList(retryNum = 0, type) {
+    if (type == 'songlist' || type == 'singer' || type == 'album') return { source: 'kg', list: [] }
     if (this._requestObj) this._requestObj.cancelHttp()
     if (retryNum > 2) return Promise.reject(new Error('try max num'))
 

@@ -62,6 +62,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/singer/detail',
+      name: 'SingerDetail',
+      component: require('./views/singer/Detail/index.vue').default,
+      meta: {
+        name: 'Search',
+      },
+    },
+    {
       path: '/leaderboard',
       name: 'Leaderboard',
       component: require('./views/Leaderboard/index.vue').default,

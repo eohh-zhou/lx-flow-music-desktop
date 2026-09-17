@@ -164,10 +164,10 @@ export default {
   align-items: center;
 }
 .right {
-	  justify-content: flex-end;
-	}
+  justify-content: flex-end;
+}
 
-	.picContent {
+.picContent {
   height: 100%;
   width: auto;
   max-height: 100%;

@@ -49,12 +49,13 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, offse
     point.x = rect.x
     point.y = rect.y
     let dom = document.elementFromPoint(point.x, point.y)
-    if (dom_pre_line === dom) return
+    if (!dom || dom_pre_line === dom) return
     if (dom.tagName == 'SPAN') {
-      dom = dom.parentNode.parentNode
-    } else if (dom.classList.contains('line')) {
+      dom = dom.parentNode?.parentNode
+    } else if (dom.classList?.contains('line')) {
       dom = dom.parentNode
     }
+    if (!dom) return
     if (dom.time == null) {
       if (lyric.lines.length) {
         time = dom.classList.contains('pre') ? 0 : lyric.lines[lyric.lines.length - 1].time ?? 0

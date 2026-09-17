@@ -1,6 +1,8 @@
 import leaderboard from './leaderboard'
 import lyric from './lyric'
 import songList from './songList'
+import singer from './singer'
+import album from './album'
 import musicSearch from './musicSearch'
 import { apis } from '../api-source'
 import hotSearch from './hotSearch'
@@ -11,6 +13,8 @@ const tx = {
   // tipSearch,
   leaderboard,
   songList,
+  singer,
+  album,
   musicSearch,
   hotSearch,
   comment,

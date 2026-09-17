@@ -100,8 +100,8 @@ export const initWindowSize = (x: LX.AppSetting['desktopLyric.x'], y: LX.AppSett
     if (width < minWidth) width = minWidth
     if (height < minHeight) height = minHeight
     if (global.envParams.workAreaSize) {
-      x = global.envParams.workAreaSize.width - width
-      y = global.envParams.workAreaSize.height - height
+      x = Math.max(Math.round((global.envParams.workAreaSize.width - width) / 2), 0)
+      y = 8
     } else {
       x = y = 0
     }

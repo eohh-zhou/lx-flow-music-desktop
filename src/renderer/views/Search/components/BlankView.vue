@@ -37,26 +37,32 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  searchType: {
+    type: String,
+    default: 'music',
+  },
 })
 
 const hotSearchList = shallowRef([])
 
+const loadHotSearch = (source, searchType) => {
+  void getList(source, searchType).then(list => {
+    if (source != props.source || searchType != props.searchType) return
+    hotSearchList.value = list
+  })
+}
+
 if (appSetting['search.isShowHotSearch']) {
   watch(() => props.visible, (visible) => {
     if (!visible) return
-    void getList(props.source).then(list => {
-      hotSearchList.value = list
-    })
+    loadHotSearch(props.source, props.searchType)
   }, {
     immediate: true,
   })
 
-  watch(() => props.source, (source) => {
+  watch(() => [props.source, props.searchType], ([source, searchType]) => {
     if (!props.visible) return
-    void getList(source).then(list => {
-      if (source != props.source) return
-      hotSearchList.value = list
-    })
+    loadHotSearch(source, searchType)
   })
 }
 

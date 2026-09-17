@@ -7,7 +7,7 @@
   <a href="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml"><img src="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml/badge.svg" alt="Build status"></a>
 </p>
 
-<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.0.10。专注于企鹅音乐与网易云音乐的账号推荐、歌单联动，以及更干净的桌面播放界面。</p>
+<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.0.11。专注于企鹅音乐与网易云音乐的账号推荐、歌单联动，以及更干净的桌面播放界面。</p>
 
 ## 个人使用版说明
 
@@ -34,18 +34,20 @@
 
 - 工具栏换肤按钮可立即切换当前皮肤，点哪个就用哪个；皮肤弹窗可单独调整左侧栏透明度、右侧栏透明度，以及左侧栏、右侧栏各自的毛玻璃强度。
 - 提供多套纯色主题，以及雨天、黄昏海、极光、山湖、手绘原野、乡云等图片主题；壁纸会透过侧栏和列表，并保留可读的半透明底与较轻的毛玻璃。
+- 搜索支持歌曲、歌单、歌手、专辑；可打开歌手详情查看歌曲和专辑。
 - 播放栏提供六种进度条样式，默认接近网易云：圆形封面、居中控制按钮、全宽顶边进度条。
+- 桌面歌词改为接近网易云的单行条：每次打开都在桌面顶部水平居中；悬停显示工具栏；贴到屏幕顶部时工具栏会移到歌词下方。
 - 基本设置可选择字体和字号；窗口最小化、最大化、关闭按钮改为圆角矩形。
 - Windows Setup 安装版可通过 GitHub Releases 在软件内检查、下载和安装后续更新。
 
 ## 下载与更新
 
-请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.0.10](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.0.10)。
+请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.0.11](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.0.11)。
 
 | 包类型 | 文件名示例 | 适用场景 |
 | --- | --- | --- |
-| Setup 安装版 | `LXFlowMusic-v3.0.10-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
-| 绿色免安装版 | `LXFlowMusic-v3.0.10-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
+| Setup 安装版 | `LXFlowMusic-v3.0.11-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
+| 绿色免安装版 | `LXFlowMusic-v3.0.11-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
 
 从绿色版迁移到支持自动更新的版本时，只需安装一次 Setup 安装版。
 

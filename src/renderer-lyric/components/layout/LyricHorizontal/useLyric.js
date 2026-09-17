@@ -22,10 +22,8 @@ export default (isComputeHeight, getLineCount = () => 0) => {
 
   const winEvent = {
     isMsDown: false,
-    msDownX: 0,
-    msDownY: 0,
-    windowW: 0,
-    windowH: 0,
+    lastX: 0,
+    lastY: 0,
   }
 
   let msDownY = 0
@@ -41,7 +39,14 @@ export default (isComputeHeight, getLineCount = () => 0) => {
   let rafId = null
   let pendingBounds = null
   const sendBoundsRaf = (bounds) => {
-    pendingBounds = bounds
+    if (pendingBounds) {
+      pendingBounds.x += bounds.x
+      pendingBounds.y += bounds.y
+      pendingBounds.w = bounds.w
+      pendingBounds.h = bounds.h
+    } else {
+      pendingBounds = bounds
+    }
     if (rafId != null) return
     rafId = window.requestAnimationFrame(() => {
       rafId = null
@@ -89,13 +94,24 @@ export default (isComputeHeight, getLineCount = () => 0) => {
     const lineCount = getLineCount()
     if (lineCount <= 0) return
     const frag = document.createDocumentFragment()
+    const start = Math.max(lyric.line, 0)
+    for (const line of lyric.lines) {
+      line.dom_line?.classList.remove('row-left', 'row-right', 'is-next')
+    }
     for (let i = 0; i < lineCount; i++) {
-      const line = lyric.lines[lyric.line + i]
-      if (line?.dom_line) frag.appendChild(line.dom_line)
+      const index = start + i
+      const line = lyric.lines[index]
+      if (!line?.dom_line) continue
+      const useAlternate = lineCount > 1
+      line.dom_line.classList.toggle('row-left', useAlternate && index % 2 === 0)
+      line.dom_line.classList.toggle('row-right', useAlternate && index % 2 === 1)
+      line.dom_line.classList.toggle('is-next', i > 0)
+      if (i > 0) line.dom_line.style.animation = 'none'
+      else line.dom_line.style.animation = ''
+      frag.appendChild(line.dom_line)
     }
     dom_lyric_text.value.textContent = ''
     dom_lyric_text.value.appendChild(frag)
-    // 重新触发入场动画
     const first = dom_lyric_text.value.firstElementChild
     if (first) {
       first.style.animation = 'none'
@@ -105,49 +121,56 @@ export default (isComputeHeight, getLineCount = () => 0) => {
   }
 
   const handleLyricDown = (target, x, y) => {
+    if (getLineCount() > 0) {
+      winEvent.isMsDown = true
+      winEvent.lastX = x
+      winEvent.lastY = y
+      if (isWin) setWindowResizeable(false)
+      return
+    }
+    const parent = target.parentNode
     if (target.classList.contains('font-lrc') ||
-        target.parentNode.classList.contains('font-lrc') ||
+        parent?.classList?.contains('font-lrc') ||
         target.classList.contains('extended') ||
-        target.parentNode.classList.contains('extended')
+        parent?.classList?.contains('extended')
     ) {
       if (delayScrollTimeout) {
         clearTimeout(delayScrollTimeout)
         delayScrollTimeout = null
-      }
-      // 当前句模式不支持拖动滚动歌词，按下歌词也移动窗口
-      if (getLineCount() > 0) {
-        winEvent.isMsDown = true
-        winEvent.msDownX = x
-        winEvent.msDownY = y
-        winEvent.windowW = window.innerWidth
-        winEvent.windowH = window.innerHeight
-        return
       }
       isMsDown.value = true
       msDownY = y
       msDownScrollY = dom_lyric.value.scrollTop
     } else {
       winEvent.isMsDown = true
-      winEvent.msDownX = x
-      winEvent.msDownY = y
-      winEvent.windowW = window.innerWidth
-      winEvent.windowH = window.innerHeight
-      // https://github.com/lyswhut/lx-music-desktop/issues/2244
+      winEvent.lastX = x
+      winEvent.lastY = y
       if (isWin) setWindowResizeable(false)
     }
   }
   const handleLyricMouseDown = event => {
-    handleLyricDown(event.target, event.clientX, event.clientY)
+    handleLyricDown(event.target, event.screenX, event.screenY)
   }
   const handleLyricTouchStart = event => {
     if (event.changedTouches.length) {
       const touch = event.changedTouches[0]
-      handleLyricDown(event.target, touch.clientX, touch.clientY)
+      handleLyricDown(event.target, touch.screenX, touch.screenY)
+    }
+  }
+  const flushBounds = () => {
+    if (rafId != null) {
+      window.cancelAnimationFrame(rafId)
+      rafId = null
+    }
+    if (pendingBounds) {
+      setWindowBounds(pendingBounds)
+      pendingBounds = null
     }
   }
   const handleMouseMsUp = () => {
     isMsDown.value = false
     winEvent.isMsDown = false
+    flushBounds()
     if (isWin) setWindowResizeable(true)
   }
 
@@ -161,31 +184,26 @@ export default (isComputeHeight, getLineCount = () => 0) => {
       dom_lyric.value.scrollTop = msDownScrollY + msDownY - y
       startLyricScrollTimeout()
     } else if (winEvent.isMsDown) {
-      // https://github.com/lyswhut/lx-music-desktop/issues/2244
-      if (isWin) {
-        sendBoundsRaf({
-          x: x - winEvent.msDownX,
-          y: y - winEvent.msDownY,
-          w: winEvent.windowW,
-          h: winEvent.windowH,
-        })
-      } else {
-        sendBoundsRaf({
-          x: x - winEvent.msDownX,
-          y: y - winEvent.msDownY,
-          w: window.innerWidth,
-          h: window.innerHeight,
-        })
-      }
+      const dx = x - winEvent.lastX
+      const dy = y - winEvent.lastY
+      winEvent.lastX = x
+      winEvent.lastY = y
+      if (!dx && !dy) return
+      sendBoundsRaf({
+        x: dx,
+        y: dy,
+        w: window.innerWidth,
+        h: window.innerHeight,
+      })
     }
   }
   const handleMouseMsMove = event => {
-    handleMove(event.clientX, event.clientY)
+    handleMove(event.screenX, event.screenY)
   }
   const handleTouchMove = (e) => {
     if (e.changedTouches.length) {
       const touch = e.changedTouches[0]
-      handleMove(touch.clientX, touch.clientY)
+      handleMove(touch.screenX, touch.screenY)
     }
   }
 
@@ -207,6 +225,8 @@ export default (isComputeHeight, getLineCount = () => 0) => {
     }
     const dom_line_content = document.createDocumentFragment()
     for (const line of lines) {
+      line.dom_line?.classList.remove('row-left', 'row-right', 'is-next')
+      if (line.dom_line) line.dom_line.style.animation = ''
       dom_line_content.appendChild(line.dom_line)
     }
     dom_lyric_text.value.textContent = ''
@@ -263,6 +283,14 @@ export default (isComputeHeight, getLineCount = () => 0) => {
       return
     }
     scrollLine(line, oldLine)
+  })
+  watch(() => setting['desktopLyric.height'], () => {
+    if (getLineCount() > 0) renderSingle()
+    else setLyric(lyric.lines)
+  })
+  watch(() => getLineCount(), () => {
+    if (getLineCount() > 0) renderSingle()
+    else setLyric(lyric.lines)
   })
 
   onMounted(() => {

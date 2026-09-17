@@ -116,8 +116,11 @@ export default {
           transition-property: font-size, color;
         }
       }
-      &.line-mode.active .font-lrc, &.font-mode.played .font-lrc {
+      &.line-mode:not(.font-mode).active .font-lrc, &.font-mode.played .font-lrc {
         color: var(--color-lyric-played);
+      }
+      &.font-mode.played > .line > .font-lrc > span {
+        background-size: 100% 100% !important;
       }
       &.font-mode .extended .font-lrc {
         transition: @transition-slow;
@@ -156,7 +159,7 @@ export default {
     //   .stroke(1px, rgba(0, 0, 0, 0.05));
     //   // text-shadow: 1px 0 2px rgba(0, 0, 0, 0.30), 1px 0 1px rgba(0, 0, 0, 0.20);
     // }
-    .line-mode .font-lrc, .extended .font-lrc {
+    .line-mode:not(.font-mode) .font-lrc, .extended .font-lrc {
       // text-shadow: 0 0 2px rgba(0, 0, 0, 0.7), 0 0 2px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.3);
       // .stroke2(rgba(0, 0, 0, 0.14));
       .stroke4(var(--color-lyric-shadow));

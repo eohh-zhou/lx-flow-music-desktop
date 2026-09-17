@@ -131,7 +131,7 @@ const parseTools = {
     let arr = interval.split(/:|\./)
     while (arr.length < 3) arr.unshift('0')
     const [m, s, ms] = arr
-    return parseInt(m) * 3600000 + parseInt(s) * 1000 + parseInt(ms)
+    return parseInt(m) * 60000 + parseInt(s) * 1000 + parseInt(ms)
   },
   fixTimeTag(lrc, targetlrc) {
     let lrcLines = lrc.split('\n')

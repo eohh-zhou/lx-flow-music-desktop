@@ -5,64 +5,81 @@ import { isWin } from '@common/utils'
 export default () => {
   const winEvent = {
     isMsDown: false,
-    msDownX: 0,
-    msDownY: 0,
-    windowW: 0,
-    windowH: 0,
+    lastX: 0,
+    lastY: 0,
+  }
+  let rafId = null
+  let pendingBounds = null
+  const sendBoundsRaf = (bounds) => {
+    if (pendingBounds) {
+      pendingBounds.x += bounds.x
+      pendingBounds.y += bounds.y
+      pendingBounds.w = bounds.w
+      pendingBounds.h = bounds.h
+    } else {
+      pendingBounds = bounds
+    }
+    if (rafId != null) return
+    rafId = window.requestAnimationFrame(() => {
+      rafId = null
+      if (pendingBounds) setWindowBounds(pendingBounds)
+      pendingBounds = null
+    })
   }
 
-  const handleLyricDown = (target, x, y) => {
+  const handleLyricDown = (x, y) => {
     winEvent.isMsDown = true
-    winEvent.msDownX = x
-    winEvent.msDownY = y
-    winEvent.windowW = window.innerWidth
-    winEvent.windowH = window.innerHeight
-    // https://github.com/lyswhut/lx-music-desktop/issues/2244
+    winEvent.lastX = x
+    winEvent.lastY = y
     if (isWin) setWindowResizeable(false)
   }
   const handleLyricMouseDown = event => {
-    console.log(event.target, event.currentTarget)
-    if (event.target !== event.currentTarget) return
-    handleLyricDown(event.target, event.clientX, event.clientY)
+    handleLyricDown(event.screenX, event.screenY)
   }
   const handleLyricTouchStart = event => {
     if (event.changedTouches.length) {
       const touch = event.changedTouches[0]
-      if (touch.target !== touch.currentTarget) return
-      handleLyricDown(event.target, touch.clientX, touch.clientY)
+      if (touch.target !== event.currentTarget) return
+      handleLyricDown(touch.screenX, touch.screenY)
+    }
+  }
+  const flushBounds = () => {
+    if (rafId != null) {
+      window.cancelAnimationFrame(rafId)
+      rafId = null
+    }
+    if (pendingBounds) {
+      setWindowBounds(pendingBounds)
+      pendingBounds = null
     }
   }
   const handleMouseMsUp = () => {
     winEvent.isMsDown = false
+    flushBounds()
     if (isWin) setWindowResizeable(true)
   }
 
   const handleMove = (x, y) => {
     if (!winEvent.isMsDown) return
-    // https://github.com/lyswhut/lx-music-desktop/issues/2244
-    if (isWin) {
-      setWindowBounds({
-        x: x - winEvent.msDownX,
-        y: y - winEvent.msDownY,
-        w: winEvent.windowW,
-        h: winEvent.windowH,
-      })
-    } else {
-      setWindowBounds({
-        x: x - winEvent.msDownX,
-        y: y - winEvent.msDownY,
-        w: window.innerWidth,
-        h: window.innerHeight,
-      })
-    }
+    const dx = x - winEvent.lastX
+    const dy = y - winEvent.lastY
+    winEvent.lastX = x
+    winEvent.lastY = y
+    if (!dx && !dy) return
+    sendBoundsRaf({
+      x: dx,
+      y: dy,
+      w: window.innerWidth,
+      h: window.innerHeight,
+    })
   }
   const handleMouseMsMove = event => {
-    handleMove(event.clientX, event.clientY)
+    handleMove(event.screenX, event.screenY)
   }
   const handleTouchMove = (e) => {
     if (e.changedTouches.length) {
       const touch = e.changedTouches[0]
-      handleMove(touch.clientX, touch.clientY)
+      handleMove(touch.screenX, touch.screenY)
     }
   }
 
@@ -78,6 +95,7 @@ export default () => {
     document.removeEventListener('mouseup', handleMouseMsUp)
     document.removeEventListener('touchmove', handleTouchMove)
     document.removeEventListener('touchend', handleMouseMsUp)
+    if (rafId != null) window.cancelAnimationFrame(rafId)
   })
 
   return {

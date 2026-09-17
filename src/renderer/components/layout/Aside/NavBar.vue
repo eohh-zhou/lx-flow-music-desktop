@@ -38,6 +38,9 @@
                         </svg>
                         <common-playing-indicator v-if="isPlayingList(child.listId)" cover />
                       </span>
+                      <svg v-else-if="child.icon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="child.iconSize" :height="child.size || 16" :width="child.size || 16" space="preserve">
+                        <use :xlink:href="child.icon" />
+                      </svg>
                       <span :class="$style.label">{{ child.tips }}</span>
                     </router-link>
                     <base-input
@@ -390,6 +393,7 @@ export default {
 
     const menus = computed(() => {
       const size = 16
+      const brandIconSize = 18
       const localPlaylistChildren = localPlaylistInfos.value.map((list, index) => {
         const isDefault = list.id == defaultList.id
         const userIndex = isDefault ? undefined : index - 1
@@ -414,6 +418,9 @@ export default {
           tips: t('online_playlists_qq'),
           name: 'QQMusicMyPlaylists',
           enable: appSetting['qqMusic.enabled'],
+          icon: '#icon-qq-music',
+          iconSize: '0 0 1024 1024',
+          size: brandIconSize,
           showCover: false,
           listId: undefined,
           cover: '',
@@ -427,6 +434,9 @@ export default {
           tips: t('online_playlists_netease'),
           name: 'NeteaseMusicMyPlaylists',
           enable: appSetting['neteaseMusic.enabled'],
+          icon: '#icon-netease-music',
+          iconSize: '0 0 1024 1024',
+          size: brandIconSize,
           showCover: false,
           listId: undefined,
           cover: '',
@@ -458,17 +468,17 @@ export default {
         {
           to: '/qqMusic/recommend',
           tips: t('qq_music'),
-          icon: '#icon-audio-wave',
-          iconSize: '0 0 24 24',
-          size,
+          icon: '#icon-qq-music',
+          iconSize: '0 0 1024 1024',
+          size: brandIconSize,
           name: 'QQMusicRecommend',
           enable: appSetting['qqMusic.enabled'],
         }, {
           to: '/neteaseMusic/recommend',
           tips: t('netease_music'),
-          icon: '#icon-audio-wave',
-          iconSize: '0 0 24 24',
-          size,
+          icon: '#icon-netease-music',
+          iconSize: '0 0 1024 1024',
+          size: brandIconSize,
           name: 'NeteaseMusicRecommend',
           enable: appSetting['neteaseMusic.enabled'],
         },
@@ -764,6 +774,13 @@ export default {
     .mixin-ellipsis-1();
   }
 
+  &>svg {
+    flex: none;
+    fill: currentColor;
+    opacity: .82;
+    transition: opacity @transition-fast;
+  }
+
   &.active {
     color: var(--color-primary);
     background-color: var(--color-primary-alpha-900);
@@ -780,6 +797,10 @@ export default {
       background-color: var(--color-primary);
     }
 
+    &>svg {
+      opacity: 1;
+    }
+
     &:hover {
       color: var(--color-primary);
       background-color: var(--color-primary-alpha-800);
@@ -789,6 +810,10 @@ export default {
   &:hover {
     color: var(--color-font);
     background-color: var(--color-050);
+
+    &>svg {
+      opacity: 1;
+    }
   }
 
   &:active:not(.active) {
@@ -871,6 +896,7 @@ export default {
 
   &>svg {
     flex: none;
+    fill: currentColor;
     opacity: .82;
     transition: opacity @transition-fast;
   }

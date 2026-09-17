@@ -49,6 +49,7 @@ export default () => {
       if (version == process.versions.app) return
       saveLastStartInfo(process.versions.app)
       if (!appSetting['common.showChangeLog']) return
+      const latest = versionInfo.newVersion
       if (version) {
         if (compareVer(process.versions.app, version) < 0) {
           void dialog({
@@ -58,10 +59,11 @@ export default () => {
           return
         }
 
-        if (compareVer(version, versionInfo.newVersion!.version) >= 0) return
+        if (latest?.version && compareVer(version, latest.version) >= 0) return
       } else if (
         // 如果当前版本不在已发布的版本中，则不需要显示更新日志
-        ![{ version: versionInfo.newVersion!.version, desc: '' }, ...(versionInfo.newVersion!.history ?? [])]
+        !latest?.version ||
+        ![{ version: latest.version, desc: '' }, ...(latest.history ?? [])]
           .some(i => i.version == process.versions.app)
       ) return
       isShowChangeLog.value = true

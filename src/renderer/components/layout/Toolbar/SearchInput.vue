@@ -459,7 +459,8 @@ const handleDocumentMouseDown = (e) => {
   if (!popupVisible.value) return
   const root = dom_root.value
   const popupEl = dom_popup.value?.el
-  if ((root && root.contains(e.target)) || (popupEl && popupEl.contains(e.target))) return
+  if (root?.contains(e.target)) return
+  if (popupEl?.contains(e.target)) return
   popupVisible.value = false
   focused.value = false
 }

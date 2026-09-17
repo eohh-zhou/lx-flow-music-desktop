@@ -45,14 +45,6 @@ dd
   h3#desktop_lyric_shape {{ $t('setting__desktop_lyric_shape') }}
   div
     base-checkbox.gap-left(id="setting_desktop_lyric_shape_single" :model-value="desktopLyricShape" need value="single" :label="$t('setting__desktop_lyric_shape_single')" @update:model-value="updateDesktopLyricShape($event)")
-    base-checkbox.gap-left(id="setting_desktop_lyric_shape_double" :model-value="desktopLyricShape" need value="double" :label="$t('setting__desktop_lyric_shape_double')" @update:model-value="updateDesktopLyricShape($event)")
-    base-checkbox.gap-left(id="setting_desktop_lyric_shape_panel" :model-value="desktopLyricShape" need value="panel" :label="$t('setting__desktop_lyric_shape_panel')" @update:model-value="updateDesktopLyricShape($event)")
-
-dd
-  h3#desktop_lyric_direction {{ $t('setting__desktop_lyric_direction') }}
-  div
-    base-checkbox.gap-left(id="setting_desktop_lyric_direction_horizontal" :model-value="appSetting['desktopLyric.direction']" need value="horizontal" :label="$t('setting__desktop_lyric_direction_horizontal')" @update:model-value="updateSetting({ 'desktopLyric.direction': $event })")
-    base-checkbox.gap-left(id="setting_desktop_lyric_direction_vertical" :model-value="appSetting['desktopLyric.direction']" need value="vertical" :label="$t('setting__desktop_lyric_direction_vertical')" @update:model-value="updateSetting({ 'desktopLyric.direction': $event })")
 
 dd
   h3#desktop_lyric_scroll_align {{ $t('setting__desktop_lyric_scroll_align') }}
@@ -236,8 +228,8 @@ const useLyricColor = () => {
   const resetColor = () => {
     const defaultSetting = {
       'desktopLyric.style.lyricUnplayColor': 'rgba(255, 255, 255, 1)',
-      'desktopLyric.style.lyricPlayedColor': 'rgba(7, 197, 86, 1)',
-      'desktopLyric.style.lyricShadowColor': 'rgba(0, 0, 0, 0.18)',
+      'desktopLyric.style.lyricPlayedColor': 'rgba(236, 65, 65, 1)',
+      'desktopLyric.style.lyricShadowColor': 'rgba(0, 0, 0, 0.35)',
     }
     updateSetting(defaultSetting)
     setLyricUnplayColor(defaultSetting['desktopLyric.style.lyricUnplayColor'])
@@ -272,16 +264,9 @@ export default {
 
     // 桌面歌词显示形态：单行歌词条 / 双行歌词条 / 自由面板
     const shapeSizes = {
-      single: { width: 680, height: 64 },
-      double: { width: 680, height: 110 },
-      panel: { width: 450, height: 300 },
+      single: { width: 860, height: 120 },
     }
-    const desktopLyricShape = computed(() => {
-      const h = appSetting['desktopLyric.height']
-      if (h <= 80) return 'single'
-      if (h <= 140) return 'double'
-      return 'panel'
-    })
+    const desktopLyricShape = computed(() => 'single')
     const updateDesktopLyricShape = (shape) => {
       const size = shapeSizes[shape]
       if (!size) return
@@ -310,8 +295,8 @@ export default {
 
     const resetWindowSetting = () => {
       updateSetting({
-        'desktopLyric.width': 680,
-        'desktopLyric.height': 64,
+        'desktopLyric.width': 860,
+        'desktopLyric.height': 120,
         'desktopLyric.x': null,
         'desktopLyric.y': null,
       })

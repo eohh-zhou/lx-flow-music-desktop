@@ -339,7 +339,7 @@ export const initAppSetting = async() => {
     global.lx.appSetting = (await initSetting()).setting
     if (!dbFileExists) await migrateDBData().catch(err => { log.error(err) })
     initTheme()
-    if (envParams.cmdParams.dt == null) envParams.cmdParams.dt = !global.lx.appSetting['common.transparentWindow']
+    if (global.envParams.cmdParams.dt == null) global.envParams.cmdParams.dt = !global.lx.appSetting['common.transparentWindow']
   }
   // global.lx.theme = getTheme()
 

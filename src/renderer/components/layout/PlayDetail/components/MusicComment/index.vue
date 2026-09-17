@@ -196,6 +196,10 @@ export default {
       })
     },
     handleShowComment() {
+      if (!this.musicInfo) {
+        this.available = false
+        return
+      }
       this.currentMusicInfo = 'progress' in this.musicInfo ? this.musicInfo.metadata.musicInfo : this.musicInfo
 
       if (this.currentMusicInfo.source == 'local' || !music[this.currentMusicInfo.source].comment) {

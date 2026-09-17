@@ -487,7 +487,7 @@ const getDailyRecommend = async() => {
     },
   }, cookie)
   const songs = Array.isArray(data.songlist)
-    ? data.songlist.map(toOldSongInfo).filter((item: ReturnType<typeof toOldSongInfo>) => item.songmid)
+    ? data.songlist.map((item: Record<string, any>) => toOldSongInfo(item.songInfo ?? item.songinfo ?? item)).filter((item: ReturnType<typeof toOldSongInfo>) => item.songmid)
     : []
   const dirinfo = data.dirinfo ?? {}
   return {

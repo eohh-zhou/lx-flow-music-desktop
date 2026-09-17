@@ -2,6 +2,29 @@ import { getMusicInfosByList } from './musicInfo'
 import { createHttpFetch } from './util'
 
 export default {
+  search(text, page, limit = 20) {
+    return createHttpFetch(`http://msearchretry.kugou.com/api/v3/search/album?keyword=${encodeURIComponent(text)}&page=${page}&pagesize=${limit}&showtype=10`)
+      .then(body => {
+        const info = Array.isArray(body)
+          ? body
+          : (body.info || body.data?.info || body.lists || [])
+        const list = info.map(item => ({
+          id: String(item.albumid || item.album_id || item.id || ''),
+          author: item.singername || item.author_name || '',
+          name: item.albumname || item.album_name || item.name || '',
+          time: item.publishtime ? String(item.publishtime).slice(0, 10) : '',
+          img: String(item.imgurl || item.sizable_cover || '').replace('{size}', '240'),
+          songCount: item.songcount || item.song_count || 0,
+          source: 'kg',
+        })).filter(item => item.id)
+        return {
+          list,
+          limit,
+          total: body.total || body.data?.total || list.length,
+          source: 'kg',
+        }
+      })
+  },
   /**
    * 通过AlbumId获取专辑信息
    * @param {*} id
@@ -26,7 +49,7 @@ export default {
 
     return {
       name: albumInfo.album_name,
-      image: albumInfo.sizable_cover.replace('{size}', 240),
+      image: String(albumInfo.sizable_cover || albumInfo.cover || '').replace('{size}', '240'),
       desc: albumInfo.intro,
       authorName: albumInfo.author_name,
       // play_count: this.formatPlayCount(info.count),

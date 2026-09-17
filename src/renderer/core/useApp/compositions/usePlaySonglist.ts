@@ -4,7 +4,7 @@ import { tempList, tempListMeta } from '@renderer/store/list/state'
 import { getListDetail, getListDetailAll } from '@renderer/store/songList/action'
 
 const getListPlayIndex = (list: LX.Music.MusicInfoOnline[], index?: number) => {
-  if (index == null) {
+  if (index == null || Number.isNaN(index)) {
     index = 1
   } else {
     if (index < 1) index = 1
@@ -28,7 +28,7 @@ export default () => {
     }
     list = await getListDetailAll(id, source)
     if (isPlayingList) {
-      if (tempListMeta.id == id) await setTempList(playListId, list)
+      if (tempListMeta.id == playListId) await setTempList(playListId, list)
     } else {
       await setTempList(playListId, list)
       playList(tempList.id, getListPlayIndex(list, playIndex))

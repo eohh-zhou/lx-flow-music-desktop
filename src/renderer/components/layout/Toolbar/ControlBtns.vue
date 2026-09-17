@@ -41,7 +41,13 @@ const handle_focus = () => {
     node.classList.remove(cssModule.hover)
   }
 }
-const getBtnEl = (el) => el.tagName == 'BUTTON' || !el ? el : getBtnEl(el.parentNode)
+const getBtnEl = (el) => {
+  while (el && el !== dom_btns.value) {
+    if (el.tagName == 'BUTTON') return el
+    el = el.parentNode
+  }
+  return null
+}
 const handle_mouseover = (event) => {
   const btn = getBtnEl(event.target)
   if (!btn) return
@@ -56,14 +62,14 @@ const handle_mouseout = (event) => {
 
 onMounted(() => {
   window.app_event.on('focus', handle_focus)
-  dom_btns.value.addEventListener('mouseover', handle_mouseover)
-  dom_btns.value.addEventListener('mouseout', handle_mouseout)
+  dom_btns.value?.addEventListener('mouseover', handle_mouseover)
+  dom_btns.value?.addEventListener('mouseout', handle_mouseout)
   removeMaximizeListener = onMaximizeChange(maximized => { isMaximized.value = maximized })
 })
 onBeforeUnmount(() => {
   window.app_event.off('focus', handle_focus)
-  dom_btns.value.removeEventListener('mouseover', handle_mouseover)
-  dom_btns.value.removeEventListener('mouseout', handle_mouseout)
+  dom_btns.value?.removeEventListener('mouseover', handle_mouseover)
+  dom_btns.value?.removeEventListener('mouseout', handle_mouseout)
   removeMaximizeListener?.()
 })
 

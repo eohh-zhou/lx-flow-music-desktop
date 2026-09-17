@@ -66,41 +66,21 @@ export default class Lyric {
   }
 
   _handleLinePlayerOnPlay = (num, text, curTime) => {
-    if (this.isLineMode) {
-      if (num < this.playingLineNum + 1) {
-        for (let i = this.playingLineNum, minNum = Math.max(num, 0) - 1; i > minNum; i--) {
-          const font = this._lineFonts[i]
-          font.reset()
-          font.lineContent.classList.remove(this.activeLineClassName)
-        }
-      } else if (num > this.playingLineNum) {
-        for (let i = Math.max(this.playingLineNum, 0); i < num; i++) {
-          const font = this._lineFonts[i]
-          font.reset()
-          font.lineContent.classList.remove(this.activeLineClassName)
-        }
-      } else if (this.playingLineNum > -1) {
-        const font = this._lineFonts[this.playingLineNum]
+    if (num < this.playingLineNum + 1) {
+      for (let i = this.playingLineNum, minNum = Math.max(num, 0) - 1; i > minNum; i--) {
+        const font = this._lineFonts[i]
+        font.lineContent.classList.remove(this.activeLineClassName)
         font.reset()
-        font.lineContent.classList.remove(this.activeLineClassName)
       }
-    } else {
-      if (num < this.playingLineNum + 1) {
-        for (let i = this.playingLineNum, minNum = Math.max(num, 0) - 1; i > minNum; i--) {
-          const font = this._lineFonts[i]
-          font.lineContent.classList.remove(this.activeLineClassName)
-          font.reset()
-        }
-      } else if (num > this.playingLineNum) {
-        for (let i = Math.max(this.playingLineNum, 0); i < num; i++) {
-          const font = this._lineFonts[i]
-          font.lineContent.classList.remove(this.activeLineClassName)
-          font.finish()
-        }
-      } else if (this.playingLineNum > -1) {
-        const font = this._lineFonts[this.playingLineNum]
+    } else if (num > this.playingLineNum) {
+      for (let i = Math.max(this.playingLineNum, 0); i < num; i++) {
+        const font = this._lineFonts[i]
         font.lineContent.classList.remove(this.activeLineClassName)
+        font.finish()
       }
+    } else if (this.playingLineNum > -1) {
+      const font = this._lineFonts[this.playingLineNum]
+      font.lineContent.classList.remove(this.activeLineClassName)
     }
     this.playingLineNum = num
     if (num > -1) {
@@ -118,9 +98,12 @@ export default class Lyric {
 
     this._lineFonts = []
     if (this.isLineMode) {
-      this._lines = lyricLines.map(line => {
+      this._lines = lyricLines.map((line, i) => {
+        const next = lyricLines[i + 1]
+        const duration = next ? Math.max(next.time - line.time, 300) : 5000
         const fontPlayer = new FontPlayer({
           time: line.time,
+          duration,
           rate: this.rate,
           lyric: line.text,
           extendedLyrics: line.extendedLyrics,
@@ -144,9 +127,12 @@ export default class Lyric {
         }
       })
     } else {
-      this._lines = lyricLines.map(line => {
+      this._lines = lyricLines.map((line, i) => {
+        const next = lyricLines[i + 1]
+        const duration = next ? Math.max(next.time - line.time, 300) : 5000
         const fontPlayer = new FontPlayer({
           time: line.time,
+          duration,
           rate: this.rate,
           lyric: line.text,
           extendedLyrics: line.extendedLyrics,

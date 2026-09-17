@@ -1,48 +1,58 @@
 <template>
-  <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
-    <div v-show="visible" :class="$style.mask" @mousedown.self="handleClose" @contextmenu.prevent="handleClose">
-      <div
-        ref="dom_menu"
-        :class="$style.menu"
-        :style="menuStyle"
-        @mousedown.stop
-      >
-        <template v-for="item in items" :key="item.key">
-          <div v-if="item.type === 'separator'" :class="$style.separator" />
-          <div
-            v-else
-            :class="[$style.item, { [$style.disabled]: item.disabled }]"
-            @mouseenter="handleItemEnter(item, $event)"
-            @click="handleItemClick(item)"
-          >
-            <span :class="$style.check">{{ item.checked ? '✓' : '' }}</span>
-            <span :class="$style.label">{{ item.label }}</span>
-            <span :class="$style.arrow">{{ item.children?.length ? '›' : '' }}</span>
-          </div>
-        </template>
+  <teleport to="body">
+    <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
+      <div v-show="visible" data-lyric-hit :class="$style.mask" @mousedown.self="handleClose" @contextmenu.prevent="handleClose">
+        <div
+          ref="dom_menu"
+          data-lyric-hit
+          :class="$style.menu"
+          :style="menuStyle"
+          @mousedown.stop
+        >
+          <template v-for="item in items" :key="item.key">
+            <div v-if="item.type === 'separator'" :class="$style.separator" />
+            <div
+              v-else
+              :class="[$style.item, { [$style.disabled]: item.disabled }]"
+              @mouseenter="handleItemEnter(item, $event)"
+              @click="handleItemClick(item)"
+            >
+              <span :class="$style.icon">
+                <svg v-if="item.icon" viewBox="0 0 24 24">
+                  <use :xlink:href="'#icon-menu-' + item.icon" />
+                </svg>
+              </span>
+              <span :class="$style.label">{{ item.label }}</span>
+              <span v-if="item.children?.length" :class="$style.arrow">›</span>
+              <span v-else-if="item.checked" :class="$style.check">✓</span>
+              <span v-else :class="$style.check" />
+            </div>
+          </template>
 
-        <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
-          <div v-if="subMenu && subMenu.visible" :class="$style.subMenu" :style="subMenuStyle">
-            <template v-for="sub in subMenu.items" :key="sub.key">
-              <div v-if="sub.type === 'separator'" :class="$style.separator" />
-              <div
-                v-else
-                :class="[$style.item, { [$style.disabled]: sub.disabled }]"
-                @click.stop="handleSubItemClick(sub)"
-              >
-                <span :class="$style.check">{{ sub.checked ? '✓' : '' }}</span>
-                <span :class="$style.label">{{ sub.label }}</span>
-              </div>
-            </template>
-          </div>
-        </transition>
+          <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
+            <div v-if="subMenu && subMenu.visible" data-lyric-hit :class="$style.subMenu" :style="subMenuStyle" @mousedown.stop>
+              <template v-for="sub in subMenu.items" :key="sub.key">
+                <div v-if="sub.type === 'separator'" :class="$style.separator" />
+                <div
+                  v-else
+                  :class="[$style.item, { [$style.disabled]: sub.disabled }]"
+                  @click.stop="handleSubItemClick(sub)"
+                >
+                  <span :class="$style.label">{{ sub.label }}</span>
+                  <span v-if="sub.checked" :class="$style.check">✓</span>
+                  <span v-else :class="$style.check" />
+                </div>
+              </template>
+            </div>
+          </transition>
+        </div>
       </div>
-    </div>
-  </transition>
+    </transition>
+  </teleport>
 </template>
 
 <script>
-import { computed, ref } from '@common/utils/vueTools'
+import { computed, ref, watch } from '@common/utils/vueTools'
 
 export default {
   props: {
@@ -78,10 +88,12 @@ export default {
     const menuStyle = computed(() => {
       let x = props.x
       let y = props.y
-      const menuW = 176
-      const menuH = Math.min(props.items.length * 30 + 12, 340, window.innerHeight - 8)
-      if (x + menuW > window.innerWidth - 4) x = Math.max(4, window.innerWidth - menuW - 4)
-      if (y + menuH > window.innerHeight - 4) y = Math.max(4, window.innerHeight - menuH - 4)
+      const menuW = 220
+      const menuH = Math.min(props.items.length * 40 + 16, window.innerHeight - 12)
+      if (x + menuW > window.innerWidth - 8) x = Math.max(8, window.innerWidth - menuW - 8)
+      if (y + menuH > window.innerHeight - 8) y = Math.max(8, window.innerHeight - menuH - 8)
+      if (x < 8) x = 8
+      if (y < 8) y = 8
       return { left: x + 'px', top: y + 'px' }
     })
 
@@ -90,6 +102,7 @@ export default {
     })
 
     const handleClose = () => {
+      subMenu.value.visible = false
       emit('update:visible', false)
     }
 
@@ -100,12 +113,12 @@ export default {
       }
       const domItem = event?.currentTarget
       const rect = domItem?.getBoundingClientRect()
-      const subW = 150
-      const subH = Math.min(item.children.length * 30 + 12, 340, window.innerHeight - 8)
-      let x = (rect?.right ?? props.x + menuW) + 2
+      const subW = 176
+      const subH = Math.min(item.children.length * 40 + 16, window.innerHeight - 12)
+      let x = (rect?.right ?? props.x + 220) + 4
       let y = (rect?.top ?? props.y)
-      if (x + subW > window.innerWidth - 4) x = (rect?.left ?? props.x) - subW - 2
-      if (y + subH > window.innerHeight - 4) y = Math.max(4, window.innerHeight - subH - 4)
+      if (x + subW > window.innerWidth - 8) x = (rect?.left ?? props.x) - subW - 4
+      if (y + subH > window.innerHeight - 8) y = Math.max(8, window.innerHeight - subH - 8)
       subMenu.value = {
         visible: true,
         x,
@@ -131,6 +144,10 @@ export default {
       handleClose()
     }
 
+    watch(() => props.visible, (visible) => {
+      if (!visible) subMenu.value.visible = false
+    })
+
     return {
       dom_menu,
       subMenu,
@@ -155,47 +172,41 @@ export default {
   width: 100%;
   height: 100%;
   z-index: 999;
+  pointer-events: auto;
+}
+
+.menu,
+.subMenu {
+  position: fixed;
+  box-sizing: border-box;
+  padding: 8px 0;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .18);
 }
 
 .menu {
-  position: absolute;
-  min-width: 172px;
-  // 条状歌词窗口较矮时限制菜单高度，靠内部滚动展示所有项
-  max-height: min(340px, calc(100vh - 8px));
-  overflow-y: auto;
-  box-sizing: border-box;
-  padding: 5px;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, .98);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, .18), 0 0 0 1px rgba(0, 0, 0, .04);
+  min-width: 216px;
 }
 
 .subMenu {
-  position: fixed;
-  min-width: 148px;
-  max-height: min(340px, calc(100vh - 8px));
-  overflow-y: auto;
-  box-sizing: border-box;
-  padding: 5px;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, .98);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, .18), 0 0 0 1px rgba(0, 0, 0, .04);
+  min-width: 168px;
+  z-index: 1000;
 }
 
 .item {
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 5px;
+  height: 38px;
+  padding: 0 14px;
   cursor: pointer;
   color: #333;
-  font-size: 12.5px;
+  font-size: 13px;
   transition: background-color .12s ease;
 
   &:hover {
-    background-color: rgba(0, 0, 0, .06);
+    background-color: #f5f5f5;
   }
 
   &.disabled {
@@ -208,11 +219,30 @@ export default {
   }
 }
 
+.icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  color: #666;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :global(svg) {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+}
+
 .check {
   flex: none;
-  width: 20px;
-  font-size: 11px;
-  color: var(--color-lyric-played, #ec4141);
+  width: 16px;
+  margin-left: 12px;
+  font-size: 13px;
+  color: #ec4141;
+  text-align: right;
 }
 
 .label {
@@ -223,14 +253,15 @@ export default {
 
 .arrow {
   flex: none;
-  padding-left: 10px;
-  color: #999;
-  font-size: 13px;
+  padding-left: 12px;
+  color: #bbb;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .separator {
   height: 1px;
-  margin: 4px 8px;
-  background-color: rgba(0, 0, 0, .08);
+  margin: 6px 12px;
+  background-color: rgba(0, 0, 0, .06);
 }
 </style>

@@ -39,7 +39,7 @@ declare namespace LX {
       'player.playbackRate': LX.AppSetting['player.playbackRate']
     }
 
-    type WinMainActions = 'get_info' | 'get_status' | 'get_analyser_data_array' | 'open_settings'
+    type WinMainActions = 'get_info' | 'get_status' | 'get_analyser_data_array' | 'open_settings' | 'toggle_play' | 'play_prev' | 'play_next'
 
     interface LyricActionBase <A> {
       action: A

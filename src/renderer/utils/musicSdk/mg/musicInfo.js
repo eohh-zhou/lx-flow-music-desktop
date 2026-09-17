@@ -74,7 +74,7 @@ export const filterMusicInfoList = (rawList) => {
     const intervalTest = /(\d\d:\d\d)$/.test(item.length)
 
     list.push({
-      singer: formatSingerName(item.artists, 'name'),
+      singer: formatSingerName(item.artists || item.singerList || item.singers, 'name') || item.singer || '',
       name: item.songName,
       albumName: item.album,
       albumId: item.albumId,
@@ -109,28 +109,29 @@ export const filterMusicInfoListV5 = (rawList) => {
       let size
       switch (type.formatType) {
         case 'PQ':
-          size = sizeFormate(type.size ?? type.androidSize)
+          size = sizeFormate(type.size ?? type.androidSize ?? type.isize ?? type.asize)
           types.push({ type: '128k', size })
           _types['128k'] = {
             size,
           }
           break
         case 'HQ':
-          size = sizeFormate(type.size ?? type.androidSize)
+          size = sizeFormate(type.size ?? type.androidSize ?? type.isize ?? type.asize)
           types.push({ type: '320k', size })
           _types['320k'] = {
             size,
           }
           break
         case 'SQ':
-          size = sizeFormate(type.size ?? type.androidSize)
+          size = sizeFormate(type.size ?? type.androidSize ?? type.isize ?? type.asize)
           types.push({ type: 'flac', size })
           _types.flac = {
             size,
           }
           break
         case 'ZQ':
-          size = sizeFormate(type.size ?? type.androidSize)
+        case 'ZQ24':
+          size = sizeFormate(type.size ?? type.androidSize ?? type.isize ?? type.asize)
           types.push({ type: 'flac24bit', size })
           _types.flac24bit = {
             size,
@@ -139,15 +140,16 @@ export const filterMusicInfoListV5 = (rawList) => {
       }
     })
 
+    const singer = formatSingerName(item.singerList || item.singers || item.artists, 'name') || item.singer || ''
     list.push({
-      singer: formatSingerName(item.singerList, 'name'),
+      singer,
       name: item.songName,
       albumName: item.album,
       albumId: item.albumId,
       songmid: item.songId,
       copyrightId: item.copyrightId,
       source: 'mg',
-      interval: formatPlayTime(item.duration),
+      interval: item.duration ? formatPlayTime(item.duration) : null,
       img: formatMgPicUrl(item),
       lrc: null,
       lrcUrl: item.lrcUrl,

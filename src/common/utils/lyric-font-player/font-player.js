@@ -28,6 +28,7 @@ const createAnimation = (dom, duration, isVertical) => new window.Animation(new 
 export default class FontPlayer {
   constructor({
     time = 0,
+    duration = 0,
     rate = 1,
     lyric = '',
     lineContentClassName = 'line-content',
@@ -42,6 +43,7 @@ export default class FontPlayer {
     isVertical = false,
   }) {
     this.time = time
+    this.duration = duration
     this.lyric = lyric
 
     this._rate = rate
@@ -180,11 +182,35 @@ export default class FontPlayer {
   _handleLineParse() {
     this.isLineMode = true
     this.lineContent.classList.add(this.lineModeClassName)
-    this.lrcContent.textContent = this.lyric
+    this.lineContent.classList.add(this.fontModeClassName)
+    const text = this.lyric
+    const duration = Math.max(this.duration || 4000, 200)
+    const dom = document.createElement('span')
+    dom.textContent = text
+    this.lrcContent.appendChild(dom)
+    const animation = createAnimation(dom, duration / this._rate, this.isVertical)
 
-    // if (this.shadowContent) this.lrcShadowContent.textContent = this.lyric
+    if (this.shadowContent) {
+      const lrcShadowContent = document.createElement('div')
+      const shadowDom = document.createElement('span')
+      shadowDom.textContent = text
+      lrcShadowContent.appendChild(shadowDom)
+      lrcShadowContent.style = 'position:absolute;top:0;left:0;right:0;z-index:-1;'
+      lrcShadowContent.className = this.shadowClassName
+      this.line.appendChild(lrcShadowContent)
+    }
+
     this.fonts.push({
-      text: this.lyric,
+      text,
+      startTime: 0,
+      time: duration,
+      dom,
+      animation,
+    })
+    this.maxFontNum = 0
+    animation.addEventListener('finish', () => {
+      this.lineContent.classList.add('played')
+      this.isPlay = false
     })
   }
 
@@ -299,7 +325,7 @@ export default class FontPlayer {
     if (!this.fonts.length) return
     this.pause()
 
-    if (this.isLineMode) return this._handlePlayLine(true)
+    if (this.isLineMode && !this.fonts[0]?.animation) return this._handlePlayLine(true)
     this.lineContent.classList.remove('played')
     this.isPlay = true
     this._performanceTime = getNow()
@@ -335,7 +361,7 @@ export default class FontPlayer {
 
   finish() {
     this.pause()
-    if (this.isLineMode) return this._handlePlayLine(true)
+    if (this.isLineMode && !this.fonts[0]?.animation) return this._handlePlayLine(true)
     this.lineContent.classList.add('played')
 
     for (const font of this.fonts) {
@@ -354,7 +380,7 @@ export default class FontPlayer {
 
   reset() {
     this.pause()
-    if (this.isLineMode) return this._handlePlayLine(false)
+    if (this.isLineMode && !this.fonts[0]?.animation) return this._handlePlayLine(false)
     this.lineContent.classList.remove('played')
     for (const font of this.fonts) {
       font.animation.cancel()

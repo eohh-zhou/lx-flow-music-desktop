@@ -321,7 +321,7 @@ export const getProxy = () => {
       port: envProxy.port,
     }
   } else {
-    const envProxyStr = envParams.cmdParams['proxy-server']
+    const envProxyStr = global.envParams.cmdParams['proxy-server']
     if (envProxyStr && typeof envProxyStr == 'string') {
       const [host, port = ''] = envProxyStr.split(':')
       return envProxy = {

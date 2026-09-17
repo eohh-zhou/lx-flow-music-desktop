@@ -3,7 +3,7 @@ import { mainOn, mainHandle } from '@common/mainIpc'
 import { WIN_LYRIC_RENDERER_EVENT_NAME } from '@common/ipcNames'
 import { buildLyricConfig, getLyricWindowBounds } from './utils'
 import { sendNewDesktopLyricClient } from '@main/modules/winMain'
-import { getBounds, getMainFrame, sendEvent, setBounds, setResizeable } from './main'
+import { getBounds, getMainFrame, sendEvent, setBounds, setIgnoreMouseEvents, setLyricOverlay, setResizeable } from './main'
 import { MessageChannelMain } from 'electron'
 import { mouseCheckTools } from './mouseCheckTools'
 
@@ -32,6 +32,15 @@ export default () => {
 
   mainOn<boolean>(WIN_LYRIC_RENDERER_EVENT_NAME.set_win_resizeable, ({ params: resizable }) => {
     setResizeable(resizable)
+  })
+
+  mainOn<{ ignore: boolean, forward?: boolean }>(WIN_LYRIC_RENDERER_EVENT_NAME.set_ignore_mouse, ({ params }) => {
+    if (global.lx.appSetting['desktopLyric.isLock']) return
+    setIgnoreMouseEvents(params.ignore, { forward: params.forward != false })
+  })
+
+  mainOn<boolean>(WIN_LYRIC_RENDERER_EVENT_NAME.set_win_overlay, ({ params: open }) => {
+    setLyricOverlay(open)
   })
 
   mainOn(WIN_LYRIC_RENDERER_EVENT_NAME.request_main_window_channel, ({ event }) => {

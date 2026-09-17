@@ -7,6 +7,8 @@ import {
   getQQMusicNewSongs,
   getQQMusicRadarTracks,
 } from '@renderer/utils/ipc'
+import album from './album'
+import singer from './singer'
 
 export default {
   _requestObj_tags: null,
@@ -258,7 +260,9 @@ export default {
     return id
   },
   // 获取歌曲列表内的音乐
-  async getListDetail(id, tryNum = 0) {
+  async getListDetail(id, page = 1, tryNum = 0) {
+    if (String(id).startsWith('album_')) return album.getAlbumDetail(String(id).slice(6))
+    if (String(id).startsWith('singer_')) return singer.getSearchDetail(String(id).slice(7), page)
     if (String(id).startsWith('qqaccount_')) return this.getAccountPlaylist(String(id).slice('qqaccount_'.length))
     if (String(id) === 'daily30') return this.getDailyRecommend()
     if (String(id).startsWith('qqradio_')) return this.getRadarRecommend(String(id).slice(8))
@@ -275,7 +279,7 @@ export default {
     })
     const { body } = await requestObj_listDetail.promise
 
-    if (body.code !== this.successCode) return this.getListDetail(id, ++tryNum)
+    if (body.code !== this.successCode) return this.getListDetail(id, page, ++tryNum)
     const cdlist = body.cdlist && body.cdlist[0]
     // 部分歌单因作者隐私设置/平台限制返回 subcode 4000（check privacy error），此时无 cdlist 字段
     if (!cdlist) throw new Error(body.msg || 'failed')

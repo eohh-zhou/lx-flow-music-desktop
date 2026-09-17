@@ -1,5 +1,6 @@
 import { rendererSend, rendererInvoke, rendererOn, rendererOff } from '@common/rendererIpc'
 import { CMMON_EVENT_NAME, WIN_LYRIC_RENDERER_EVENT_NAME } from '@common/ipcNames'
+import { syncLyricBarSide } from './lyricBarSide'
 
 type RemoveListener = () => void
 
@@ -17,6 +18,14 @@ export const onSettingChanged = (listener: LX.IpcRendererEventListenerParams<Par
 }
 export const setWindowBounds = (bounds: LX.DesktopLyric.NewBounds) => {
   rendererSend<LX.DesktopLyric.NewBounds>(WIN_LYRIC_RENDERER_EVENT_NAME.set_win_bounds, bounds)
+  syncLyricBarSide(window.screenY + bounds.y)
+  window.requestAnimationFrame(() => { syncLyricBarSide() })
+}
+export const setIgnoreMouseEvents = (ignore: boolean, forward = true) => {
+  rendererSend<{ ignore: boolean, forward?: boolean }>(WIN_LYRIC_RENDERER_EVENT_NAME.set_ignore_mouse, { ignore, forward })
+}
+export const setWinOverlay = (open: boolean) => {
+  rendererSend<boolean>(WIN_LYRIC_RENDERER_EVENT_NAME.set_win_overlay, open)
 }
 let previousResizable: boolean | null = null
 export const setWindowResizeable = (resizable: boolean) => {

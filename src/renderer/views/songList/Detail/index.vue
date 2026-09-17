@@ -76,6 +76,12 @@ interface Query {
   picUrl?: string
   refresh?: 'true'
   fromName?: string
+  returnSource?: string
+  returnId?: string
+  returnName?: string
+  returnPicUrl?: string
+  returnTab?: string
+  returnFromName?: string
 }
 
 const verifyQueryParams = async function(this: any, to: { query: Query, path: string }, from: { name?: unknown, query?: Record<string, unknown> }, next: (route?: { path: string, query: Query }) => void) {
@@ -111,17 +117,19 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
   picUrl.value = _picUrl ?? ''
   refresh.value = _refresh ? _refresh == 'true' : false
   if (from?.name && from.name !== 'SongListDetail') {
-    window.lx.songListInfo.fromName = to.query.fromName || String(from.name)
-    window.lx.songListInfo.fromQuery = { ...from.query }
+    window.lx.songListInfo.fromName = to.query.fromName ?? String(from.name)
+    window.lx.songListInfo.fromQuery = { ...(from.query as Record<string, string | Array<string | null> | null> | undefined) }
   } else if (to.query.fromName) {
     window.lx.songListInfo.fromName = to.query.fromName
   }
 }
 
-const leaveDetail = (_to: unknown, _from: unknown, next: () => void) => {
+const leaveDetail = (to: { name?: unknown }, _from: unknown, next: () => void) => {
   setVisibleListDetail(false)
-  window.lx.songListInfo.fromName = ''
-  window.lx.songListInfo.fromQuery = null
+  if (to?.name !== 'SingerDetail') {
+    window.lx.songListInfo.fromName = ''
+    window.lx.songListInfo.fromQuery = null
+  }
   next()
 }
 
@@ -177,12 +185,27 @@ export default {
 
     const handleBack = () => {
       setVisibleListDetail(false)
-      const fromName = window.lx.songListInfo.fromName
+      const query = route.query
+      const fromName = window.lx.songListInfo.fromName || (typeof query.fromName === 'string' ? query.fromName : '')
       const fromQuery = window.lx.songListInfo.fromQuery
       window.lx.songListInfo.fromName = ''
       window.lx.songListInfo.fromQuery = null
+      if (fromName == 'SingerDetail' || query.returnId) {
+        void router.replace({
+          name: 'SingerDetail',
+          query: {
+            source: String(fromQuery?.source ?? query.returnSource ?? query.source ?? ''),
+            id: String(fromQuery?.id ?? query.returnId ?? ''),
+            name: String(fromQuery?.name ?? query.returnName ?? ''),
+            picUrl: String(fromQuery?.picUrl ?? query.returnPicUrl ?? ''),
+            tab: String(fromQuery?.tab ?? query.returnTab ?? 'albums'),
+            fromName: String(fromQuery?.fromName ?? query.returnFromName ?? ''),
+          },
+        }).catch(() => { router.back() })
+        return
+      }
       if (fromName) {
-        void router.replace({ name: fromName, query: fromQuery || {} }).catch(() => { router.back() })
+        void router.replace({ name: fromName, query: fromQuery ?? {} }).catch(() => { router.back() })
       } else {
         router.back()
       }

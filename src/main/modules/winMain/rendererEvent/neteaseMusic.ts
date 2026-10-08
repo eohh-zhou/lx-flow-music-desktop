@@ -95,7 +95,7 @@ const getNeteaseCookieHeader = async() => {
 }
 const hasNeteaseLoginCookie = (cookie: string) => {
   const cookies = parseCookies(cookie)
-  return !!cookies.get('MUSIC_U') || !!cookies.get('MUSIC_A')
+  return !!cookies.get('MUSIC_U')
 }
 const isNeteaseLoginUrl = (url: string) => {
   try {
@@ -119,7 +119,7 @@ const finishNeteaseLogin = (configured: boolean) => {
   loginCookieChanged = null
   if (currentWindow && !currentWindow.isDestroyed()) currentWindow.close()
   void clearNeteaseLoginSession()
-  resolve?.({ configured: configured || !!getCookie() })
+  resolve?.({ configured: configured || hasNeteaseLoginCookie(getCookie()) })
 }
 
 const openNeteaseLogin = async(parent: BrowserWindow | null) => {
@@ -129,12 +129,30 @@ const openNeteaseLogin = async(parent: BrowserWindow | null) => {
     return loginPromise ?? { configured: false }
   }
   const authSession = getNeteaseLoginSession()
+  const cookieSync = { running: false, pending: false }
   const syncCookie = async() => {
-    const cookie = await getNeteaseCookieHeader()
-    if (!hasNeteaseLoginCookie(cookie)) return false
-    saveCookie(cookie)
-    finishNeteaseLogin(true)
-    return true
+    cookieSync.pending = true
+    if (cookieSync.running) return
+    cookieSync.running = true
+    try {
+      while (cookieSync.pending) {
+        cookieSync.pending = false
+        if (loginWindow !== browserWindow || browserWindow.isDestroyed()) return
+        try {
+          const cookie = await getNeteaseCookieHeader()
+          if (loginWindow !== browserWindow || browserWindow.isDestroyed()) return
+          if (!hasNeteaseLoginCookie(cookie)) continue
+          await getNeteaseAccountUidFromApi(cookie)
+          if (loginWindow !== browserWindow || browserWindow.isDestroyed()) return
+          saveCookie(cookie)
+          finishNeteaseLogin(true)
+        } catch (error) {
+          console.error('网易云音乐登录凭据验证失败', error)
+        }
+      }
+    } finally {
+      cookieSync.running = false
+    }
   }
   const result = new Promise<LX.NeteaseMusic.LoginResult>(resolve => {
     resolveLogin = resolve
@@ -161,7 +179,11 @@ const openNeteaseLogin = async(parent: BrowserWindow | null) => {
     },
   })
   loginWindow = browserWindow
-  loginCookieChanged = () => { void syncCookie() }
+  loginCookieChanged = () => {
+    void syncCookie().catch((error: unknown) => {
+      console.error('网易云音乐登录凭据验证失败', error)
+    })
+  }
   authSession.cookies.on('changed', loginCookieChanged)
   browserWindow.webContents.setWindowOpenHandler(({ url }) => ({ action: isNeteaseLoginUrl(url) ? 'allow' : 'deny' }))
   browserWindow.webContents.on('will-navigate', (event, url) => {
@@ -170,22 +192,22 @@ const openNeteaseLogin = async(parent: BrowserWindow | null) => {
   browserWindow.webContents.on('will-redirect', (event, url) => {
     if (!isNeteaseLoginUrl(url)) event.preventDefault()
   })
-  browserWindow.webContents.on('did-navigate', () => { void syncCookie() })
-  browserWindow.webContents.on('did-navigate-in-page', () => { void syncCookie() })
+  browserWindow.webContents.on('did-navigate', loginCookieChanged)
+  browserWindow.webContents.on('did-navigate-in-page', loginCookieChanged)
   browserWindow.on('closed', () => {
     if (loginWindow === browserWindow) finishNeteaseLogin(false)
   })
   try {
     await browserWindow.loadURL(NETEASE_LOGIN_URL)
   } catch {
-    finishNeteaseLogin(false)
+    if (loginWindow === browserWindow) finishNeteaseLogin(false)
   }
   return result
 }
 
 const getRequiredCookie = () => {
   const cookie = getCookie()
-  if (!cookie) throw new Error('网易云音乐 Cookie 未配置')
+  if (!hasNeteaseLoginCookie(cookie)) throw new Error('网易云音乐 Cookie 未配置，请重新登录')
   return cookie
 }
 
@@ -207,8 +229,8 @@ const buildNeteaseCookie = (cookie: string, extra: Record<string, string> = {}) 
   return Array.from(cookies.entries()).map(([name, value]) => `${name}=${value}`).join('; ')
 }
 
-const requestNetease = async(path: string, params: Record<string, any> = {}, extraCookie: Record<string, string> = {}) => {
-  const cookie = buildNeteaseCookie(getRequiredCookie(), extraCookie)
+const requestNetease = async(path: string, params: Record<string, any> = {}, extraCookie: Record<string, string> = {}, loginCookie = getRequiredCookie()) => {
+  const cookie = buildNeteaseCookie(loginCookie, extraCookie)
   const cookies = parseCookies(cookie)
   const response = await request<Record<string, any>>(`${NETEASE_API_URL}${path}`, {
     method: 'POST',
@@ -235,11 +257,11 @@ const requestNetease = async(path: string, params: Record<string, any> = {}, ext
   return body
 }
 
-const requestNeteaseFirst = async(paths: string[], params: Record<string, any> = {}, extraCookie: Record<string, string> = {}) => {
+const requestNeteaseFirst = async(paths: string[], params: Record<string, any> = {}, extraCookie: Record<string, string> = {}, loginCookie?: string) => {
   let lastError: unknown
   for (const path of paths) {
     try {
-      return await requestNetease(path, params, extraCookie)
+      return await requestNetease(path, params, extraCookie, loginCookie)
     } catch (error) {
       lastError = error
     }
@@ -581,13 +603,10 @@ const pickNeteaseUid = (body: Record<string, any>) => {
   return String(profile.userId ?? profile.userid ?? account.id ?? account.userId ?? body.userId ?? body.data?.userId ?? '')
 }
 
-const getNeteaseAccountUid = async() => {
-  const cookieUid = parseCookies(getRequiredCookie()).get('uid') ?? parseCookies(getRequiredCookie()).get('uin') ?? ''
-  if (/^\d+$/.test(cookieUid) && cookieUid != '0') return cookieUid
-
+const getNeteaseAccountUidFromApi = async(cookie: string) => {
   const bodies = [
-    () => requestNeteaseFirst(['/weapi/nuser/account/get', '/weapi/w/nuser/account/get']),
-    () => requestNeteaseFirst(['/weapi/login/status', '/weapi/w/login/status']),
+    async() => requestNeteaseFirst(['/weapi/nuser/account/get', '/weapi/w/nuser/account/get'], {}, {}, cookie),
+    async() => requestNeteaseFirst(['/weapi/login/status', '/weapi/w/login/status'], {}, {}, cookie),
   ]
   for (const load of bodies) {
     try {
@@ -596,6 +615,14 @@ const getNeteaseAccountUid = async() => {
     } catch {}
   }
   throw new Error('网易云音乐登录状态缺少账号标识，请重新登录')
+}
+
+const getNeteaseAccountUid = async() => {
+  const cookie = getRequiredCookie()
+  const cookies = parseCookies(cookie)
+  const cookieUid = cookies.get('uid') ?? cookies.get('uin') ?? ''
+  if (/^\d+$/.test(cookieUid) && cookieUid != '0') return cookieUid
+  return getNeteaseAccountUidFromApi(cookie)
 }
 
 const requestNeteaseUserPlaylists = async(uid: string) => {
@@ -824,7 +851,7 @@ export default () => {
     if (!cookie.trim()) void clearNeteaseLoginSession()
     return true
   })
-  mainHandle<LX.NeteaseMusic.Status>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_status, async() => ({ configured: !!getCookie() }))
+  mainHandle<LX.NeteaseMusic.Status>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_status, async() => ({ configured: hasNeteaseLoginCookie(getCookie()) }))
   mainHandle<undefined, LX.NeteaseMusic.LoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_login, async({ event }) => openNeteaseLogin(BrowserWindow.fromWebContents(event.sender)))
   mainHandle<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_daily_recommend, getDailyRecommend)
   mainHandle<LX.NeteaseMusic.SongRecommend>(WIN_MAIN_RENDERER_EVENT_NAME.netease_music_personal_fm, getPersonalFM)

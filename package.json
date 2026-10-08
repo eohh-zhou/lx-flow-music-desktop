@@ -1,6 +1,6 @@
 {
   "name": "lx-flow-music-desktop",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "LX Flow Music 桌面版，包含企鹅音乐和网易云音乐个性化推荐功能。",
   "main": "./dist/main.js",
   "scripts": {
@@ -63,6 +63,7 @@
     "build:renderer-scripts": "cross-env NODE_ENV=production webpack --config build-config/renderer-scripts/webpack.config.prod.js --progress",
     "lint": "eslint --ext .ts,.js,.vue -f node_modules/eslint-formatter-friendly src",
     "lint:fix": "eslint --ext .ts,.js,.vue -f node_modules/eslint-formatter-friendly --fix src",
+    "test:regression": "node --test scripts/regression-tests.cjs",
     "postinstall": "electron-builder install-app-deps",
     "dp": "cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://127.0.0.1:2081 npm run pack",
     "up": "cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://127.0.0.1:2081 npm i"

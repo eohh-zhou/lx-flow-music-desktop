@@ -27,7 +27,7 @@ export default () => {
           listRef.value.scrollTo({ top: 0 })
         })
       }
-    })
+    }).catch(() => {})
   }
 
   onBeforeRouteLeave(() => {})

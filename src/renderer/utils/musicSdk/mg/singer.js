@@ -25,6 +25,47 @@ const collectBmwSongs = (contents) => {
   return songs
 }
 
+const albumListCache = new Map()
+const ALBUM_LIST_CACHE_TTL = 5 * 60 * 1000
+const ALBUM_LIST_CACHE_SIZE = 20
+const SONG_PAGE_SIZE = 50
+
+const loadSingerAlbums = async(id, getInfo) => {
+  const info = await getInfo(id).catch(() => null)
+  const albums = []
+  const seenAlbums = new Set()
+  const seenPages = new Set()
+  let loaded = 0
+  for (let page = 1; ; page++) {
+    const data = await createHttpFetch(`https://app.c.nf.migu.cn/MIGUM3.0/bmw/singer/song/v1.0?singerId=${encodeURIComponent(id)}&pageNo=${page}&pageSize=${SONG_PAGE_SIZE}&type=1`)
+    const songs = collectBmwSongs(data?.contents)
+    if (!songs.length) break
+    const pageKey = JSON.stringify(songs.map(song => song.copyrightId || song.songId || song.contentId || song.id || `${song.albumId}:${song.name}`))
+    if (seenPages.has(pageKey)) throw new Error('咪咕歌曲接口返回重复分页，请稍后重试')
+    seenPages.add(pageKey)
+    loaded += songs.length
+    for (const song of songs) {
+      const albumId = String(song.albumId || '')
+      if (!albumId || seenAlbums.has(albumId)) continue
+      seenAlbums.add(albumId)
+      albums.push({
+        id: albumId,
+        count: 0,
+        time: '',
+        info: {
+          name: song.album || '',
+          author: info?.info?.name || '',
+          img: pickMgImg(song),
+          desc: null,
+        },
+      })
+    }
+    const total = parseInt(data?.totalCount || data?.total || data?.songNum || 0) || 0
+    if (total > 0 ? loaded >= total : songs.length < SONG_PAGE_SIZE) break
+  }
+  return albums
+}
+
 const searchSwitch = encodeURIComponent(JSON.stringify({
   song: 0, album: 0, singer: 1, tagSong: 0, mvSong: 0, bestShow: 0, songlist: 0, lyricSong: 0,
 }))
@@ -100,33 +141,25 @@ export default {
     }
   },
   async getAlbumList(id, page = 1, limit = 20) {
-    const [info, songData] = await Promise.all([
-      this.getInfo(id).catch(() => null),
-      createHttpFetch(`https://app.c.nf.migu.cn/MIGUM3.0/bmw/singer/song/v1.0?singerId=${id}&pageNo=${page}&pageSize=50&type=1`).catch(() => ({ contents: [] })),
-    ])
-    const songs = collectBmwSongs(songData?.contents)
-    const albums = []
-    const seen = new Set()
-    for (const song of songs) {
-      const albumId = String(song.albumId || '')
-      if (!albumId || seen.has(albumId)) continue
-      seen.add(albumId)
-      albums.push({
-        id: albumId,
-        count: 0,
-        time: '',
-        info: {
-          name: song.album || '',
-          author: info?.info?.name || '',
-          img: pickMgImg(song),
-          desc: null,
-        },
+    id = String(id)
+    let cached = albumListCache.get(id)
+    if (!cached || cached.expiresAt <= Date.now()) {
+      if (albumListCache.size >= ALBUM_LIST_CACHE_SIZE) albumListCache.delete(albumListCache.keys().next().value)
+      cached = { expiresAt: Infinity, promise: loadSingerAlbums(id, this.getInfo.bind(this)) }
+      albumListCache.set(id, cached)
+      const current = cached
+      cached.promise.then(() => {
+        current.expiresAt = Date.now() + ALBUM_LIST_CACHE_TTL
+      }).catch(() => {
+        if (albumListCache.get(id) === current) albumListCache.delete(id)
       })
     }
+    const albums = await cached.promise
+    const offset = (page - 1) * limit
     return {
       source: 'mg',
-      list: albums,
-      limit: Math.max(albums.length, 1),
+      list: albums.slice(offset, offset + limit),
+      limit,
       page,
       total: albums.length,
     }

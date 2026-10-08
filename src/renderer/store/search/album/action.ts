@@ -5,6 +5,8 @@ import { sortInsert, similar } from '@common/utils/common'
 import type { AlbumInfoItem } from './state'
 import { sources, maxPages, listInfos } from './state'
 
+const searchRequests = new Map<LX.OnlineSource | 'all', symbol>()
+
 interface SearchResult {
   list: AlbumInfoItem[]
   limit: number
@@ -65,6 +67,7 @@ const setList = (datas: SearchResult, page: number, text: string): AlbumInfoItem
 }
 
 export const resetListInfo = (sourceId: LX.OnlineSource | 'all'): [] => {
+  searchRequests.delete(sourceId)
   let listInfo = listInfos[sourceId]
   if (!listInfo) return []
   listInfo.page = 1
@@ -80,7 +83,9 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
   const listInfo = listInfos[sourceId]!
   if (!text) return resetListInfo(sourceId)
   const key = `${page}__${sourceId}__${text}`
-  if (listInfo.key == key && listInfo.list.length) return listInfo.list
+  if (listInfo.key == key && listInfo.list.length && !searchRequests.has(sourceId)) return listInfo.list
+  const request = Symbol(key)
+  searchRequests.set(sourceId, request)
   if (sourceId == 'all') {
     listInfo.noItemLabel = window.i18n.t('list__loading')
     listInfo.key = key
@@ -98,17 +103,21 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
       }))
     }
     return Promise.all(task).then((results: SearchResult[]) => {
-      if (key != listInfo.key) return []
-      return setLists(results, page, text)
+      if (key != listInfo.key || searchRequests.get(sourceId) !== request) return []
+      const list = setLists(results, page, text)
+      searchRequests.delete(sourceId)
+      return list
     })
   } else {
-    if (listInfo?.key == key && listInfo?.list.length) return listInfo?.list
     listInfo.noItemLabel = window.i18n.t('list__loading')
     listInfo.key = key
     return (music[sourceId]?.album.search(text, page, listInfo.limit).then((data: SearchResult) => {
-      if (key != listInfo.key) return []
-      return setList(data, page, text)
+      if (key != listInfo.key || searchRequests.get(sourceId) !== request) return []
+      const list = setList(data, page, text)
+      searchRequests.delete(sourceId)
+      return list
     }) ?? Promise.reject(new Error('source not found: ' + sourceId))).catch((error: any) => {
+      if (key != listInfo.key || searchRequests.get(sourceId) !== request) return []
       resetListInfo(sourceId)
       listInfo.noItemLabel = window.i18n.t('list__load_failed')
       console.log(error)

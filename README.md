@@ -7,7 +7,7 @@
   <a href="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml"><img src="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml/badge.svg" alt="Build status"></a>
 </p>
 
-<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.1.0。专注于企鹅音乐与网易云音乐的账号推荐、歌单联动，以及更干净的桌面播放界面。</p>
+<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.1.1。专注于企鹅音乐与网易云音乐的账号推荐、歌单联动，以及更干净的桌面播放界面。</p>
 
 ## 个人使用版说明
 
@@ -22,7 +22,7 @@
 - 左侧导航可直接进入企鹅音乐推荐，不必再翻到深层歌单页。
 - 账号视图包含主页推荐、我的歌单、雷达推荐、推荐歌单、推荐新歌；「我的歌单」可浏览账号创建和收藏的歌单并在应用内播放。
 - 独立企鹅音乐设置页：用登录窗口获取登录状态，不必手动粘贴 Cookie；登录信息只保存在本机。
-- 「我的列表」右键「同步到企鹅音乐」，预览匹配结果后可新建企鹅音乐歌单，不会覆盖或删除已有歌单。
+- 「我的列表」右键「同步到企鹅音乐」，预览匹配结果后会复用已有同名歌单、补充缺少的歌曲；没有同名歌单时新建，不会删除已有歌曲或歌单。
 
 ### 网易云音乐
 
@@ -42,12 +42,12 @@
 
 ## 下载与更新
 
-请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.1.0](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.1.0)。
+请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.1.1](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.1.1)。
 
 | 包类型 | 文件名示例 | 适用场景 |
 | --- | --- | --- |
-| Setup 安装版 | `LXFlowMusic-v3.1.0-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
-| 绿色免安装版 | `LXFlowMusic-v3.1.0-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
+| Setup 安装版 | `LXFlowMusic-v3.1.1-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
+| 绿色免安装版 | `LXFlowMusic-v3.1.1-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
 
 从绿色版迁移到支持自动更新的版本时，只需安装一次 Setup 安装版。
 

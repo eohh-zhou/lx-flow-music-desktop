@@ -15,13 +15,21 @@ let overlayOriginBounds: Electron.Rectangle | null = null
 const LYRIC_STRIP_HEIGHT = 120
 const LYRIC_OVERLAY_HEIGHT = 400
 
-const saveBoundsConfig = debounce((config: Partial<LX.AppSetting>) => {
+const saveBoundsConfig = debounce((window: Electron.BrowserWindow, config: Partial<LX.AppSetting>) => {
+  if (browserWindow !== window) return
   global.lx.event_app.update_config(config)
   if (isWinBoundsUpdateing) isWinBoundsUpdateing = false
 }, 500)
 
+const resetWindowState = () => {
+  isWinBoundsUpdateing = false
+  isLyricOverlayOpen = false
+  overlayOriginBounds = null
+}
+
 const winEvent = () => {
   if (!browserWindow) return
+  const currentWindow = browserWindow
 
   // browserWindow.on('close', () => {
   //   if (global.lx.appSetting['desktopLyric.enable'] && !global.lx.mainWindowClosed) {
@@ -30,17 +38,21 @@ const winEvent = () => {
   //   }
   // })
 
-  browserWindow.on('closed', () => {
+  currentWindow.on('closed', () => {
+    if (browserWindow !== currentWindow) return
     browserWindow = null
+    resetWindowState()
+    alwaysOnTopTools.clearLoop()
   })
 
-  browserWindow.on('move', () => {
+  currentWindow.on('move', () => {
+    if (browserWindow !== currentWindow) return
     // bounds = browserWindow.getBounds()
     // console.log('move', isWinBoundsUpdateing)
     if (isWinBoundsUpdateing) {
       if (!isLyricOverlayOpen) {
-        const bounds = browserWindow!.getBounds()
-        saveBoundsConfig({
+        const bounds = currentWindow.getBounds()
+        saveBoundsConfig(currentWindow, {
           'desktopLyric.x': bounds.x,
           'desktopLyric.y': bounds.y,
           'desktopLyric.width': bounds.width,
@@ -49,7 +61,7 @@ const winEvent = () => {
       }
     } else if (isWin && !isLyricOverlayOpen) { // Linux 不允许将窗口设置出屏幕之外，MacOS未知，故只在Windows下执行强制设置
       // 非主动调整窗口触发的窗口位置变化将重置回设置值
-      browserWindow!.setBounds({
+      currentWindow.setBounds({
         x: global.lx.appSetting['desktopLyric.x'] ?? 0,
         y: global.lx.appSetting['desktopLyric.y'] ?? 0,
         width: global.lx.appSetting['desktopLyric.width'],
@@ -58,18 +70,19 @@ const winEvent = () => {
     }
   })
 
-  browserWindow.on('resize', () => {
+  currentWindow.on('resize', () => {
+    if (browserWindow !== currentWindow) return
     // bounds = browserWindow.getBounds()
     // console.log(bounds)
     isWinBoundsUpdateing = true
-    const bounds = browserWindow!.getBounds()
+    const bounds = currentWindow.getBounds()
     if (!isLyricOverlayOpen && bounds.height > 140) {
       bounds.width = 860
       bounds.height = LYRIC_STRIP_HEIGHT
-      browserWindow!.setBounds(bounds)
+      currentWindow.setBounds(bounds)
     }
     if (!isLyricOverlayOpen) {
-      saveBoundsConfig({
+      saveBoundsConfig(currentWindow, {
         'desktopLyric.x': bounds.x,
         'desktopLyric.y': bounds.y,
         'desktopLyric.width': bounds.width,
@@ -85,22 +98,24 @@ const winEvent = () => {
   //   browserWindow.webContents.send('focus')
   // })
 
-  browserWindow.once('ready-to-show', () => {
+  currentWindow.once('ready-to-show', () => {
+    if (browserWindow !== currentWindow) return
     showWindow()
     if (global.lx.appSetting['desktopLyric.isLock']) {
-      browserWindow!.setIgnoreMouseEvents(true, { forward: !isLinux && global.lx.appSetting['desktopLyric.isHoverHide'] })
+      currentWindow.setIgnoreMouseEvents(true, { forward: !isLinux && global.lx.appSetting['desktopLyric.isHoverHide'] })
     }
     // linux下每次重开时貌似要重新设置置顶
     // if (isLinux && global.lx.appSetting['desktopLyric.isAlwaysOnTop']) {
     //   browserWindow!.setAlwaysOnTop(global.lx.appSetting['desktopLyric.isAlwaysOnTop'], 'screen-saver')
     // }
     if (global.lx.appSetting['desktopLyric.isAlwaysOnTop']) alwaysOnTopTools.startLoop()
-    browserWindow!.blur()
+    currentWindow.blur()
   })
 }
 
 export const createWindow = () => {
   closeWindow()
+  resetWindowState()
   if (!global.envParams.workAreaSize) return
   let x = global.lx.appSetting['desktopLyric.x']
   let y = global.lx.appSetting['desktopLyric.y']

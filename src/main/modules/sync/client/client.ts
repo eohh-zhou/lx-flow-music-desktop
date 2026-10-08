@@ -151,6 +151,8 @@ let client: LX.Sync.Client.Socket | null
 // let listSyncPromise: Promise<void>
 export const connect = (urlInfo: LX.Sync.Client.UrlInfo, keyInfo: LX.Sync.ClientKeyInfo) => {
   client = new WebSocket(`${urlInfo.wsProtocol}//${urlInfo.hostPath}/socket?i=${encodeURIComponent(keyInfo.clientId)}&t=${encodeURIComponent(aesEncrypt(SYNC_CODE.msgConnect, keyInfo.key))}`, {
+    followRedirects: true,
+    maxRedirects: 5,
   }) as LX.Sync.Client.Socket
   client.data = {
     keyInfo,

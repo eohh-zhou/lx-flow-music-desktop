@@ -58,7 +58,7 @@
             <span class="select name">{{ item.name }}</span>
             <span v-if="isShowSource" class="no-select label-source">{{ item.source }}</span>
           </div>
-          <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+          <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="getArtist(item)">{{ getArtist(item) }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 9%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 16%; padding-left: 0; padding-right: 0;">
@@ -90,7 +90,7 @@
             <span class="select name" :aria-label="item.name">{{ item.name }}</span>
             <span v-if="isShowSource" class="no-select label-source">{{ item.source }}</span>
           </div>
-          <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+          <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="getArtist(item)">{{ getArtist(item) }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 25%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 10%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
         </div>
@@ -144,6 +144,8 @@ import useSearch from './useSearch'
 import useListScroll from './useListScroll'
 import useMusicToggle from './useMusicToggle'
 import { appSetting } from '@renderer/store/setting'
+import { updateListMusics } from '@renderer/store/list/action'
+import useBilibiliArtists from '@renderer/utils/compositions/useBilibiliArtists'
 export default {
   name: 'MusicList',
   components: {
@@ -185,6 +187,10 @@ export default {
       isShowSource,
       excludeListIds,
     } = useListInfo({ props, onLoadedList })
+    const getArtist = useBilibiliArtists(listRef, info => {
+      if (!list.value.some(item => item.id == info.id)) return
+      void updateListMusics([{ id: props.listId, musicInfo: info }]).catch(error => { console.log(error) })
+    })
 
     const route = useRoute()
     const router = useRouter()
@@ -353,6 +359,7 @@ export default {
     }
 
     return {
+      getArtist,
       listItemHeight,
       handleListItemClick,
       selectedList,

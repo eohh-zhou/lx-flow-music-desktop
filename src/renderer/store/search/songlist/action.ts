@@ -96,7 +96,7 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
     let task = []
     for (const source of sources) {
       if (source == 'all' || (page > 1 && page > (maxPages[source]!))) continue
-      task.push((music[source]?.songList.search(text, page, listInfos.all.limit) ?? Promise.reject(new Error('source not found: ' + source))).catch((error: any) => {
+      task.push((music[source]?.songList.search?.(text, page, listInfos.all.limit) ?? Promise.reject(new Error('source not found: ' + source))).catch((error: any) => {
         console.log(error)
         return {
           list: [],
@@ -114,7 +114,7 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
     if (listInfo?.key == key && listInfo?.list.length) return listInfo?.list
     listInfo.noItemLabel = window.i18n.t('list__loading')
     listInfo.key = key
-    return (music[sourceId]?.songList.search(text, page, listInfo.limit).then((data: SearchResult) => {
+    return (music[sourceId]?.songList.search?.(text, page, listInfo.limit).then((data: SearchResult) => {
       if (key != listInfo.key) return []
       return setList(data, page, text)
     }) ?? Promise.reject(new Error('source not found: ' + sourceId))).catch((error: any) => {

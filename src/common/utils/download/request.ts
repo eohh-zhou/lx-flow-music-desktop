@@ -1,6 +1,7 @@
 import { URL } from 'url'
 import http from 'http'
 import https from 'https'
+import { getBilibiliMediaHeaders } from '../bilibili'
 
 export interface Options {
   method: 'get' | 'head' | 'delete' | 'patch' | 'post' | 'put'
@@ -32,7 +33,7 @@ const sendRequest = (url: string, options: Options, callback?: HttpCallback) => 
       .join('&')}`
   }
 
-  if (options.headers) httpOptions.headers = { ...options.headers }
+  httpOptions.headers = { ...options.headers, ...getBilibiliMediaHeaders(url) }
 
   if (options.agent) httpOptions.agent = options.agent
 

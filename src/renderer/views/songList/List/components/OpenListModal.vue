@@ -3,7 +3,7 @@
     <main class="scroll" :class="$style.main">
       <h2>{{ $t('songlist__import_input_title') }}</h2>
       <div :class="$style.inputContent">
-        <base-selection v-model="source" :class="$style.select" :list="props.sourceList" item-key="id" item-name="name" />
+        <base-selection v-model="source" :class="$style.select" :list="importSources" item-key="id" item-name="name" />
         <base-input
           ref="input"
           v-model.trim="text"
@@ -12,9 +12,11 @@
           @submit="handleSubmit"
         />
       </div>
+      <p v-if="errorText" role="alert" :class="$style.error">{{ errorText }}</p>
       <div :class="$style.footer">
         <div :class="$style.tips">
           <ul>
+            <li>{{ $t('bilibili__import_tip') }}</li>
             <li>{{ $t('songlist__import_input_tip_1') }}</li>
             <li>{{ $t('songlist__import_input_tip_2') }}</li>
             <li>{{ $t('songlist__import_input_tip_3') }}</li>
@@ -28,7 +30,7 @@
             </li>
           </ul>
         </div>
-        <base-btn :class="$style.btn" @click="handleSubmit">{{ $t('songlist__import_input_btn_confirm') }}</base-btn>
+        <base-btn :class="$style.btn" :disabled="isLoading" @click="handleSubmit">{{ $t(isLoading ? 'list__loading' : 'songlist__import_input_btn_confirm') }}</base-btn>
       </div>
     </main>
   </material-modal>
@@ -37,12 +39,17 @@
 <script setup>
 import { openSongListInputInfo } from '@renderer/store/songList/state'
 import { setOpenSongListInputInfo } from '@renderer/store/songList/action'
-import { ref, watch } from '@common/utils/vueTools'
+import { computed, ref, watch } from '@common/utils/vueTools'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
 import { openUrl } from '@common/utils/electron'
+import { isBilibiliListInput, resolveBilibiliListId } from '@renderer/utils/musicSdk/bili/utils'
 
 const props = defineProps({
   modelValue: Boolean,
+  defaultSource: {
+    type: String,
+    default: '',
+  },
   sourceList: {
     type: Array,
     required: true,
@@ -55,24 +62,39 @@ const router = useRouter()
 const route = useRoute()
 const text = ref('')
 const source = ref('')
+const errorText = ref('')
+const isLoading = ref(false)
+const importSources = computed(() => props.sourceList.some(source => source.id == 'bili')
+  ? props.sourceList
+  : [...props.sourceList, { id: 'bili', name: window.i18n.t('source_bili') }])
 
 watch(() => props.modelValue, (visible) => {
   if (!visible) return
-  source.value = openSongListInputInfo.source || route.query.source
+  errorText.value = ''
+  source.value = props.defaultSource || openSongListInputInfo.source || route.query.source
   // text.value = openSongListInputInfo.text
 })
 
-const handleSubmit = () => {
-  if (!text.value.length) return
-  setOpenSongListInputInfo(text.value, source.value)
-  void router.push({
-    path: '/songList/detail',
-    query: {
-      source: source.value,
-      id: text.value,
-      refresh: 'true',
-    },
-  })
+const handleSubmit = async() => {
+  if (!text.value.length || isLoading.value) return
+  isLoading.value = true
+  errorText.value = ''
+  const input = text.value
+  try {
+    const targetSource = isBilibiliListInput(input) ? 'bili' : source.value
+    const id = targetSource == 'bili' ? await resolveBilibiliListId(input) : input
+    if (!props.modelValue) return
+    setOpenSongListInputInfo(input, targetSource)
+    await router.push({
+      path: '/songList/detail',
+      query: { source: targetSource, id, refresh: 'true', fromName: route.name ? String(route.name) : undefined },
+    })
+    emit('update:model-value', false)
+  } catch (error) {
+    errorText.value = window.i18n.t(/^bilibili__error_/.test(error.message) ? error.message : 'bilibili__error_request')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 </script>
@@ -102,6 +124,11 @@ const handleSubmit = () => {
 .inputContent {
   display: flex;
   flex-flow: row nowrap;
+}
+.error {
+  padding-top: 10px;
+  color: var(--color-font);
+  font-size: 12px;
 }
 .select {
   width: auto;

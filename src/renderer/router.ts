@@ -54,6 +54,20 @@ const router = createRouter({
       },
     },
     {
+      path: '/recommendations',
+      name: 'Recommendations',
+      component: require('./views/Recommendations/index.vue').default,
+      meta: { name: 'Recommendations' },
+    },
+    {
+      path: '/biliMusic/recommend',
+      name: 'BilibiliMusicRecommend',
+      component: require('./views/biliMusic/Recommend/index.vue').default,
+      meta: {
+        name: 'BilibiliMusicRecommend',
+      },
+    },
+    {
       path: '/songList/detail',
       name: 'SongListDetail',
       component: require('./views/songList/Detail/index.vue').default,

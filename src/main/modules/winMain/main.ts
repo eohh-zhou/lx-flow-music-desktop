@@ -6,6 +6,7 @@ import { getProxy, isCmdParamEnabled, openDevTools as handleOpenDevTools } from 
 import { mainSend } from '@common/mainIpc'
 import { sendFocus, sendTaskbarButtonClick, sendMaximizeChange } from './rendererEvent'
 import { encodePath } from '@common/utils/electron'
+import { BILIBILI_HEADERS, BILIBILI_MEDIA_URLS } from '@common/utils/bilibili'
 
 let browserWindow: Electron.BrowserWindow | null = null
 let saveBoundsTimer: NodeJS.Timeout | null = null
@@ -124,6 +125,10 @@ export const createWindow = () => {
 
   const { shouldUseDarkColors, theme } = global.lx.theme
   const ses = session.fromPartition('persist:win-main')
+  ses.webRequest.onBeforeSendHeaders({ urls: BILIBILI_MEDIA_URLS }, ({ requestHeaders }, callback) => {
+    const headers = Object.fromEntries(Object.entries(requestHeaders).filter(([key]) => !['referer', 'user-agent'].includes(key.toLowerCase())))
+    callback({ requestHeaders: { ...headers, ...BILIBILI_HEADERS } })
+  })
   const proxy = getProxy()
   setSesProxy(ses, proxy?.host, proxy?.port)
 

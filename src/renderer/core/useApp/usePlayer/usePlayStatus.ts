@@ -45,6 +45,9 @@ export default () => {
       albumName: musicInfo.album,
       picUrl: musicInfo.pic ?? '',
       lyric: musicInfo.lrc ?? '',
+      tlyric: musicInfo.tlrc ?? '',
+      rlyric: musicInfo.rlrc ?? '',
+      lxlyric: musicInfo.lxlrc ?? '',
       lyricLineText: '',
       lyricLineAllText: '',
     })
@@ -58,6 +61,9 @@ export default () => {
       lyricLineText: '',
       lyricLineAllText: '',
     })
+  }
+  const handleMetadata = () => {
+    sendPlayerStatus({ name: musicInfo.name, singer: musicInfo.singer, albumName: musicInfo.album })
   }
   const handleSetPic = () => {
     sendPlayerStatus({
@@ -157,6 +163,7 @@ export default () => {
   window.app_event.on('stop', handleStop)
   window.app_event.on('error', handleError)
   window.app_event.on('musicToggled', handleSetPlayInfo)
+  window.app_event.on('musicInfoUpdated', handleMetadata)
   window.app_event.on('lyricUpdated', handleSetLyric)
   window.app_event.on('picUpdated', handleSetPic)
   window.app_event.on('lyricLinePlay', handleSetLyricLine)
@@ -170,6 +177,7 @@ export default () => {
     window.app_event.off('stop', handleStop)
     window.app_event.off('error', handleError)
     window.app_event.off('musicToggled', handleSetPlayInfo)
+    window.app_event.off('musicInfoUpdated', handleMetadata)
     window.app_event.off('lyricUpdated', handleSetLyric)
     window.app_event.off('picUpdated', handleSetPic)
     window.app_event.off('lyricLinePlay', handleSetLyricLine)

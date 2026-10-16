@@ -65,16 +65,18 @@ export const getLyricInfo = async({
   musicInfo,
   isRefresh = false,
   onToggleSource,
+  onMetadata,
 }: {
   musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   isRefresh?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  onMetadata?: (musicInfo: LX.Music.MusicInfoOnline) => void
 }): Promise<LX.Player.LyricInfo> => {
   if ('progress' in musicInfo) {
     return getDownloadLyricInfo({ musicInfo, isRefresh, onToggleSource })
   } else if (musicInfo.source == 'local') {
     return getLocalLyricInfo({ musicInfo, isRefresh, onToggleSource })
   } else {
-    return getOnlineLyricInfo({ musicInfo, isRefresh, onToggleSource })
+    return getOnlineLyricInfo({ musicInfo, isRefresh, onToggleSource, onMetadata })
   }
 }

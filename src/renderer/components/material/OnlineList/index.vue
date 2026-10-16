@@ -50,7 +50,7 @@
                   <span v-else-if="item.meta._qualitys['320k']" class="no-select badge badge-theme-secondary">{{ $t('tag__high_quality') }}</span>
                   <span v-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
                 </div>
-                <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+                <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="getArtist(item)">{{ getArtist(item) }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 19%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 9%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 16%; padding-left: 0; padding-right: 0;">
@@ -87,7 +87,7 @@
                   <span v-else-if="item.meta._qualitys['320k']" class="no-select badge badge-theme-secondary">{{ $t('tag__high_quality') }}</span>
                   <span v-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
                 </div>
-                <div class="list-item-cell" style="flex: 0 0 21%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+                <div class="list-item-cell" style="flex: 0 0 21%;"><span class="select" :aria-label="getArtist(item)">{{ getArtist(item) }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 24%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 10%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
               </div>
@@ -130,6 +130,7 @@ import useMusicDownload from './useMusicDownload'
 import useMusicAdd from './useMusicAdd'
 import useMusicActions from './useMusicActions'
 import { appSetting } from '@renderer/store/setting'
+import useBilibiliArtists from '@renderer/utils/compositions/useBilibiliArtists'
 export default {
   name: 'MaterialOnlineList',
   props: {
@@ -164,12 +165,13 @@ export default {
       default: false,
     },
   },
-  emits: ['show-menu', 'play-list', 'togglePage'],
+  emits: ['show-menu', 'play-list', 'togglePage', 'metadata-updated'],
   setup(props, { emit }) {
     const actionButtonsVisible = appSetting['list.actionButtonsVisible']
     const rightClickSelectedIndex = ref(-1)
     const dom_listContent = ref(null)
     const listRef = ref(null)
+    const getArtist = useBilibiliArtists(listRef, info => { emit('metadata-updated', info) })
 
     const {
       selectedList,
@@ -275,6 +277,7 @@ export default {
 
     return {
       listItemHeight,
+      getArtist,
       handleListItemClick,
       selectedList,
       handleListItemRightClick,

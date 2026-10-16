@@ -113,6 +113,8 @@ type Tables = 'db_info'
 | 'music_url'
 | 'download_list'
 | 'dislike_list'
+| 'listening_session'
+| 'index_listening_session_time'
 
 const tables = new Map<Tables, string>()
 
@@ -226,6 +228,18 @@ tables.set('dislike_list', `
   );
 `)
 
+tables.set('listening_session', `
+  CREATE TABLE "listening_session" (
+    "session_id" TEXT NOT NULL PRIMARY KEY,
+    "revision" INTEGER NOT NULL,
+    "updated_at" INTEGER NOT NULL,
+    "data" TEXT NOT NULL
+  );
+`)
+tables.set('index_listening_session_time', `
+  CREATE INDEX "index_listening_session_time" ON "listening_session" ("updated_at");
+`)
+
 export default tables
 
-export const DB_VERSION = '2'
+export const DB_VERSION = '3'

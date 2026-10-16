@@ -34,6 +34,10 @@ export class AppEvent extends Event {
     this.emit('musicToggled')
   }
 
+  musicInfoUpdated() {
+    this.emit('musicInfoUpdated')
+  }
+
   /**
    * 手动改变进度
    * @param progress 进度
@@ -86,6 +90,10 @@ export class AppEvent extends Event {
   // 播放器原始事件
   playerPlaying() {
     this.emit('playerPlaying')
+  }
+
+  playerUserSkip() {
+    this.emit('playerUserSkip')
   }
 
   playerPause() {

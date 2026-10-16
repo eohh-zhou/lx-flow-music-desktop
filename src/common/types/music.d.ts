@@ -29,6 +29,11 @@ declare namespace LX {
       qualitys: MusicQualityType[]
       _qualitys: _MusicQualityType
       albumId?: string | number // 歌曲专辑ID
+      bilibili?: {
+        rawTitle: string
+        uploader: string
+        matchedMusic?: MusicInfoOnline
+      }
     }
 
     interface MusicInfoMeta_local extends MusicInfoMetaBase {
@@ -50,7 +55,7 @@ declare namespace LX {
       meta: MusicInfoMeta_local
     }
 
-    interface MusicInfo_online_common extends MusicInfoBase<'kw' | 'wy'> {
+    interface MusicInfo_online_common extends MusicInfoBase<'kw' | 'wy' | 'bili'> {
       meta: MusicInfoMeta_online
     }
 

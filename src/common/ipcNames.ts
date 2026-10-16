@@ -43,6 +43,8 @@ const modules = {
     clear_dislike_music_infos: 'clear_dislike_music_infos',
   },
   winMain: {
+    listening_save: 'listening_save',
+    listening_get: 'listening_get',
     focus: 'focus',
     close: 'close',
     min: 'min',
@@ -161,6 +163,12 @@ const modules = {
     netease_music_new_songs: 'netease_music_new_songs',
     netease_music_playlist_sync_preview: 'netease_music_playlist_sync_preview',
     netease_music_playlist_sync_commit: 'netease_music_playlist_sync_commit',
+    ai_recommend_config_get: 'ai_recommend_config_get',
+    ai_recommend_config_set: 'ai_recommend_config_set',
+    ai_recommend_test: 'ai_recommend_test',
+    ai_recommend_plan: 'ai_recommend_plan',
+    ai_recommend_rank: 'ai_recommend_rank',
+    ai_recommend_cancel: 'ai_recommend_cancel',
 
     open_api_action: 'open_api_action',
     sync_action: 'sync_action',

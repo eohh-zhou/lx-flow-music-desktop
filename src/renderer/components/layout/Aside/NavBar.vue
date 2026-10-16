@@ -30,7 +30,7 @@
                     :class="[$style.subItem, { 'default-list': child.isDefault }, { 'user-list': child.isUser }, { [$style.clicked]: rightClickItemIndex == child.menuIndex }, { [$style.fetching]: child.listId && fetchingListStatus[child.listId] }]"
                     :data-index="child.userIndex" role="presentation" @contextmenu="handleLocalListContextMenu($event, child)"
                   >
-                    <router-link :class="[$style.subLink, {[$style.active]: isChildActive(child)}]" role="tab" :aria-selected="isChildActive(child)" :to="child.to" :aria-label="child.tips">
+                    <router-link :class="[$style.subLink, {[$style.active]: isChildActive(child)}]" role="tab" :aria-selected="isChildActive(child)" :to="child.to" :aria-label="child.tips" @click="handleNavClick(child)">
                       <span v-if="child.showCover" :class="$style.subCover">
                         <img v-if="child.cover" :src="child.cover" loading="lazy" decoding="async" alt="" @error="handleCoverError(child.listId)">
                         <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" :height="14" :width="14" space="preserve">
@@ -123,6 +123,7 @@ export default {
     const currentRoute = router.currentRoute
 
     const expandedGroups = reactive<Record<string, boolean>>({
+      MusicRecommendations: localStorage.getItem(`${EXPAND_STORAGE_KEY}MusicRecommendations`) !== 'false',
       List: localStorage.getItem(`${EXPAND_STORAGE_KEY}List`) !== 'false',
       OnlinePlaylists: localStorage.getItem(`${EXPAND_STORAGE_KEY}OnlinePlaylists`) !== 'false',
     })
@@ -394,6 +395,41 @@ export default {
     const menus = computed(() => {
       const size = 16
       const brandIconSize = 18
+      const recommendationChildren = [
+        {
+          key: 'recommend_qq',
+          to: '/qqMusic/recommend',
+          tips: t('qq_music'),
+          name: 'QQMusicRecommend',
+          enable: appSetting['qqMusic.enabled'],
+          icon: '#icon-qq-music',
+        }, {
+          key: 'recommend_netease',
+          to: '/neteaseMusic/recommend',
+          tips: t('netease_music'),
+          name: 'NeteaseMusicRecommend',
+          enable: appSetting['neteaseMusic.enabled'],
+          icon: '#icon-netease-music',
+        }, {
+          key: 'recommend_bili',
+          to: '/biliMusic/recommend',
+          tips: t('bili_music'),
+          name: 'BilibiliMusicRecommend',
+          enable: true,
+          icon: '#icon-bilibili-fill',
+        },
+      ].filter(item => item.enable).map(item => ({
+        ...item,
+        iconSize: '0 0 1024 1024',
+        size: brandIconSize,
+        showCover: false,
+        listId: undefined,
+        cover: '',
+        isDefault: false,
+        isUser: false,
+        menuIndex: undefined,
+        userIndex: undefined,
+      }))
       const localPlaylistChildren = localPlaylistInfos.value.map((list, index) => {
         const isDefault = list.id == defaultList.id
         const userIndex = isDefault ? undefined : index - 1
@@ -466,21 +502,23 @@ export default {
           enable: true,
         },
         {
-          to: '/qqMusic/recommend',
-          tips: t('qq_music'),
-          icon: '#icon-qq-music',
-          iconSize: '0 0 1024 1024',
+          to: '/recommendations',
+          tips: t('recommend__title'),
+          icon: '#icon-recommendation-sparkles',
+          iconSize: '0 0 24 24',
+          size,
+          name: 'Recommendations',
+          enable: true,
+        },
+        {
+          to: '',
+          tips: t('nav__music_recommendations'),
+          icon: '#icon-music-recommendation',
+          iconSize: '0 0 1114 1024',
           size: brandIconSize,
-          name: 'QQMusicRecommend',
-          enable: appSetting['qqMusic.enabled'],
-        }, {
-          to: '/neteaseMusic/recommend',
-          tips: t('netease_music'),
-          icon: '#icon-netease-music',
-          iconSize: '0 0 1024 1024',
-          size: brandIconSize,
-          name: 'NeteaseMusicRecommend',
-          enable: appSetting['neteaseMusic.enabled'],
+          name: 'MusicRecommendations',
+          enable: true,
+          children: recommendationChildren,
         },
         {
           to: '/leaderboard',
@@ -535,9 +573,9 @@ export default {
     const menuGroups = computed(() => {
       const all = menus.value
       return [
-        { label: t('nav__online'), items: all.slice(0, 5).filter(m => m.enable) },
+        { label: t('nav__online'), items: all.filter(m => m.enable && ['Search', 'SongList', 'MusicRecommendations', 'Recommendations', 'Leaderboard'].includes(m.name)) },
         // 设置入口在侧边栏左下角，不在导航列表中
-        { label: t('nav__my'), items: all.slice(5, 8).filter(m => m.enable) },
+        { label: t('nav__my'), items: all.filter(m => m.enable && ['List', 'OnlinePlaylists', 'Download'].includes(m.name)) },
       ].filter(g => g.items.length)
     })
 
@@ -545,12 +583,12 @@ export default {
       const activeRoute = currentRoute.value
       if (activeRoute.name == 'SongListDetail') {
         const from = activeRoute.query.fromName as string | undefined
-        if (from == 'QQMusicRecommend' || from == 'QQMusicMyPlaylists' || from == 'NeteaseMusicRecommend' || from == 'NeteaseMusicMyPlaylists') return name == from
+        if (from == 'QQMusicRecommend' || from == 'QQMusicMyPlaylists' || from == 'NeteaseMusicRecommend' || from == 'NeteaseMusicMyPlaylists' || from == 'BilibiliMusicRecommend') return name == from
       }
       return activeRoute.meta.name == name
     }
     const handleNavClick = (item: { name: string }) => {
-      if (item.name == 'SongList') setVisibleListDetail(false)
+      if (item.name == 'SongList' || item.name == 'BilibiliMusicRecommend') setVisibleListDetail(false)
     }
     const isChildActive = (child: { name: string, listId?: string }) => child.listId
       ? currentRoute.value.meta.name == 'List' && currentRoute.value.query.id == child.listId

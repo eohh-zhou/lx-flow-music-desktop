@@ -156,7 +156,9 @@ export default {
       return list
     }
 
-    const updateView = (currentScrollTop = dom_scrollContainer.value.scrollTop) => {
+    const updateView = (currentScrollTop = dom_scrollContainer.value?.scrollTop ?? 0) => {
+      // A queued animation frame can run after navigation has unmounted this list.
+      if (!dom_scrollContainer.value) return
       // const currentScrollTop = this.$refs.dom_scrollContainer.scrollTop
       const itemHeight = props.itemHeight
       const currentStartIndex = Math.floor(currentScrollTop / itemHeight)

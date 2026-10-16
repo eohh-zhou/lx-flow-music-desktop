@@ -15,6 +15,7 @@ for (const source of music.sources) {
   sources.push(source.id as LX.OnlineSource)
   sortList[source.id as LX.OnlineSource] = songList.sortList as SortInfo[]
 }
+sources.push('bili')
 
 export interface TagInfoItem<T extends LX.OnlineSource = LX.OnlineSource> {
   parent_id: string
@@ -49,6 +50,8 @@ export interface ListInfoItem {
   desc: string | null
   source: LX.OnlineSource
   total?: string
+  trackCount?: number
+  reason?: string
 }
 export interface ListInfo {
   list: ListInfoItem[]

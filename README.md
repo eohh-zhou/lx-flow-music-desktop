@@ -7,7 +7,7 @@
   <a href="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml"><img src="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml/badge.svg" alt="Build status"></a>
 </p>
 
-<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.1.1。专注于企鹅音乐与网易云音乐的账号推荐、歌单联动，以及更干净的桌面播放界面。</p>
+<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.2.0。支持 LX个性化推荐、AI推荐、Bilibili 音乐，以及企鹅音乐与网易云音乐的账号推荐和歌单联动。</p>
 
 ## 个人使用版说明
 
@@ -16,6 +16,19 @@
 原项目：<https://github.com/lyswhut/lx-music-desktop>
 
 ## 我增加和调整的功能
+
+### 为你推荐
+
+- LX推荐以「我的列表」歌单为基础，逐步结合近期完播、反复播放、实际收听时长和主动跳过记录，推荐歌单里没有的单曲。
+- 可选择曲库范围、探索程度和参考歌单，支持不感兴趣反馈；每首参考歌曲在每批结果中最多带出两首，兼顾不同歌手和专辑。
+- AI推荐可配置兼容模型接口，先规划搜索方向，再从真实曲库候选中筛选；可自行选择是否使用个人听歌偏好。
+- 收听统计保存在本机；LX推荐不调用模型 API，AI推荐仅在手动生成时调用，换一批使用缓存结果。
+
+### Bilibili 音乐
+
+- 支持导入公开收藏夹、合集、系列与分 P 视频歌单，以及浏览热门和最新音乐合集。
+- 内置 Bilibili 音频播放，并提供歌曲艺术家识别和歌词匹配。
+- 企鹅音乐、网易云和 bili 音乐的平台推荐统一收纳在侧栏「音乐推荐」中。
 
 ### 企鹅音乐
 
@@ -42,12 +55,12 @@
 
 ## 下载与更新
 
-请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.1.1](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.1.1)。
+请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.2.0](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.2.0)。
 
 | 包类型 | 文件名示例 | 适用场景 |
 | --- | --- | --- |
-| Setup 安装版 | `LXFlowMusic-v3.1.1-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
-| 绿色免安装版 | `LXFlowMusic-v3.1.1-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
+| Setup 安装版 | `LXFlowMusic-v3.2.0-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
+| 绿色免安装版 | `LXFlowMusic-v3.2.0-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
 
 从绿色版迁移到支持自动更新的版本时，只需安装一次 Setup 安装版。
 

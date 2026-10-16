@@ -82,8 +82,16 @@ export const clearListDetail = () => {
   listDetailInfo.noItemLabel = ''
 }
 
+export const updateListDetailMusicInfo = (musicInfo: LX.Music.MusicInfoOnline) => {
+  const item = listDetailInfo.list.find(item => item.id == musicInfo.id)
+  if (!item || item.source != 'bili') return
+  Object.assign(item, { name: musicInfo.name, singer: musicInfo.singer, meta: musicInfo.meta })
+  // Keep selection identities and the cached detail entry, while updating the raw list's rendered cells.
+  listDetailInfo.list = markRaw([...listDetailInfo.list])
+}
+
 export const getTags = async<T extends LX.OnlineSource>(source: T) => {
-  return musicSdk[source]?.songList.getTags() as Promise<TagInfo<T>>
+  return (musicSdk[source]?.songList.getTags?.() ?? Promise.reject(new Error('source not found: ' + source))) as Promise<TagInfo<T>>
 }
 
 
@@ -114,11 +122,12 @@ export const getAndSetList = async(source: LX.OnlineSource, tabId: string, sortI
   listInfo.noItemLabel = window.i18n.t('list__loading')
   listInfo.key = key
   // clearList()
-  return musicSdk[source]?.songList.getList(sortId, tabId, page).then((result: ListInfo) => {
+  return (musicSdk[source]?.songList.getList?.(sortId, tabId, page) ?? Promise.reject(new Error('source not found: ' + source))).then((result: ListInfo) => {
     cache.set(key, result)
     if (key != listInfo.key) return
     setList(result, tabId, sortId, page)
   }).catch((error: any) => {
+    if (key != listInfo.key) return
     clearList()
     listInfo.noItemLabel = window.i18n.t('list__load_failed')
     console.log(error)
@@ -200,10 +209,12 @@ export const getAndSetListDetail = async(id: string, source: LX.OnlineSource, pa
 
   return getListDetail(id, source, page, isRefresh).then((result: ListDetailInfo) => {
     if (key != listDetailInfo.key) return
-    setListDetail(result, id, page)
+    setListDetail(result, source == 'bili' ? result.id : id, page)
   }).catch((error: any) => {
     clearListDetail()
-    listDetailInfo.noItemLabel = window.i18n.t('list__load_failed')
+    listDetailInfo.noItemLabel = source == 'bili' && /^bilibili__error_/.test(error?.message)
+      ? window.i18n.t(error.message)
+      : window.i18n.t('list__load_failed')
     console.log(error)
     throw error
   })

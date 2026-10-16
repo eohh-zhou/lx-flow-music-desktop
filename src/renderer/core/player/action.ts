@@ -18,7 +18,7 @@ import { getMusicUrl, getPicPath, getLyricInfo } from '../music/index'
 import { filterList } from './utils'
 import { requestMsg } from '@renderer/utils/message'
 import { getRandom } from '@renderer/utils/index'
-import { addListMusics, removeListMusics } from '@renderer/store/list/action'
+import { addListMusics, removeListMusics, updateListMusics } from '@renderer/store/list/action'
 import { loveList } from '@renderer/store/list/state'
 import { addDislikeInfo } from '@renderer/core/dislikeList'
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
@@ -147,6 +147,19 @@ export const setMusicUrl = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   })
 }
 
+const getPlayingLyricInfo = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
+  const listId = playMusicInfo.listId
+  return getLyricInfo({
+    musicInfo,
+    onMetadata(updated) {
+      if (musicInfo.id != playMusicInfo.musicInfo?.id) return
+      setMusicInfo({ name: updated.name, singer: updated.singer })
+      window.app_event.musicInfoUpdated()
+      if (listId) void updateListMusics([{ id: listId, musicInfo: updated }]).catch(err => { console.log(err) })
+    },
+  })
+}
+
 // 恢复上次播放的状态
 const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
   const musicInfo = playMusicInfo.musicInfo
@@ -165,7 +178,7 @@ const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
     window.app_event.picUpdated()
   }).catch(_ => _)
 
-  void getLyricInfo({ musicInfo }).then((lyricInfo) => {
+  void getPlayingLyricInfo(musicInfo).then((lyricInfo) => {
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return
     setMusicInfo({
       lrc: lyricInfo.lyric,
@@ -220,7 +233,7 @@ const handlePlay = () => {
     window.app_event.picUpdated()
   }).catch(_ => _)
 
-  void getLyricInfo({ musicInfo }).then((lyricInfo) => {
+  void getPlayingLyricInfo(musicInfo).then((lyricInfo) => {
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return
     setMusicInfo({
       lrc: lyricInfo.lyric,
@@ -248,6 +261,7 @@ export const playListById = (listId: string, id: string) => {
   // pause()
   const musicInfo = getList(listId).find(m => m.id == id)
   if (!musicInfo) return
+  window.app_event.playerUserSkip()
   setPlayMusicInfo(listId, musicInfo)
   if (appSetting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
   clearTempPlayeList()
@@ -261,6 +275,7 @@ export const playListById = (listId: string, id: string) => {
  * @param index 播放的歌曲位置
  */
 export const playList = (listId: string, index: number) => {
+  window.app_event.playerUserSkip()
   const prevListId = playInfo.playerListId
   setPlayListId(listId)
   // pause()
@@ -382,6 +397,7 @@ const handlePlayNext = (playMusicInfo: LX.Player.PlayMusicInfo) => {
  * @returns
  */
 export const playNext = async(isAutoToggle = false): Promise<void> => {
+  if (!isAutoToggle) window.app_event.playerUserSkip()
   console.log('skip next', isAutoToggle)
   if (tempPlayList.length) { // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
     const playMusicInfo = tempPlayList[0]

@@ -95,6 +95,7 @@ export const sourceNames = computed(() => {
     kg: 'kg',
     mg: 'mg',
     wy: 'wy',
+    bili: window.i18n.t('source_bili'),
     all: window.i18n.t(prefix + 'all' as any),
   }
   for (const { id } of music.sources) {
@@ -156,9 +157,9 @@ watch(isFullscreen, isFullscreen => {
 export const themeShouldUseDarkColors = ref(window.shouldUseDarkColors)
 
 
-export const qualityList = shallowRef<LX.QualityList>({})
+export const qualityList = shallowRef<LX.QualityList>({ bili: ['128k'] })
 export const setQualityList = (_qualityList: LX.QualityList) => {
-  qualityList.value = _qualityList
+  qualityList.value = { ..._qualityList, bili: ['128k'] }
 }
 
 export const themeId = ref('red_light')

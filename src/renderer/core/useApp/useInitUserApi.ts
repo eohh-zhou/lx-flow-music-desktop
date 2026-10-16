@@ -2,7 +2,7 @@ import { onBeforeUnmount, watch } from '@common/utils/vueTools'
 import { useI18n } from '@renderer/plugins/i18n'
 import { onUserApiStatus, getUserApiList, sendUserApiRequest as sendUserApiRequestRemote, userApiRequestCancel, onShowUserApiUpdateAlert } from '@renderer/utils/ipc'
 import { openUrl } from '@common/utils/electron'
-import { qualityList, userApi } from '@renderer/store'
+import { setQualityList, userApi } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
 import { dialog } from '@renderer/plugins/Dialog'
 import { setUserApi } from '@renderer/core/apiSource'
@@ -127,7 +127,7 @@ export default () => {
           }
           qualitys[source as LX.Source] = sourceQualitys
         }
-        qualityList.value = qualitys
+        setQualityList(qualitys)
         userApi.apis = apis
       }
     } else {

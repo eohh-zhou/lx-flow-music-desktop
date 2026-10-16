@@ -13,6 +13,7 @@ import {
   handleGetOnlinePicUrl,
   getCachedLyricInfo,
 } from './utils'
+import { getBilibiliLyricInfo } from './bilibili'
 
 /* export const setMusicUrl = ({ musicInfo, type, url }: {
   musicInfo: LX.Music.MusicInfo
@@ -52,12 +53,12 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
   //   // return Promise.reject(new Error('该歌曲没有可播放的音频'))
   // }
   const targetQuality = quality ?? getPlayQuality(appSetting['player.playQuality'], musicInfo)
-  const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
+  const cachedUrl = musicInfo.source == 'bili' ? '' : await getStoreMusicUrl(musicInfo, targetQuality)
   if (cachedUrl && !isRefresh) return cachedUrl
 
   return handleGetOnlineMusicUrl({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache }) => {
-    if (targetMusicInfo.id != musicInfo.id && !isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
-    void saveMusicUrl(musicInfo, targetQuality, url)
+    if (targetMusicInfo.source != 'bili' && targetMusicInfo.id != musicInfo.id && !isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
+    if (musicInfo.source != 'bili') void saveMusicUrl(musicInfo, targetQuality, url)
     return url
   })
 }
@@ -80,12 +81,14 @@ export const getPicUrl = async({ musicInfo, listId, isRefresh, allowToggleSource
     return url
   })
 }
-export const getLyricInfo = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+export const getLyricInfo = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {}, onMetadata }: {
   musicInfo: LX.Music.MusicInfoOnline
   isRefresh: boolean
   allowToggleSource?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  onMetadata?: (musicInfo: LX.Music.MusicInfoOnline) => void
 }): Promise<LX.Player.LyricInfo> => {
+  if (musicInfo.source == 'bili') return buildLyricInfo(await getBilibiliLyricInfo({ musicInfo, isRefresh, onMetadata, onToggleSource }))
   if (!isRefresh) {
     const lyricInfo = await getCachedLyricInfo(musicInfo)
     if (lyricInfo) return buildLyricInfo(lyricInfo)

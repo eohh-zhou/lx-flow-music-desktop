@@ -5,6 +5,7 @@ import wy from './wy/index'
 import mg from './mg/index'
 import bd from './bd/index'
 import xm from './xm'
+import bili from './bili'
 import { supportQuality } from './api-source'
 
 
@@ -46,6 +47,7 @@ const sources = {
   mg,
   bd,
   xm,
+  bili,
 }
 export default {
   ...sources,

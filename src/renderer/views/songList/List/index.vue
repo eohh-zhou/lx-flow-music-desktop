@@ -43,20 +43,24 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
   let _sortId = to.query.sortId
   let _page: string | undefined = to.query.page
 
+  if (_source == 'bili') {
+    next({ path: '/biliMusic/recommend', query: { sortId: _sortId ?? 'hot', tagId: _tagId ?? '', page: _page ?? '1' } })
+    return
+  }
   if (isVisibleListDetail.value) {
     next({ path: '/songList/detail', query: {} })
     return
   } else if (_source == null) {
-    if (listInfo.key) {
+    if (listInfo.key && listInfo.source != 'bili') {
       _source = listInfo.source
       _tagId = listInfo.tagId
       _sortId = listInfo.sortId
       _page = listInfo.page.toString()
     } else {
       const setting = await getSongListSetting()
-      _source = setting.source
-      _tagId = setting.tagId
-      _sortId = setting.sortId
+      _source = setting.source == 'bili' ? 'kw' : setting.source
+      _tagId = setting.source == 'bili' ? '' : setting.tagId
+      _sortId = setting.source == 'bili' ? 'hot' : setting.sortId
       _page = '1'
     }
 
@@ -70,7 +74,8 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
   source.value = _source as LX.OnlineSource
   tagId.value = _tagId ?? ''
   sortId.value = _sortId ?? ''
-  page.value = _page ? parseInt(_page) : 1
+  const requestedPage = _page ? parseInt(_page) : 1
+  page.value = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
   void setSongListSetting({ source: _source, tagId: _tagId, sortId: _sortId })
 }
 
@@ -88,7 +93,7 @@ export default {
     const visibleOpenSongListModal = ref(false)
 
     const sourceList = computed(() => {
-      return sources.map(s => ({ id: s, name: sourceNames.value[s] }))
+      return sources.filter(s => s != 'bili').map(s => ({ id: s, name: sourceNames.value[s] }))
     })
     const router = useRouter()
     const route = useRoute()

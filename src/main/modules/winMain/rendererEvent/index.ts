@@ -14,6 +14,8 @@ import soundEffect from './soundEffect'
 import openAPI from './openAPI'
 import qqMusic from './qqMusic'
 import neteaseMusic from './neteaseMusic'
+import aiRecommendation from './aiRecommendation'
+import listening from './listening'
 import { sendEvent } from '../main'
 
 export * from './app'
@@ -43,6 +45,8 @@ export default () => {
   openAPI()
   qqMusic()
   neteaseMusic()
+  aiRecommendation()
+  listening()
 
   global.lx.event_app.on('updated_config', (keys, setting) => {
     sendConfigChange(setting)

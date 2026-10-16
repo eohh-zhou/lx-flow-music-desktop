@@ -47,6 +47,7 @@
         :no-item="listDetailInfo.noItemLabel"
         @play-list="handlePlayListScoped"
         @toggle-page="togglePage"
+        @metadata-updated="updateListDetailMusicInfo"
       />
     </div>
   </div>
@@ -56,7 +57,7 @@
 import { computed, ref, watch } from '@common/utils/vueTools'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
 import { listDetailInfo } from '@renderer/store/songList/state'
-import { setVisibleListDetail } from '@renderer/store/songList/action'
+import { setVisibleListDetail, updateListDetailMusicInfo } from '@renderer/store/songList/action'
 import { addSongListDetail, playSongListDetail } from './action'
 import useList from './useList'
 import useKeyBack from './useKeyBack'
@@ -240,6 +241,7 @@ export default {
       handleBack,
       searchKeyword,
       displayList,
+      updateListDetailMusicInfo,
       clearScopeSearch,
     }
   },

@@ -138,6 +138,7 @@ export default () => {
   // window.app_event.on('playerLoadstart', handleSetPlayInfo)
   window.app_event.on('musicToggled', handleSetPlayInfo)
   window.app_event.on('picUpdated', updateMediaSessionInfo)
+  window.app_event.on('musicInfoUpdated', updateMediaSessionInfo)
 
   onBeforeUnmount(() => {
     window.app_event.off('playerLoadeddata', updatePositionState)
@@ -150,5 +151,6 @@ export default () => {
     // window.app_event.off('playerLoadstart', handleSetPlayInfo)
     window.app_event.off('musicToggled', handleSetPlayInfo)
     window.app_event.off('picUpdated', updateMediaSessionInfo)
+    window.app_event.off('musicInfoUpdated', updateMediaSessionInfo)
   })
 }

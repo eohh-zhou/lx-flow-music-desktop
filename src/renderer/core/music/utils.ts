@@ -300,7 +300,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   quality: LX.Quality
   isFromCache: boolean
 }> => {
-  if (!await window.lx.apiInitPromise[0]) throw new Error('source init failed')
+  if (musicInfo.source != 'bili' && !await window.lx.apiInitPromise[0]) throw new Error('source init failed')
   // console.log(musicInfo.source)
   const targetQuality = quality ?? getPlayQuality(appSetting['player.playQuality'], musicInfo)
 

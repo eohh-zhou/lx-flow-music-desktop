@@ -14,11 +14,13 @@
           <p :class="$style.meta">
             <span v-if="item.author">{{ item.author }}</span>
             <span v-if="item.time">{{ item.time }}</span>
+            <span v-if="item.trackCount">{{ $t('bilibili__track_count', { count: item.trackCount }) }}</span>
             <span v-if="visibleSource">{{ item.source }}</span>
           </p>
+          <p v-if="item.reason" :class="$style.reason">{{ item.reason }}</p>
         </li>
       </ul>
-      <div :class="$style.pagination">
+      <div v-if="!hidePagination" :class="$style.pagination">
         <material-pagination :count="props.listInfo.total" :limit="props.listInfo.limit" :page="props.listInfo.page" @btn-click="togglePage" />
       </div>
     </div>
@@ -39,8 +41,10 @@ import { useRoute, useRouter } from '@common/utils/vueRouter'
 const props = withDefaults(defineProps<{
   listInfo: ListInfo
   visibleSource?: boolean
+  hidePagination?: boolean
 }>(), {
   visibleSource: false,
+  hidePagination: false,
 })
 
 const router = useRouter()
@@ -184,6 +188,13 @@ defineExpose({
   .title {
     color: var(--color-primary);
   }
+}
+.reason {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-primary-font);
+  .mixin-ellipsis-2();
 }
 .pagination {
   text-align: center;

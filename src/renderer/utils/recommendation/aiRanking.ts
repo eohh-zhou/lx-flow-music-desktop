@@ -32,7 +32,13 @@ export interface AiRetrieval {
 
 export const fuseAiCandidates = (branches: AiRetrieval[], options: AiSelectionOptions): AiTrackRecommendation[] => {
   const fused = new Map<string, { row: TrackRecommendation, score: number, directions: string[] }>()
+  // Additional pages belong to one retrieval direction, not independent votes.
+  const directions = new Map<string, AiRetrieval>()
   for (const branch of branches) {
+    const previous = directions.get(branch.key)
+    directions.set(branch.key, previous ? { ...previous, rows: [...previous.rows, ...branch.rows] } : branch)
+  }
+  for (const branch of directions.values()) {
     const rows = filterAiTracks(branch.rows.filter(row => matchesAiTarget(row.music, branch.intent)), options)
     rows.forEach((row, index) => {
       const key = trackSignature(row.music)
@@ -63,17 +69,20 @@ export const applyAiRanks = (candidates: AiTrackRecommendation[], ranks: AiRecom
   const used = new Set<string>()
   const ordered: AiTrackRecommendation[] = []
   const accepted = ranks.filter(rank => byId.has(rank.id) && !rank.exclude && !excluded.has(rank.id))
+    .filter((rank, index, list) => list.findIndex(item => item.id == rank.id) == index)
   for (const rank of accepted) {
     if (used.has(rank.id)) continue
     used.add(rank.id)
     const row = byId.get(rank.id)!
-    const relevance = 0.85 * (1 - (ordered.length / Math.max(accepted.length + 8, 16))) + 0.15 * (row.ai?.relevance ?? 0.5)
+    const rankScore = 1 - ordered.length / Math.max(accepted.length + 8, 16)
+    const modelScore = typeof rank.score == 'number' && Number.isFinite(rank.score) ? Math.max(0, Math.min(1, rank.score)) : rankScore
+    const relevance = 0.8 * modelScore + 0.1 * rankScore + 0.1 * (row.ai?.relevance ?? 0.5)
     ordered.push({ ...row, reason: typeof rank.reason == 'string' ? rank.reason.slice(0, 120) : '', ai: { relevance, directions: row.ai?.directions ?? [] } })
   }
   if (!ordered.length && !excluded.size) throw new Error('ai_recommend__error_response')
-  // Explicitly rejected candidates are never restored by the fallback tail.
-  return [...ordered, ...candidates.filter(row => !used.has(row.music.id) && !excluded.has(row.music.id))
-    .map(row => ({ ...row, ai: { relevance: 0.3 + 0.2 * (row.ai?.relevance ?? 0.5), directions: row.ai?.directions ?? [] } }))]
+  // A successful model response is a shortlist. Omitted or rejected candidates
+  // must not re-enter merely to fill a page, including after cache restoration.
+  return ordered
 }
 
 // Keep model relevance as the primary score. MMR reduces redundant artists,

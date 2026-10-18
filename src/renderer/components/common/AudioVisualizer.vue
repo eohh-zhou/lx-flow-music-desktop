@@ -69,7 +69,10 @@ export default {
 
     // https://developer.mozilla.org/zh-CN/docs/Web/API/AnalyserNode/smoothingTimeConstant
     const renderFrame = () => {
+      animationFrameId = null
+      if (!isPlaying || document.hidden) return
       x = 0
+      frequencyAvg = 0
 
       analyser.getByteFrequencyData(dataArray)
 
@@ -105,22 +108,27 @@ export default {
         x += barWidth
       }
 
-      animationFrameId = null
       if (isPlaying) animationFrameId = window.requestAnimationFrame(renderFrame)
     }
 
     const handlePlay = () => {
+      if (!ctx || document.hidden || isPlaying) return
       isPlaying = true
       // analyser.fftSize = 256
       bufferLength = analyser.frequencyBinCount
       // console.log(bufferLength)
       barWidth = getBarWidth(WIDTH)
-      dataArray = new Uint8Array(bufferLength)
+      if (dataArray?.length !== bufferLength) dataArray = new Uint8Array(bufferLength)
       renderFrame()
     }
     const handlePause = () => {
-      if (animationFrameId) window.cancelAnimationFrame(animationFrameId)
+      if (animationFrameId != null) window.cancelAnimationFrame(animationFrameId)
+      animationFrameId = null
       isPlaying = false
+    }
+    const handleVisibility = () => {
+      if (document.hidden) handlePause()
+      else if (isPlay.value) handlePlay()
     }
 
     const handleResize = () => {
@@ -136,14 +144,18 @@ export default {
 
     window.app_event.on('play', handlePlay)
     window.app_event.on('pause', handlePause)
+    window.app_event.on('stop', handlePause)
     window.app_event.on('error', handlePause)
     window.addEventListener('resize', handleResize)
+    document.addEventListener('visibilitychange', handleVisibility)
     onBeforeUnmount(() => {
       handlePause()
       window.app_event.off('play', handlePlay)
       window.app_event.off('pause', handlePause)
+      window.app_event.off('stop', handlePause)
       window.app_event.off('error', handlePause)
       window.removeEventListener('resize', handleResize)
+      document.removeEventListener('visibilitychange', handleVisibility)
     })
 
     onMounted(() => {

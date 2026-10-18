@@ -20,8 +20,8 @@ const compactSoftwareRow = (row: SoftwareRecommendation): SoftwareRecommendation
 })
 export const saveSoftwareRecommendations = () => {
   try {
-    const feeds = Object.fromEntries(sources.map(source => [source, { ...softwareFeeds[source], pool: softwareFeeds[source].pool.slice(0, 60).map(compactSoftwareRow), ids: softwareFeeds[source].ids.slice(0, 20), seen: softwareFeeds[source].seen.slice(-160) }]))
-    localStorage.setItem(key, JSON.stringify({ preferences: softwarePreferences, feeds }))
+    const feeds = Object.fromEntries(sources.map(source => [source, { ...softwareFeeds[source], pool: softwareFeeds[source].pool.slice(0, 60).map(compactSoftwareRow), ids: softwareFeeds[source].ids.slice(0, 60), seen: softwareFeeds[source].seen.slice(-160) }]))
+    localStorage.setItem(key, JSON.stringify({ layoutVersion: 2, preferences: softwarePreferences, feeds }))
     return true
   } catch { return false }
 }
@@ -43,6 +43,7 @@ try {
     const pool = value.pool.slice(0, 60).filter((row: any) => (source == 'all' || row?.music?.source == source) && ['tx', 'wy', 'bili'].some(platform => isRecommendationTrack(row?.music, platform as RecommendationSource)))
       .map((row: any) => compactSoftwareRow({ music: row.music, origin: 'search', reason: typeof row.reason == 'string' ? row.reason.slice(0, 120) : '', direction: row.direction, reference: row.reference, contexts: row.contexts }))
     const ids = new Set(pool.map((row: TrackRecommendation) => row.music.id))
-    Object.assign(softwareFeeds[source], { pool: markRaw(pool), ids: Array.isArray(value.ids) ? value.ids.filter((id: unknown) => ids.has(id as string)).slice(0, 20) : [], seen: Array.isArray(value.seen) ? value.seen.filter((id: unknown) => typeof id == 'string' && id.length < 400).slice(-160) : [], updatedAt: Number.isFinite(value.updatedAt) ? value.updatedAt : 0, generation: Number.isInteger(value.generation) && value.generation >= 0 && value.generation < 1000000 ? value.generation : 0 })
+    const visibleIds = saved.layoutVersion == 2 && Array.isArray(value.ids) ? value.ids : [...ids]
+    Object.assign(softwareFeeds[source], { pool: markRaw(pool), ids: [...new Set<string>(visibleIds.filter((id: unknown) => ids.has(id as string)))].slice(0, 60), seen: Array.isArray(value.seen) ? value.seen.filter((id: unknown) => typeof id == 'string' && id.length < 400).slice(-160) : [], updatedAt: Number.isFinite(value.updatedAt) ? value.updatedAt : 0, generation: Number.isInteger(value.generation) && value.generation >= 0 && value.generation < 1000000 ? value.generation : 0 })
   }
 } catch { /* Start with an empty software feed if its cache cannot be read. */ }

@@ -80,13 +80,12 @@ import { openUrl } from '@common/utils/electron'
 import { LIST_IDS } from '@common/constants'
 import { appSetting } from '@renderer/store/setting'
 import { useI18n } from '@root/lang'
-import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from '@common/utils/vueTools'
+import { computed, nextTick, reactive, ref, watch } from '@common/utils/vueTools'
 import { useRouter } from '@common/utils/vueRouter'
 import { defaultList, fetchingListStatus, userLists } from '@renderer/store/list/state'
-import { getListMusics, removeUserList } from '@renderer/store/list/action'
+import { removeUserList } from '@renderer/store/list/action'
 import { playMusicInfo } from '@renderer/store/player/state'
 import { setVisibleListDetail } from '@renderer/store/songList/action'
-import { getPicPath } from '@renderer/core/music'
 import { dialog } from '@renderer/plugins/Dialog'
 import { saveListPrevSelectId } from '@renderer/utils/data'
 import musicSdk from '@renderer/utils/musicSdk'
@@ -102,6 +101,7 @@ import useSort from '@renderer/views/List/MyList/useSort'
 import useDarg from '@renderer/views/List/MyList/useDarg'
 import useEditList from '@renderer/views/List/MyList/useEditList'
 import useDuplicate from '@renderer/views/List/MyList/useDuplicate'
+import usePlaylistCovers from './usePlaylistCovers'
 
 const EXPAND_STORAGE_KEY = 'lx__nav_group_expanded_'
 
@@ -132,58 +132,11 @@ export default {
       localStorage.setItem(`${EXPAND_STORAGE_KEY}${item.name}`, String(expandedGroups[item.name]))
     }
 
-    const playlistCovers = reactive<Record<string, string>>({})
-    const coverLoading = new Set<string>()
     const localPlaylistInfos = computed<LX.List.MyListInfo[]>(() => [defaultList, ...userLists])
-    const loadPlaylistCover = async(listId: string) => {
-      if (coverLoading.has(listId)) return
-      coverLoading.add(listId)
-      try {
-        const firstSong = (await getListMusics(listId))[0]
-        if (!firstSong) {
-          playlistCovers[listId] = ''
-          return
-        }
-        const cachedPic = firstSong.meta.picUrl
-        if (cachedPic) {
-          playlistCovers[listId] = cachedPic
-          return
-        }
-        playlistCovers[listId] = await getPicPath({ musicInfo: firstSong, listId })
-      } catch {
-        playlistCovers[listId] = ''
-      } finally {
-        coverLoading.delete(listId)
-      }
-    }
-    const loadPlaylistCovers = async(ids: string[]) => {
-      await Promise.all([...new Set(ids)].map(async id => loadPlaylistCover(id)))
-    }
-    const handleMyListUpdate = (ids: string[]) => {
-      if (!expandedGroups.List) return
-      const visibleIds = new Set(localPlaylistInfos.value.map(list => list.id))
-      void loadPlaylistCovers(ids.filter(id => visibleIds.has(id)))
-    }
-    const handleCoverError = (listId?: string) => {
-      if (listId) playlistCovers[listId] = ''
-    }
-
-    watch(() => ({
-      expanded: expandedGroups.List,
-      ids: localPlaylistInfos.value.map(list => list.id).join('|'),
-    }), ({ expanded }) => {
-      if (!expanded) return
-      const currentIds = localPlaylistInfos.value.map(list => list.id)
-      for (const id of Object.keys(playlistCovers)) {
-        if (!currentIds.includes(id)) Reflect.deleteProperty(playlistCovers, id)
-      }
-      void loadPlaylistCovers(currentIds)
-    }, { immediate: true })
-
-    window.app_event.on('myListUpdate', handleMyListUpdate)
-    onBeforeUnmount(() => {
-      window.app_event.off('myListUpdate', handleMyListUpdate)
-    })
+    const { playlistCovers, handleCoverError } = usePlaylistCovers(
+      computed(() => localPlaylistInfos.value.map(list => list.id)),
+      computed(() => expandedGroups.List && !appSetting['common.sidebarCollapsed']),
+    )
 
     const dom_lists_list = ref<HTMLElement | null>(null)
     const dom_listsNewInput = ref<{ focus: () => void } | null>(null)

@@ -1,4 +1,5 @@
-import { getListMusics } from '@renderer/store/list/listManage'
+import { getListMusicLibrary } from '@renderer/store/list/listManage'
+import type { LibraryTrack } from '@common/types/library'
 import { userLists } from '@renderer/store/list/state'
 import { getListening } from './listeningIpc'
 import { checkCancelled } from './providers'
@@ -22,8 +23,8 @@ const tasteSeeds = (preferences: SoftwarePreference[], limit: number, seen = new
 }
 
 export const getRecommendationProfile = async(useProfile: boolean, listId: string, avoidRecent: boolean, signal = new AbortController().signal) => {
-  const playlists: LX.Music.MusicInfo[][] = []
-  const owned: LX.Music.MusicInfo[][] = []
+  const playlists: LibraryTrack[][] = []
+  const owned: LibraryTrack[][] = []
   // Library exclusion always stays local, including when personalisation is off.
   // Only visible user playlists contribute taste; the legacy love/default lists do not.
   const ids = userLists.map(list => list.id)
@@ -31,7 +32,7 @@ export const getRecommendationProfile = async(useProfile: boolean, listId: strin
   const history = useProfile || avoidRecent ? await getListening() : []
   checkCancelled(signal)
   for (const id of ids) {
-    const songs = await getListMusics(id)
+    const songs = await getListMusicLibrary(id)
     checkCancelled(signal)
     owned.push(songs)
     if (useProfile && (!selected || selected == id)) playlists.push(songs)

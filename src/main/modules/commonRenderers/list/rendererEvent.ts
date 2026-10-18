@@ -1,5 +1,6 @@
 import { mainHandle } from '@common/mainIpc'
 import { PLAYER_EVENT_NAME } from '@common/ipcNames'
+import type { LibraryTrack } from '@common/types/library'
 
 // 列表操作事件（公共，只注册一次）
 export default () => {
@@ -23,6 +24,12 @@ export default () => {
   })
   mainHandle<string, LX.Music.MusicInfo[]>(PLAYER_EVENT_NAME.list_music_get, async({ params: listId }) => {
     return global.lx.worker.dbService.getListMusics(listId)
+  })
+  mainHandle<string, LX.Music.MusicInfo | null>(PLAYER_EVENT_NAME.list_music_get_head, async({ params: listId }) => {
+    return global.lx.worker.dbService.getListMusicHead(listId)
+  })
+  mainHandle<string, LibraryTrack[]>(PLAYER_EVENT_NAME.list_music_get_library, async({ params: listId }) => {
+    return global.lx.worker.dbService.getListMusicLibrary(listId)
   })
   mainHandle<LX.List.ListActionMusicAdd>(PLAYER_EVENT_NAME.list_music_add, async({ params: { id, musicInfos, addMusicLocationType } }) => {
     await global.lx.event_list.list_music_add(id, musicInfos, addMusicLocationType, false)

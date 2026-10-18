@@ -62,5 +62,6 @@ export interface AiRecommendIntent {
 export interface AiRecommendRank {
   id: string
   reason: string
+  score?: number
   exclude?: boolean
 }

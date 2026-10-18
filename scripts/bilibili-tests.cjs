@@ -69,6 +69,7 @@ function harness(respond = () => ({})) {
   const sdk = load('src/renderer/utils/musicSdk/bili/index.js', { './songList': { default: songList, __esModule: true }, './utils': utils }).default
   const listDetailInfo = {}
   const action = load('src/renderer/store/songList/action.ts', {
+    '@common/utils/lruCache': load('src/common/utils/lruCache.ts'),
     '@renderer/utils': { ...tools, deduplicationList: list => Array.from(new Map(list.map(item => [item.id, item])).values()) },
     '@renderer/utils/musicSdk': { __esModule: true, default: { bili: sdk } },
     '@common/utils/vueTools': { markRaw: value => value, markRawList: value => value },
@@ -1144,6 +1145,24 @@ test('AI track exclusions accept only real candidates, override ranking duplicat
   assert.deepEqual(Array.from(result, item => [item.id, item.exclude === true]), [['wy_1', false], ['wy_2', true]])
   assert.deepEqual(JSON.parse(h.requests[0].options.json.messages[1].content).candidates[0].retrieval, ['Some query', 'Another query'])
   assert.equal(JSON.stringify(result).includes('private-cookie'), false)
+})
+
+test('AI ranking uses compact request-scoped IDs and restores all forty real songs with bounded scores', async() => {
+  const h = aiHarness()
+  await h.configure()
+  const candidates = Array.from({ length: 40 }, (_, index) => ({ id: 'wy_' + (100 + index), name: 'Song' + index, singer: 'Artist' + index, albumName: 'Album', interval: '03:00' }))
+  h.setResponse(async(_url, options) => {
+    const input = JSON.parse(options.json.messages[1].content)
+    assert.deepEqual(input.candidates.map(item => item.id), candidates.map((_, index) => 'c' + (index + 1)))
+    assert.ok(options.json.max_tokens <= 3600)
+    return { statusCode: 200, body: { choices: [{ message: { content: JSON.stringify({ items: input.candidates.map(item => ({ id: item.id, reason: 'Fits the request', score: 85 })) }) } }] } }
+  })
+  const ranked = await h.invoke('ai_recommend_rank', { jobId: 'compact', kind: 'tracks', source: 'wy', hint: 'Night', trackCandidates: candidates })
+  assert.deepEqual(Array.from(ranked, item => item.id), candidates.map(item => item.id))
+  assert.ok(ranked.every(item => item.score == 0.85))
+  h.setResponse(async() => ({ statusCode: 200, body: { choices: [{ message: { content: JSON.stringify({ items: [{ id: 'c40', score: 99 }, { id: 'c1', score: 500 }, { id: 'c2', score: -10 }], excludedIds: ['c2', 'c99'] }) } }] } }))
+  const next = await h.invoke('ai_recommend_rank', { jobId: 'compact-next', kind: 'tracks', source: 'wy', hint: 'Another request', trackCandidates: candidates.slice(10, 12) })
+  assert.deepEqual(Array.from(next, item => [item.id, item.score, item.exclude === true]), [['wy_110', 1, false], ['wy_111', undefined, true]])
 })
 
 test('AI errors do not expose credentials or provider response bodies', async() => {

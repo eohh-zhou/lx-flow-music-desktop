@@ -19,6 +19,7 @@ const defaultSetting: LX.AppSetting = {
   'common.randomAnimate': true,
   'common.isAgreePact': false,
   'common.controlBtnPosition': 'right',
+  'common.sidebarCollapsed': false,
   'common.playBarProgressStyle': 'centerControlFull',
   'common.transparentWindow': true,
   'common.tryAutoUpdate': true,

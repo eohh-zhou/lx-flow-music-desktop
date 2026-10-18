@@ -31,28 +31,10 @@
     <div :class="$style.resultHeader">
       <div :class="$style.resultTitle"><strong>{{ $t('recommend__your_results') }}</strong><span v-if="rows.length" :class="$style.count">{{ $t('software__track_count', { count: rows.length }) }}</span></div>
       <button v-if="rows.length" type="button" :class="$style.resultAction" @click="play(0)"><svg-icon name="play-outline" />{{ $t('list__play') }}</button>
-      <button v-if="rows.length" type="button" :class="$style.resultAction" :disabled="loading || !nextRows.length" @click="nextBatch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h12m-3-3 3 3-3 3M20 17H8m3-3-3 3 3 3" /></svg>{{ $t('recommend__next_batch') }}</button>
     </div>
     <p v-if="message" :class="$style.notice" role="status">{{ translate(message) }}</p>
     <main ref="resultsContainer" :class="[$style.results, 'scroll']" :aria-busy="loading">
-      <ul v-if="rows.length" :class="$style.grid">
-        <li v-for="(row, index) in rows" :key="row.music.id" :class="$style.card" :data-recommendation-id="row.music.id">
-          <span :class="$style.order" aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
-          <button type="button" :class="$style.cover" :aria-label="$t('recommend__play_song', { name: row.music.name })" @click="play(index)">
-            <img v-if="row.music.meta.picUrl" :src="row.music.meta.picUrl" loading="lazy" decoding="async" alt="" @error="hideBrokenImage"><svg-icon v-else name="music" />
-            <span :class="$style.playOverlay"><svg-icon name="play-outline" /></span>
-          </button>
-          <div :class="$style.track">
-            <div :class="$style.trackHeading"><button type="button" :class="$style.name" :title="row.music.name" @click="play(index)">{{ row.music.name }}</button><small v-if="prefs.source == 'all'" :class="$style.source">{{ row.music.source == 'bili' ? 'bilibili' : $t(row.music.source == 'tx' ? 'source_tx' : 'source_wy') }}</small></div>
-            <p :class="$style.artist"><span :class="$style.artistName" :title="row.music.singer">{{ row.music.singer || $t('unknown_singer') }}</span><span v-if="row.music.interval" :class="$style.duration">{{ row.music.interval }}</span></p>
-            <p :class="$style.reason" :title="row.reason"><svg-icon name="recommendation-sparkles" /><span>{{ row.reason }}</span></p>
-          </div>
-          <div :class="$style.trackActions">
-            <button type="button" :aria-label="$t('recommend__collect_song', { name: row.music.name })" :title="$t('software__add_to_list')" @click="collect(row)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 5h13M4 10h13M4 15h7m6-1v7m-3-3.5h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg></button>
-            <button type="button" :aria-label="$t('recommend__dismiss_song', { name: row.music.name })" :title="$t('recommend__not_interested')" @click="dismiss(row)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg></button>
-          </div>
-        </li>
-      </ul>
+      <RecommendationList v-if="rows.length" :rows="rows" :show-source="prefs.source == 'all'" @play="play" @collect="collect" @dismiss="dismiss" />
       <div v-else :class="$style.empty"><svg-icon name="recommendation-sparkles" /><p>{{ $t(loading ? 'recommend__waiting' : 'software__empty') }}</p></div>
     </main>
     <common-list-add-modal v-if="selectedMusic" v-model:show="showCollect" :music-info="selectedMusic" teleport="#view" />
@@ -61,6 +43,7 @@
 
 <script setup lang="ts">
 import { computed, markRaw, onBeforeUnmount, ref, watch } from '@common/utils/vueTools'
+import RecommendationList from './RecommendationList.vue'
 import { useI18n } from '@renderer/plugins/i18n'
 import { userLists } from '@renderer/store/list/state'
 import { setTempList } from '@renderer/store/list/action'
@@ -85,6 +68,7 @@ const varieties = computed(() => (['familiar', 'balanced', 'explore'] as const).
 const selectedCount = computed(() => userLists.filter(list => prefs.lists?.includes(list.id)).length)
 const feed = computed(() => softwareFeeds[prefs.source])
 const loading = ref(false)
+const preview = ref<TrackRecommendation[]>([])
 const message = ref('')
 const selectedMusic = ref<LX.Music.MusicInfoOnline | null>(null)
 const showCollect = ref(false)
@@ -92,13 +76,13 @@ const resultsContainer = ref<HTMLElement | null>(null)
 const owned = ref<Set<string>>(new Set())
 const libraryReady = ref(false)
 const allowed = (row: TrackRecommendation) => libraryReady.value && !isOwnedTrack(row.music, owned.value) && !getBlockedKeys().has(row.music.id) && !getBlockedKeys().has(trackSignature(row.music)) && !hasDislike(row.music)
-const rows = computed(() => selectSoftwareBatch(feed.value.ids.flatMap(id => { const row = feed.value.pool.find(row => row.music.id == id); return row ? [row] : [] }), { variety: prefs.variety, allowed }))
-const nextRows = computed(() => selectSoftwareBatch(feed.value.pool, { variety: prefs.variety, seen: new Set(feed.value.seen), allowed }))
+const rows = computed(() => selectSoftwareBatch(loading.value && preview.value.length ? preview.value : feed.value.ids.flatMap(id => { const row = feed.value.pool.find(row => row.music.id == id); return row ? [row] : [] }), { variety: prefs.variety, allowed, limit: 60 }))
 let controller: AbortController | null = null
 let version = 0
 let libraryController: AbortController | null = null
 const refreshOwned = async() => {
   libraryController?.abort()
+  libraryReady.value = false
   const signal = (libraryController = new AbortController()).signal
   try {
     const keys = await getOwnedLibraryKeys(signal)
@@ -109,7 +93,7 @@ const listsChanged = (ids: string[]) => { if (ids.some(id => userLists.some(list
 watch(() => userLists.map(list => list.id).join(','), () => { void refreshOwned() }, { immediate: true })
 window.app_event.on('myListUpdate', listsChanged)
 const persist = () => { if (!saveSoftwareRecommendations()) message.value = 'recommend__storage_failed' }
-const cancel = () => { version++; controller?.abort(); controller = null; loading.value = false }
+const cancel = () => { version++; controller?.abort(); controller = null; loading.value = false; preview.value = [] }
 watch(() => prefs.source, () => { cancel(); message.value = '' })
 watch(prefs, persist, { deep: true })
 const toggleList = (id: string) => {
@@ -118,13 +102,18 @@ const toggleList = (id: string) => {
   prefs.lists = [...selected]
 }
 const markSeen = (selected: TrackRecommendation[]) => { feed.value.seen = [...new Set([...feed.value.seen, ...selected.flatMap(row => [row.music.id, trackSignature(row.music)])])].slice(-160) }
+const withPreviewMetadata = <T extends TrackRecommendation>(pool: T[]): T[] => {
+  const resolved = new Map(preview.value.filter(row => row.music.source == 'bili' && row.music.singer).map(row => [row.music.id, row.music]))
+  return pool.map(row => !row.music.singer && resolved.has(row.music.id) ? { ...row, music: resolved.get(row.music.id)! } : row)
+}
 const run = async() => {
   if (loading.value) return
   cancel()
   const current = version
   const source = prefs.source
   const generation = feed.value.generation ?? 0
-  const seen = new Set(feed.value.seen)
+  const seen = new Set([...feed.value.seen, ...rows.value.flatMap(row => [row.music.id, trackSignature(row.music)])])
+  const showPreview = !rows.value.length
   const signal = (controller = new AbortController()).signal
   loading.value = true; message.value = ''
   try {
@@ -145,15 +134,17 @@ const run = async() => {
       signal,
       allowed: music => !hasDislike(music),
       onResults: pool => {
-        if (signal.aborted || current != version || feed.value.ids.length || !pool.length) return
-        Object.assign(softwareFeeds[source], { pool: markRaw(pool), ids: selectSoftwareBatch(pool, { variety: prefs.variety }).map(row => row.music.id), updatedAt: Date.now() })
+        if (signal.aborted || current != version || !showPreview) return
+        preview.value = markRaw(withPreviewMetadata(pool))
       },
     })
     if (signal.aborted || current != version) return
     if (!result.pool.length) throw new Error(result.partial ? 'software__error' : 'software__no_results')
     const target = softwareFeeds[source]
-    const selected = selectSoftwareBatch(result.pool, { variety: prefs.variety })
-    Object.assign(target, { pool: markRaw(result.pool), ids: selected.map(row => row.music.id), updatedAt: Date.now(), generation: (generation + 1) % 1000000 })
+    const pool = withPreviewMetadata(result.pool)
+    const selected = selectSoftwareBatch(pool, { variety: prefs.variety, allowed, limit: 60 })
+    if (!selected.length) throw new Error('software__no_results')
+    Object.assign(target, { pool: markRaw(pool), ids: selected.map(row => row.music.id), updatedAt: Date.now(), generation: (generation + 1) % 1000000 })
     markSeen(selected)
     message.value = result.partial ? 'software__partial' : ''
     persist()
@@ -161,9 +152,8 @@ const run = async() => {
     if (current != version) return
     const key = error instanceof Error ? error.message : ''
     message.value = /^software__/.test(key) ? key : 'software__error'
-  } finally { if (current == version) { loading.value = false; controller = null } }
+  } finally { if (current == version) { loading.value = false; controller = null; preview.value = [] } }
 }
-const nextBatch = () => { const selected = nextRows.value; if (!selected.length) return; feed.value.ids = selected.map(row => row.music.id); markSeen(selected); persist() }
 const dismiss = (row: TrackRecommendation) => { blockRecommendation(row); feed.value.ids = feed.value.ids.filter(id => id != row.music.id); persist() }
 const resetFeedback = () => { blocked.splice(0); saveRecommendations(); persist() }
 const play = async(index: number) => {
@@ -172,8 +162,15 @@ const play = async(index: number) => {
   try { await setTempList(`software-recommendations:${prefs.source}`, songs); playList(LIST_IDS.TEMP, index) } catch { message.value = 'recommend__play_failed' }
 }
 const collect = (row: TrackRecommendation) => { selectedMusic.value = row.music; showCollect.value = true }
-const hideBrokenImage = (event: Event) => { (event.target as HTMLImageElement).style.visibility = 'hidden' }
-useVisibleArtists(resultsContainer, rows, music => { const target = softwareFeeds[prefs.source]; target.pool = markRaw(target.pool.map(row => row.music.id == music.id ? { ...row, music } : row)); persist() })
+useVisibleArtists(resultsContainer, rows, music => {
+  if (loading.value && preview.value.length) {
+    preview.value = markRaw(preview.value.map(row => row.music.id == music.id ? { ...row, music } : row))
+    return
+  }
+  const target = softwareFeeds[prefs.source]
+  target.pool = markRaw(target.pool.map(row => row.music.id == music.id ? { ...row, music } : row))
+  persist()
+})
 onBeforeUnmount(() => { cancel(); libraryController?.abort(); window.app_event.off('myListUpdate', listsChanged); saveSoftwareRecommendations() })
 </script>
 
@@ -197,26 +194,9 @@ onBeforeUnmount(() => { cancel(); libraryController?.abort(); window.app_event.o
 .resultAction { display: inline-flex; flex: none; align-items: center; justify-content: center; gap: 4px; border: none; padding: 4px 0; color: var(--color-font-label); background: none; font-size: 11px; cursor: pointer; svg { width: 14px; height: 14px; fill: currentColor; } path { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; } &:hover:not(:disabled) { color: var(--color-primary); } &:disabled { opacity: .4; cursor: default; } }
 .notice { flex: none; font-size: 12px; line-height: 1.5; padding-bottom: 10px; color: var(--color-primary-font); }
 .results { flex: 1; min-height: 0; overflow: auto; padding-bottom: 8px; }
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; row-gap: 0; margin: 0; padding: 0; list-style: none; }
-.card { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 6px; min-width: 0; border-radius: 6px; transition: background-color @transition-fast; &::after { content: ''; position: absolute; left: 31px; right: 6px; bottom: 0; height: 1px; background: var(--color-font); opacity: .08; pointer-events: none; } &:hover, &:focus-within { background: var(--color-primary-alpha-900); .trackActions { opacity: 1; pointer-events: auto; } } }
-.order { flex: none; width: 15px; color: var(--color-font-label); font-size: 9px; font-variant-numeric: tabular-nums; opacity: .6; text-align: center; }
-.cover { width: 46px; height: 46px; position: relative; flex: none; display: flex; align-items: center; justify-content: center; border: none; padding: 0; border-radius: 6px; overflow: hidden; cursor: pointer; background: var(--color-150); color: var(--color-font-label); img { width: 100%; height: 100%; object-fit: cover; } > svg { width: 22px; height: 22px; fill: currentColor; } &:hover .playOverlay { opacity: 1; } }
-.playOverlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: white; background: rgba(0, 0, 0, .3); opacity: 0; transition: opacity @transition-fast; svg { width: 22px; height: 22px; fill: currentColor; } }
-.track { flex: 1; min-width: 0; }
-.trackHeading { display: flex; align-items: center; gap: 7px; min-width: 0; }
-.name { display: block; flex: 1; min-width: 0; max-width: 100%; border: none; padding: 0; text-align: left; cursor: pointer; background: none; color: var(--color-font); font-size: 13px; font-weight: 600; line-height: 1.4; .mixin-ellipsis-1(); &:hover { color: var(--color-primary); } }
-.artist { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 11px; color: var(--color-750); line-height: 1.35; }
-.artistName { min-width: 0; .mixin-ellipsis-1(); }
-.duration { flex: none; padding-left: 8px; border-left: 1px solid var(--color-200); font-size: 10px; font-variant-numeric: tabular-nums; }
-.reason { display: flex; align-items: center; gap: 4px; margin-top: 4px; color: var(--color-700); font-size: 9px; line-height: 1.4; svg { flex: none; width: 10px; height: 10px; fill: var(--color-primary); opacity: .65; } span { min-width: 0; .mixin-ellipsis-1(); } }
-.source { display: inline-block; flex: none; font-size: 9px; line-height: 1.3; color: var(--color-font-label); white-space: nowrap; }
-.trackActions { display: flex; flex-direction: column; gap: 3px; opacity: 0; pointer-events: none; transition: opacity @transition-fast; button { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: none; border-radius: 6px; background: none; padding: 3px; color: var(--color-font-label); cursor: pointer; &:hover { color: var(--color-primary); background: var(--color-primary-alpha-900); } } }
 .empty { min-height: 170px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--color-font-label); font-size: 13px; svg { width: 35px; height: 35px; fill: currentColor; opacity: .65; } }
 .spinning { animation: software-spin 1.2s linear infinite; }
 @keyframes software-spin { to { transform: rotate(360deg); } }
-@media (max-width: 1000px) { .options { gap: 10px 12px; } .selection { width: 112px; } .field { gap: 6px; } .grid { column-gap: 18px; } }
-@media (max-width: 1080px) { .grid { grid-template-columns: minmax(0, 1fr); } }
-@media (min-width: 1700px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (hover: none) { .trackActions { opacity: 1; pointer-events: auto; } }
+@media (max-width: 1000px) { .options { gap: 10px 12px; } .selection { width: 112px; } .field { gap: 6px; } }
 @media (prefers-reduced-motion: reduce) { .spinning { animation: none; } }
 </style>

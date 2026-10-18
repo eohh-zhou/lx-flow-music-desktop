@@ -58,7 +58,7 @@ export const createListUpdateStatement = () => {
  * 创建音乐信息查询语句
  * @returns 查询语句
  */
-export const createMusicInfoQueryStatement = () => {
+export const createMusicInfoQueryStatement = (firstOnly = false) => {
   const db = getDB()
   return db.prepare<[LX.DBService.MusicInfoQuery]>(`
     SELECT mInfo."id", mInfo."name", mInfo."singer", mInfo."source", mInfo."interval", mInfo."meta"
@@ -67,8 +67,21 @@ export const createMusicInfoQueryStatement = () => {
     ON mInfo.id=O.musicInfoId AND O.listId=@listId
     WHERE mInfo.listId=@listId
     ORDER BY O."order" ASC
+    ${firstOnly ? 'LIMIT 1' : ''}
     `)
 }
+
+export const createMusicLibraryQueryStatement = () => getDB().prepare<[LX.DBService.MusicInfoQuery]>(`
+  SELECT mInfo.id, mInfo.name, mInfo.singer, mInfo.source,
+    json_extract(mInfo.meta, '$.bilibili.matchedMusic.id') AS matchedId,
+    json_extract(mInfo.meta, '$.bilibili.matchedMusic.name') AS matchedName,
+    json_extract(mInfo.meta, '$.bilibili.matchedMusic.singer') AS matchedSinger
+  FROM my_list_music_info mInfo
+  LEFT JOIN my_list_music_info_order O
+  ON mInfo.id=O.musicInfoId AND O.listId=@listId
+  WHERE mInfo.listId=@listId
+  ORDER BY O."order" ASC
+`)
 
 /**
  * 创建音乐信息插入语句

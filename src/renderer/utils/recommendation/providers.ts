@@ -25,6 +25,7 @@ export const fetchBody = async(url: string, options: Record<string, unknown>, si
   try {
     const response = await promise
     checkCancelled(signal)
+    if (response.statusCode == 429) throw new Error('recommend__error_rate_limit')
     if (response.statusCode != 200) throw new Error('recommend__error_search')
     return response.body
   } finally { signal.removeEventListener('abort', abort) }

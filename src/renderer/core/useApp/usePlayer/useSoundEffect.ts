@@ -1,4 +1,5 @@
-import { watch } from '@common/utils/vueTools'
+import { onBeforeUnmount, watch } from '@common/utils/vueTools'
+import { LruCache } from '@common/utils/lruCache'
 import {
   freqs,
   getAudioContext,
@@ -15,12 +16,13 @@ import {
 
 import { appSetting } from '@renderer/store/setting'
 
-const cache = new Map<string, AudioBuffer>()
+const cache = new LruCache<string, AudioBuffer>(3, 24 * 1024 * 1024, buffer => buffer.length * buffer.numberOfChannels * 4)
 const loadBuffer = async(name: string) => new Promise<AudioBuffer>((resolve, reject) => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const path = require('@renderer/assets/medias/filters/' + name) as string
-  if (cache.has(path)) {
-    resolve(cache.get(path)!)
+  const cached = cache.get(path)
+  if (cached) {
+    resolve(cached)
     return
   }
   // Load buffer asynchronously
@@ -52,6 +54,9 @@ const loadBuffer = async(name: string) => new Promise<AudioBuffer>((resolve, rej
 })
 
 export default () => {
+  let convolutionVersion = 0
+  let convolverApplied = false
+  onBeforeUnmount(() => { convolutionVersion++; cache.clear() })
   // console.log(appSetting['player.soundEffect.panner.enable'])
   if (appSetting['player.soundEffect.panner.enable']) startPanner()
   setPannerSoundR(appSetting['player.soundEffect.panner.soundR'] / 10)
@@ -61,11 +66,6 @@ export default () => {
     for (const item of freqs) {
       bfs.get(`hz${item}`)!.gain.value = appSetting[`player.soundEffect.biquadFilter.hz${item}`]
     }
-  }
-  if (appSetting['player.soundEffect.convolution.fileName']) {
-    void loadBuffer(appSetting['player.soundEffect.convolution.fileName']).then((buffer) => {
-      setConvolver(buffer, appSetting['player.soundEffect.convolution.mainGain'] / 10, appSetting['player.soundEffect.convolution.sendGain'] / 10)
-    })
   }
   if (appSetting['player.soundEffect.pitchShifter.playbackRate'] != 1) {
     setPitchShifter(appSetting['player.soundEffect.pitchShifter.playbackRate'])
@@ -86,22 +86,27 @@ export default () => {
     setPannerSpeed(2 * (speed / 10))
   })
   watch(() => appSetting['player.soundEffect.convolution.fileName'], (fileName) => {
-    setTimeout(() => {
-      if (fileName) {
-        void loadBuffer(fileName).then((buffer) => {
-          setConvolver(buffer, appSetting['player.soundEffect.convolution.mainGain'] / 10, appSetting['player.soundEffect.convolution.sendGain'] / 10)
-        })
-      } else {
-        setConvolver(null, 0, 0)
-      }
+    const version = ++convolutionVersion
+    if (!fileName) {
+      cache.clear()
+      if (convolverApplied) setConvolver(null, 0, 0)
+      convolverApplied = false
+      return
+    }
+    void loadBuffer(fileName).then((buffer) => {
+      if (version != convolutionVersion) return
+      setConvolver(buffer, appSetting['player.soundEffect.convolution.mainGain'] / 10, appSetting['player.soundEffect.convolution.sendGain'] / 10)
+      convolverApplied = true
+    }).catch(error => {
+      if (version == convolutionVersion) console.error('Unable to load convolution preset', error)
     })
-  })
+  }, { immediate: true })
   watch(() => appSetting['player.soundEffect.convolution.mainGain'], (mainGain) => {
-    if (!appSetting['player.soundEffect.convolution.fileName']) return
+    if (!convolverApplied) return
     setConvolverMainGain(mainGain / 10)
   })
   watch(() => appSetting['player.soundEffect.convolution.sendGain'], (sendGain) => {
-    if (!appSetting['player.soundEffect.convolution.fileName']) return
+    if (!convolverApplied) return
     setConvolverSendGain(sendGain / 10)
   })
   watch(() => appSetting['player.soundEffect.biquadFilter.hz31'], (hz31) => {

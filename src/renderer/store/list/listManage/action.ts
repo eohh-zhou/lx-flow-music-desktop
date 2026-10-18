@@ -113,8 +113,8 @@ export const listDataOverwrite = ({ defaultList, loveList, userList, tempList }:
     newUserIds.push(listInfo.id)
     if (allMusicList.has(listInfo.id)) {
       overwriteMusicList(listInfo.id, list)
-      updatedListIds.push(listInfo.id)
     }
+    updatedListIds.push(listInfo.id)
     return listInfo
   })
   for (const list of userLists) {
@@ -210,14 +210,12 @@ export const listMusicOverwrite = (listId: string, musicInfos: LX.Music.MusicInf
 }
 
 export const listMusicClear = (ids: string[]): string[] => {
-  const changedIds: string[] = []
   for (const id of ids) {
     const list = allMusicList.get(id)
     if (!list?.length) continue
     overwriteMusicList(id, [])
-    changedIds.push(id)
   }
-  return changedIds
+  return ids
 }
 
 export const listMusicAdd = (id: string, musicInfos: LX.Music.MusicInfo[], addMusicLocationType: LX.AddMusicLocationType): string[] => {
@@ -254,7 +252,7 @@ export const listMusicMove = (fromId: string, toId: string, musicInfos: LX.Music
 
 export const listMusicRemove = (listId: string, ids: string[]): string[] => {
   let targetList = allMusicList.get(listId)
-  if (!targetList) return listId == loveList.id ? [listId] : []
+  if (!targetList) return [listId]
 
   const idsSet = new Set<string>(ids)
   const newList = targetList.filter(mInfo => !idsSet.has(mInfo.id))
@@ -267,6 +265,7 @@ export const listMusicRemove = (listId: string, ids: string[]): string[] => {
 export const listMusicUpdateInfo = (musicInfos: LX.List.ListActionMusicUpdate): string[] => {
   const updateListIds = new Set<string>()
   for (const { id, musicInfo } of musicInfos) {
+    updateListIds.add(id)
     const targetList = allMusicList.get(id)
     if (!targetList) continue
     const index = targetList.findIndex(l => l.id == musicInfo.id)
@@ -280,14 +279,13 @@ export const listMusicUpdateInfo = (musicInfos: LX.List.ListActionMusicUpdate): 
       meta: musicInfo.meta,
     })
     targetList.splice(index, 1, markRaw(info))
-    updateListIds.add(id)
   }
   return Array.from(updateListIds)
 }
 
 export const listMusicUpdatePosition = async(listId: string, position: number, ids: string[]): Promise<string[]> => {
   let targetList = allMusicList.get(listId)
-  if (!targetList) return listId == loveList.id ? [listId] : []
+  if (!targetList) return [listId]
 
 
   // const infos = Array(ids.length)

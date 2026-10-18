@@ -68,9 +68,9 @@ export const saveRecommendations = () => {
   try {
     const feeds = Object.fromEntries(recommendationSources.map(source => {
       const feed = recommendationFeeds[source]
-      return [source, { ...feed, pool: feed.pool.slice(0, 40).map(compactAiRow), ids: feed.ids.slice(0, 20), seen: feed.seen.slice(-160) }]
+      return [source, { ...feed, pool: feed.pool.slice(0, 40).map(compactAiRow), ids: feed.ids.slice(0, 40), seen: feed.seen.slice(-160) }]
     }))
-    localStorage.setItem(storageKey, JSON.stringify({ algorithmVersion: 2, preferences: recommendationPreferences, feeds, blocked: recommendationBlocked.slice(-200) }))
+    localStorage.setItem(storageKey, JSON.stringify({ algorithmVersion: 3, preferences: recommendationPreferences, feeds, blocked: recommendationBlocked.slice(-200) }))
     return true
   } catch { return false }
 }
@@ -96,7 +96,7 @@ try {
   }
   for (const source of recommendationSources) {
     const value = saved?.feeds?.[source]
-    if (saved?.algorithmVersion != 2 || !value || !Array.isArray(value.pool)) continue
+    if (saved?.algorithmVersion != 3 || !value || !Array.isArray(value.pool)) continue
     const pool: AiTrackRecommendation[] = value.pool.slice(0, 40).flatMap((row: any) => {
       if (!isRecommendationTrack(row?.music, source)) return []
       const restored: TrackRecommendation = { music: row.music, origin: ['search', 'daily', 'popular'].includes(row.origin) ? row.origin : 'search', reason: String(row.reason ?? '').slice(0, 120) }
@@ -105,7 +105,7 @@ try {
     const ids = new Set(pool.map(row => row.music.id))
     Object.assign(recommendationFeeds[source], {
       pool: markRaw(pool),
-      ids: Array.isArray(value.ids) ? value.ids.filter((id: unknown) => ids.has(id as string)).slice(0, 20) : [],
+      ids: Array.isArray(value.ids) ? [...new Set<string>(value.ids.filter((id: unknown) => ids.has(id as string)))].slice(0, 40) : [],
       seen: Array.isArray(value.seen) ? value.seen.filter((key: unknown) => typeof key == 'string' && key.length < 400).slice(-160) : [],
       updatedAt: Number.isFinite(value.updatedAt) ? value.updatedAt : 0,
       mode: value.mode == 'platform' ? 'platform' : 'ai',

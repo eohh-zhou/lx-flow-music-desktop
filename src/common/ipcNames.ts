@@ -26,6 +26,8 @@ const modules = {
     list_update: 'list_update',
     list_update_position: 'list_update_position',
     list_music_get: 'list_music_get',
+    list_music_get_head: 'list_music_get_head',
+    list_music_get_library: 'list_music_get_library',
     list_music_add: 'list_music_add',
     list_music_move: 'list_music_move',
     list_music_remove: 'list_music_remove',

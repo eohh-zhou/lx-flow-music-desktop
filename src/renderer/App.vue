@@ -1,7 +1,7 @@
 <template>
   <div id="container" class="view-container">
-    <div id="main">
-      <layout-aside id="left" />
+    <div id="main" :class="{ 'sidebar-collapsed': appSetting['common.sidebarCollapsed'] }">
+      <layout-aside v-show="!appSetting['common.sidebarCollapsed']" id="left" />
       <div id="right">
         <layout-toolbar id="toolbar" />
         <layout-view id="view" />
@@ -23,6 +23,7 @@ import { onMounted } from '@common/utils/vueTools'
 // import BubbleCursor from '@common/utils/effects/cursor-effects/bubbleCursor'
 // import '@common/utils/effects/snow.min'
 import useApp from '@renderer/core/useApp'
+import { appSetting } from '@renderer/store/setting'
 
 useApp()
 
@@ -163,6 +164,7 @@ html.has-wallpaper.fullscreen {
 }
 #right {
   flex: auto;
+  min-width: 0;
   display: flex;
   flex-flow: column nowrap;
   transition: background-color @transition-normal;
@@ -173,6 +175,10 @@ html.has-wallpaper.fullscreen {
   border-top-left-radius: @radius-card;
   overflow: hidden;
   box-shadow: -1px 0 0 var(--color-100), 0 2px 16px rgba(0, 0, 0, 0.05);
+}
+.sidebar-collapsed #right {
+  border-top-left-radius: 0;
+  box-shadow: none;
 }
 #toolbar, #player {
   flex: none;

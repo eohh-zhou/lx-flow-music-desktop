@@ -1,6 +1,7 @@
 import { planAiRecommendations, rankAiRecommendations } from '@renderer/utils/aiRecommendation'
 import { checkCancelled, searchTracks } from './providers'
-import { applyAiRanks, fuseAiCandidates, selectAiBatch } from './aiRanking'
+import { applyAiRanks, filterAiTracks, fuseAiCandidates, matchesAiTarget, selectAiBatch } from './aiRanking'
+import { normalize } from './ranking'
 import type { AiRecommendRequest } from '@common/types/aiRecommendation'
 import type { AiSelectionOptions, AiRetrieval } from './aiRanking'
 
@@ -25,34 +26,52 @@ export const generateTracks = async({ context, signal, blocked, seen, owned, all
   let completed = 0
   let rateLimit: Error | null = null
   onStage('recommend__searching')
-  const planned = intents.slice(0, 6)
+  const planned = intents.filter((intent, index) => intents.findIndex(item => normalize(item.keyword) == normalize(intent.keyword)) == index).slice(0, 6)
   const deadline = Date.now() + 30000
-  // QQ/NetEase use two searches at a time; Bilibili stays sequential so a rate
-  // limit immediately stops that source. No pagination or automatic model retry.
+  // Give every direction its first page before spending up to two recovery
+  // requests. One 30-second window covers all catalogue work, with no model retry.
   const concurrency = context.source == 'bili' ? 1 : 2
-  for (let offset = 0; offset < planned.length && !rateLimit && Date.now() < deadline; offset += concurrency) {
+  const recovery: AiRetrieval[] = []
+  const retrieve = async(intent: AiRetrieval['intent'], key: string, page = 1) => {
     checkCancelled(signal)
-    const batch = await Promise.all(planned.slice(offset, offset + concurrency).map(async(intent, index) => {
+    try {
+      const rows = await searchTracks(context.source, intent.keyword, signal, page)
       checkCancelled(signal)
-      try {
-        const rows = await searchTracks(context.source, intent.keyword, signal)
-        checkCancelled(signal)
-        completed++
-        return { intent, key: `q${offset + index}`, rows }
-      } catch (error) {
-        checkCancelled(signal)
-        failed++
-        if (String(error).includes('bilibili__error_rate_limit')) rateLimit = new Error('bilibili__error_rate_limit')
-        return null
+      completed++
+      return { intent, key, rows }
+    } catch (error) {
+      checkCancelled(signal)
+      failed++
+      if (/bilibili__error_rate_limit|recommend__error_rate_limit/.test(String(error))) rateLimit = error as Error
+      return null
+    }
+  }
+  for (let offset = 0; offset < planned.length && Date.now() < deadline; offset += concurrency) {
+    if (rateLimit) break
+    checkCancelled(signal)
+    const batch = await Promise.all(planned.slice(offset, offset + concurrency).map(async(intent, index) => retrieve(intent, `q${offset + index}`)))
+    for (const branch of batch) {
+      if (!branch) continue
+      branches.push(branch)
+      const usable = filterAiTracks(branch.rows.filter(row => matchesAiTarget(row.music, branch.intent)), selection)
+      if (branch.rows.length >= 20 && usable.length < (branch.intent.kind == 'track' ? 1 : 6)) {
+        recovery.push(branch)
       }
-    }))
+    }
+  }
+  const firstPages = completed
+  // Avoid extra traffic when the existing pool already has enough new music.
+  const extra = fuseAiCandidates(branches, selection).length < 24 ? recovery.slice(0, 2) : []
+  for (let offset = 0; offset < extra.length && Date.now() < deadline; offset += concurrency) {
+    if (rateLimit) break
+    const batch = await Promise.all(extra.slice(offset, offset + concurrency).map(async branch => retrieve(branch.intent, branch.key, 2)))
     for (const branch of batch) if (branch) branches.push(branch)
   }
   checkCancelled(signal)
   const candidates = fuseAiCandidates(branches, selection)
   if (!candidates.length) throw rateLimit ?? new Error(!completed && failed ? 'recommend__error_search' : 'recommend__empty_filtered')
   onStage('recommend__ranking')
-  let notice = failed || completed < planned.length ? 'recommend__partial' : ''
+  let notice = failed || firstPages < planned.length ? 'recommend__partial' : ''
   let ordered = candidates
   try {
     const ranks = await rankAiRecommendations({

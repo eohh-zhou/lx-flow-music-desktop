@@ -1,6 +1,7 @@
 import { toRaw } from '@common/utils/vueTools'
 import { rendererInvoke, rendererOff, rendererOn } from '@common/rendererIpc'
 import { PLAYER_EVENT_NAME } from '@common/ipcNames'
+import { toLibraryTrack, type LibraryTrack } from '@common/types/library'
 import {
   userListCreate,
   listDataOverwrite,
@@ -71,6 +72,20 @@ export const getListMusics = async(listId: string | null): Promise<LX.Music.Musi
   if (allMusicList.has(listId)) return allMusicList.get(listId)!
   const list = await rendererInvoke<string, LX.Music.MusicInfo[]>(PLAYER_EVENT_NAME.list_music_get, listId)
   return setMusicList(listId, list)
+}
+
+// Sidebar covers must not load or retain an entire playlist in either process.
+export const getListMusicHead = async(listId: string): Promise<LX.Music.MusicInfo | null> => {
+  if (!listId) return null
+  if (allMusicList.has(listId)) return allMusicList.get(listId)![0] ?? null
+  return rendererInvoke<string, LX.Music.MusicInfo | null>(PLAYER_EVENT_NAME.list_music_get_head, listId)
+}
+
+export const getListMusicLibrary = async(listId: string): Promise<LibraryTrack[]> => {
+  if (!listId) return []
+  const cached = allMusicList.get(listId)
+  if (cached) return cached.map(toLibraryTrack)
+  return rendererInvoke<string, LibraryTrack[]>(PLAYER_EVENT_NAME.list_music_get_library, listId)
 }
 
 /**

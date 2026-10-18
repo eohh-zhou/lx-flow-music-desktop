@@ -1,5 +1,6 @@
 import { LIST_IDS } from '@common/constants'
 import { arrPush, arrPushByPosition, arrUnshift } from '@common/utils/common'
+import { toLibraryTrack, type LibraryTrack } from '@common/types/library'
 import {
   deleteUserLists,
   insertUserLists,
@@ -11,6 +12,8 @@ import {
   overwriteMusicInfo,
   queryAllUserList,
   queryMusicInfoByListId,
+  queryMusicHeadByListId,
+  queryMusicLibraryByListId,
   queryMusicInfoByListIdAndMusicInfoId,
   queryMusicInfoByMusicInfoId,
   removeMusicInfoByListId,
@@ -22,6 +25,11 @@ import {
 
 let userLists: LX.DBService.UserListInfo[]
 let musicLists = new Map<string, LX.Music.MusicInfo[]>()
+
+export const getListMusicLibrary = (listId: string): LibraryTrack[] => {
+  const cached = musicLists.get(listId)
+  return cached ? cached.map(toLibraryTrack) : queryMusicLibraryByListId(listId)
+}
 
 const toDBMusicInfo = (musicInfos: LX.Music.MusicInfo[], listId: string, offset: number = 0): LX.DBService.MusicInfo[] => {
   return musicInfos.map((info, index) => {
@@ -171,6 +179,12 @@ export const getListMusics = (listId: string): LX.Music.MusicInfo[] => {
   }
 
   return targetList
+}
+
+export const getListMusicHead = (listId: string): LX.Music.MusicInfo | null => {
+  if (musicLists.has(listId)) return musicLists.get(listId)![0] ?? null
+  const info = queryMusicHeadByListId(listId)
+  return info ? { id: info.id, name: info.name, singer: info.singer, source: info.source, interval: info.interval, meta: JSON.parse(info.meta) } : null
 }
 
 /**

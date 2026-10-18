@@ -2,6 +2,7 @@
 import { deduplicationList, toNewMusicInfo } from '@renderer/utils'
 import musicSdk from '@renderer/utils/musicSdk'
 import { markRaw, markRawList } from '@common/utils/vueTools'
+import { LruCache } from '@common/utils/lruCache'
 import {
   tags,
   listInfo,
@@ -17,7 +18,7 @@ import type {
   TagInfo,
 } from './state'
 
-const cache = new Map<string, any>()
+const cache = new LruCache<string, any>(24, 3000, result => result.list?.length || 1)
 
 // Personalized recommendations and authenticated account playlists must not use the generic detail cache.
 const isDynamicQQRecommendation = (id: string, source: LX.OnlineSource) =>
@@ -148,7 +149,7 @@ export const getListDetail = async(id: string, source: LX.OnlineSource, page: nu
 
   return musicSdk[source]?.songList.getListDetail(id, page).then((result: ListDetailInfo) => {
     result.list = markRawList(deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]))
-    cache.set(key, result)
+    if (!isDynamicQQRecommendation(id, source)) cache.set(key, result)
     return result
   })
 }
@@ -171,7 +172,7 @@ export const getListDetailAll = async(id: string, source: LX.OnlineSource, isRef
       ? Promise.resolve(cache.get(key))
       : musicSdk[source]?.songList.getListDetail(id, page).then((result: ListDetailInfo) => {
         result.list = markRawList(deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]))
-        cache.set(key, result)
+        if (!dynamicRecommendation) cache.set(key, result)
         return result
       }) ?? Promise.reject(new Error('source not found' + source))
   }
@@ -211,6 +212,7 @@ export const getAndSetListDetail = async(id: string, source: LX.OnlineSource, pa
     if (key != listDetailInfo.key) return
     setListDetail(result, source == 'bili' ? result.id : id, page)
   }).catch((error: any) => {
+    if (key != listDetailInfo.key) return
     clearListDetail()
     listDetailInfo.noItemLabel = source == 'bili' && /^bilibili__error_/.test(error?.message)
       ? window.i18n.t(error.message)

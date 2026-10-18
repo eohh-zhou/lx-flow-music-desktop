@@ -1,4 +1,5 @@
 import { getDB } from '../../db'
+import type { LibraryTrack } from '@common/types/library'
 import {
   createListQueryStatement,
   createListInsertStatement,
@@ -6,6 +7,7 @@ import {
   createListClearStatement,
   createListUpdateStatement,
   createMusicInfoQueryStatement,
+  createMusicLibraryQueryStatement,
   createMusicInfoInsertStatement,
   createMusicInfoUpdateStatement,
   createMusicInfoDeleteStatement,
@@ -20,6 +22,18 @@ import {
 } from './statements'
 
 const idFixRxp = /\.0$/
+
+export const queryMusicLibraryByListId = (listId: string): LibraryTrack[] => {
+  const rows = createMusicLibraryQueryStatement().all({ listId }) as Array<Omit<LibraryTrack, 'matched'> & {
+    matchedId: string | null
+    matchedName: string | null
+    matchedSinger: string | null
+  }>
+  return rows.map(({ matchedId, matchedName, matchedSinger, ...track }) => ({
+    ...track,
+    ...(track.source != 'local' && matchedId && matchedName ? { matched: { id: matchedId, name: matchedName, singer: matchedSinger ?? '' } } : {}),
+  }))
+}
 /**
  * 获取用户列表
  * @returns
@@ -165,6 +179,8 @@ export const queryMusicInfoByListId = (listId: string) => {
   const musicInfoQueryStatement = createMusicInfoQueryStatement()
   return musicInfoQueryStatement.all({ listId }) as LX.DBService.MusicInfo[]
 }
+
+export const queryMusicHeadByListId = (listId: string) => createMusicInfoQueryStatement(true).get({ listId }) as LX.DBService.MusicInfo | undefined
 
 /**
  * 批量移动歌曲

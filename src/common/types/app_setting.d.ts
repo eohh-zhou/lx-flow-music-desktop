@@ -68,6 +68,9 @@ declare global {
        */
       'common.controlBtnPosition': 'left' | 'right'
 
+      /** 是否收起主导航侧栏 */
+      'common.sidebarCollapsed': boolean
+
       /**
        * 播放栏进度条样式
        */

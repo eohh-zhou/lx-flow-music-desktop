@@ -1,5 +1,5 @@
 <template>
-  <div class="content" :class="[$style.select, show ? $style.active : '']">
+  <div class="content" :class="[$style.select, show ? $style.active : '']" :aria-disabled="disabled">
     <div ref="dom_btn" class="label-content" :class="$style.label" @click="handleShow">
       <span class="label">{{ label }}</span>
       <div class="icon" :class="$style.icon">
@@ -23,6 +23,10 @@
 
 export default {
   props: {
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
     list: {
       type: Array,
       default() {
@@ -65,6 +69,11 @@ export default {
       return item[this.itemName]
     },
   },
+  watch: {
+    disabled(value) {
+      if (value) this.show = false
+    },
+  },
   mounted() {
     document.addEventListener('click', this.handleHide, true)
   },
@@ -83,13 +92,15 @@ export default {
     },
     handleClick(item) {
       // console.log(this.modelValue)
-      if (item === this.modelValue) return
+      if (this.disabled || (this.itemKey ? item[this.itemKey] : item) === this.modelValue) return
       this.$emit('update:modelValue', this.itemKey ? item[this.itemKey] : item)
       this.$emit('change', item)
     },
     handleShow() {
+      if (this.disabled) return
       this.show = true
       this.$nextTick(() => {
+        if (this.disabled || !this.show || !this.$refs.dom_list) return
         this.listStyles.transform = `scaleY(1) translateY(${this.handleGetOffset()}px)`
 
         const activeItem = this.$refs.dom_list.children[this.activeIndex]
@@ -121,6 +132,8 @@ export default {
   font-size: 12px;
   position: relative;
   width: var(--selection-width, 300px);
+
+  &[aria-disabled="true"] { opacity: .6; .label { cursor: default; } }
 
   &.active {
     .label {

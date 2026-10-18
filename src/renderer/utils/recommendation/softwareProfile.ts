@@ -1,5 +1,6 @@
 import { isQualifiedListen } from '@common/types/listening'
 import type { ListeningCheckpoint, ListeningTrack } from '@common/types/listening'
+import { toLibraryTrack, type LibraryTrack } from '@common/types/library'
 import { normalize, trackSignature } from './ranking'
 
 export type PreferenceBasis = 'complete' | 'repeat' | 'time' | 'playlist' | 'context' | 'related'
@@ -11,7 +12,7 @@ export interface SoftwarePreference {
 export interface SoftwareProfile {
   seeds: SoftwarePreference[]
   artists: Map<string, { name: string, score: number, basis: PreferenceBasis }>
-  library: LX.Music.MusicInfo[]
+  library: LibraryTrack[]
   owned: Set<string>
   recent: Set<string>
   skips: Map<string, number>
@@ -46,11 +47,11 @@ export const buildListeningContext = (history: ListeningCheckpoint[], now: numbe
   return [...tracks.values()].map(({ count, ...item }) => item).sort((a, b) => b.score - a.score)
 }
 
-export const buildOwnedTrackKeys = (playlists: LX.Music.MusicInfo[][]) => {
+export const buildOwnedTrackKeys = (playlists: Array<Array<LibraryTrack | LX.Music.MusicInfo>>) => {
   const keys = new Set<string>()
   for (const list of playlists) {
     for (const track of list) {
-      for (const song of [track, track.source != 'local' ? track.meta.bilibili?.matchedMusic : null]) {
+      for (const song of [track, toLibraryTrack(track).matched]) {
         if (!song) continue
         keys.add(song.id)
         keys.add(trackSignature(song))
@@ -63,14 +64,14 @@ export const buildOwnedTrackKeys = (playlists: LX.Music.MusicInfo[][]) => {
 }
 export const isOwnedTrack = (track: Pick<ListeningTrack, 'id' | 'name' | 'singer'>, keys: Set<string>) => keys.has(track.id) || keys.has(trackSignature(track)) || keys.has(`unknown:${normalize(track.name)}`) || (!knownArtist(track.singer) && keys.has(`name:${normalize(track.name)}`))
 
-export const buildSoftwareProfile = (playlists: LX.Music.MusicInfo[][], history: ListeningCheckpoint[], now = Date.now(), ownedPlaylists = playlists): SoftwareProfile => {
-  const library = new Map<string, LX.Music.MusicInfo>()
+export const buildSoftwareProfile = (playlists: Array<Array<LibraryTrack | LX.Music.MusicInfo>>, history: ListeningCheckpoint[], now = Date.now(), ownedPlaylists = playlists): SoftwareProfile => {
+  const library = new Map<string, LibraryTrack>()
   for (const list of playlists) {
     // Spread the sample across a playlist rather than always taking its first songs.
     const step = Math.max(1, list.length / 120)
     for (let index = 0; index < list.length && index / step < 120; index += step) {
       const track = list[Math.floor(index)]
-      if (track?.name?.trim()) library.set(trackSignature(track), track)
+      if (track?.name?.trim()) library.set(trackSignature(track), toLibraryTrack(track))
     }
   }
   const groups = new Map<string, { track: ListeningTrack, days: Map<number, { completed: number, qualified: number, listened: number, skipped: number, decay: number }> }>()

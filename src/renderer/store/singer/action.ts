@@ -1,10 +1,11 @@
 import { markRaw, markRawList } from '@common/utils/vueTools'
+import { LruCache } from '@common/utils/lruCache'
 import { deduplicationList, toNewMusicInfo } from '@renderer/utils'
 import musicSdk from '@renderer/utils/musicSdk'
 import { singerDetailInfo } from './state'
 import type { SingerAlbumItem } from './state'
 
-const cache = new Map<string, any>()
+const cache = new LruCache<string, any>(24)
 
 const getSingerApi = (source: LX.OnlineSource) => musicSdk[source]?.singer
 

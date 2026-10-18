@@ -18,7 +18,7 @@ const base = 'src/renderer/utils/recommendation/'
 const ranking = load(base + 'ranking.ts')
 const listeningTypes = load('src/common/types/listening.ts')
 const { ListeningSession } = load(base + 'listening.ts')
-const softwareProfile = load(base + 'softwareProfile.ts', { '@common/types/listening': listeningTypes, './ranking': ranking })
+const softwareProfile = load(base + 'softwareProfile.ts', { '@common/types/listening': listeningTypes, './ranking': ranking, '@common/types/library': load('src/common/types/library.ts') })
 const { buildSoftwareProfile, buildOwnedTrackKeys } = softwareProfile
 const song = (id, singer = 'Artist', name = id, source = 'tx') => ({ id: `${source}_${id}`, source, name, singer, interval: '03:00', meta: { songId: id, albumName: 'Album', qualitys: [], _qualitys: {}, ...(source == 'tx' ? { strMediaMid: 'media' } : {}) } })
 const row = music => ({ music, reason: '', origin: 'search' })
@@ -160,7 +160,7 @@ test('Cold-start preferences use user playlists, deduplicate songs and sample be
   assert.equal(profile.qualified, 0)
   assert.equal(profile.recentWeight, 0)
   assert.equal(profile.seeds.filter(item => item.track.id == first.id).length, 1)
-  assert.ok(profile.library.some(item => Number(item.meta.songId) > 900))
+  assert.ok(profile.library.some(item => Number(item.id.split('_')[1]) > 900))
 })
 
 test('Recent completions and repeated listens outweigh a large playlist and older listens', () => {
@@ -274,7 +274,7 @@ test('Only newly searched tracks appear while later online searches are still ru
 test('Reference exclusions affect taste but all visible playlists still exclude owned songs', async() => {
   const reads = []
   const subject = load(base + 'softwareData.ts', {
-    '@renderer/store/list/listManage': { getListMusics: async id => { reads.push(id); return [song(id, id)] } },
+    '@renderer/store/list/listManage': { getListMusicLibrary: async id => { reads.push(id); return [song(id, id)] } },
     '@renderer/store/list/state': { userLists: [{ id: 'one' }, { id: 'two' }] },
     './listeningIpc': { getListening: async() => [] },
     './softwareProfile': softwareProfile,
@@ -312,6 +312,26 @@ test('Software and AI caches stay separate and compact metadata omits playback c
   assert.equal(restored.softwareFeeds.wy.pool.length, 0)
 })
 
+test('LX full-list cache preserves sixty selected IDs and expands old paginated caches', () => {
+  const storage = new Map()
+  const localStorage = { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) }
+  const session = load(base + 'session.ts', { '@common/utils/vueTools': vue, './ranking': ranking }, { localStorage })
+  const restore = () => load(base + 'softwareSession.ts', { '@common/utils/vueTools': vue, './ranking': ranking, './session': session }, { localStorage })
+  const subject = restore()
+  const pool = Array.from({ length: 60 }, (_, index) => ({ ...row(song(String(index), 'Artist' + index)), reference: 'seed:reference' + Math.floor(index / 2) }))
+  Object.assign(subject.softwareFeeds.all, { pool, ids: pool.map(row => row.music.id), generation: 12 })
+  assert.ok(subject.saveSoftwareRecommendations())
+  assert.equal(restore().softwareFeeds.all.ids.length, 60)
+  const old = JSON.parse(storage.get('lx__software_recommendations_v5'))
+  delete old.layoutVersion
+  old.feeds.all.ids = old.feeds.all.ids.slice(0, 20)
+  storage.set('lx__software_recommendations_v5', JSON.stringify(old))
+  const migrated = restore()
+  assert.equal(migrated.softwareFeeds.all.ids.length, 60)
+  assert.equal(migrated.softwareFeeds.all.generation, 12)
+  assert.equal(softwareMmr.selectSoftwareBatch(migrated.softwareFeeds.all.pool, { variety: 'balanced', limit: 60 }).length, 60)
+})
+
 test('Software view cancels outdated requests, keeps results on failure and plays its visible queue', async() => {
   const { parse, compileScript } = require('@vue/compiler-sfc')
   const file = 'src/renderer/views/Recommendations/SoftwareRecommendations.vue'
@@ -326,8 +346,10 @@ test('Software view cancels outdated requests, keeps results on failure and play
   const eventHub = new EventEmitter()
   let ownedLibrary = new Set()
   let unmount
+  let resolveArtist
   const module = load(file, {
     vue,
+    './RecommendationList.vue': {},
     '@common/utils/vueTools': { ...vue, onBeforeUnmount(callback) { unmount = callback } },
     '@renderer/plugins/i18n': { useI18n: () => key => key },
     '@renderer/store/list/state': { userLists: [{ id: 'one', name: 'Mine' }, { id: 'two', name: 'Also mine' }] },
@@ -342,7 +364,7 @@ test('Software view cancels outdated requests, keeps results on failure and play
     '@renderer/utils/recommendation/softwareEngine': { generateSoftwareTracks: (_profile, options) => new Promise((resolve, reject) => pending.push({ options, resolve, reject })) },
     '@renderer/utils/recommendation/softwareMmr': softwareMmr,
     '@renderer/utils/recommendation/ranking': ranking,
-    '@renderer/utils/recommendation/useVisibleArtists': { __esModule: true, default() {} },
+    '@renderer/utils/recommendation/useVisibleArtists': { __esModule: true, default(_container, _rows, onResolved) { resolveArtist = onResolved } },
   }, { window: { app_event: eventHub } }, source)
   const scope = vue.effectScope()
   const state = scope.run(() => module.default.setup({}, { expose() {} }))
@@ -385,6 +407,44 @@ test('Software view cancels outdated requests, keeps results on failure and play
   await fourth
   assert.equal(feeds.wy.generation, 1)
   assert.equal(feeds.wy.pool[0].music.id, 'wy_2')
+  const complete = state.run()
+  await tick()
+  const completePool = Array.from({ length: 45 }, (_, index) => ({ ...row(song(String(100 + index), 'Artist ' + index, 'New ' + index, 'wy')), reference: 'seed:' + Math.floor(index / 3) }))
+  pending[4].resolve({ pool: completePool, partial: false })
+  await complete
+  assert.equal(state.rows.value.length, 30, 'All qualifying results display beyond the old 20-song page')
+  assert.equal(feeds.wy.ids.length, 30)
+  for (const reference of new Set(state.rows.value.map(row => row.reference))) assert.equal(state.rows.value.filter(row => row.reference == reference).length, 2, 'The full list retains the two-song reference cap')
+  await state.play(29)
+  assert.equal(queues[1].list.length, 30)
+  assert.equal(plays[1].index, 29)
+  feeds.wy.pool = []; feeds.wy.ids = []
+  const preview = state.run()
+  await tick()
+  pending[5].options.onResults(completePool)
+  assert.equal(state.rows.value.length, 30, 'Incremental results use the same full-list limits')
+  assert.equal(feeds.wy.pool.length, 0, 'Unfinished generation does not overwrite persisted results')
+  state.cancel()
+  pending[5].resolve({ pool: completePool, partial: false })
+  await preview
+  assert.equal(state.rows.value.length, 0, 'Cancelled preview results do not survive as a completed feed')
+  assert.equal(feeds.wy.pool.length, 0)
+  prefs.source = 'bili'
+  feeds.bili.pool = []; feeds.bili.ids = []
+  await vue.nextTick()
+  const biliPreview = state.run()
+  await tick()
+  const biliPool = [row(song('BV17x411w7KC_1', '', 'New Bilibili song', 'bili'))]
+  pending[6].options.onResults(biliPool)
+  resolveArtist({ ...biliPool[0].music, singer: 'Confirmed singer' })
+  assert.equal(state.rows.value[0].music.singer, 'Confirmed singer', 'Visible preview receives artist matching')
+  assert.equal(feeds.bili.pool.length, 0, 'Preview metadata does not create a completed feed')
+  pending[6].options.onResults(biliPool)
+  assert.equal(state.rows.value[0].music.singer, 'Confirmed singer', 'Later incremental results retain matched artists')
+  pending[6].resolve({ pool: biliPool, partial: false })
+  await biliPreview
+  assert.equal(state.rows.value[0].music.singer, 'Confirmed singer')
+  assert.equal(feeds.bili.pool[0].music.singer, 'Confirmed singer', 'Final results preserve preview metadata')
   unmount()
   assert.equal(eventHub.listenerCount('myListUpdate'), 0)
   scope.stop()

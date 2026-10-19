@@ -93,13 +93,17 @@
 
 以下为当前版本的实机截图。
 
-**企鹅音乐推荐 · 首页推荐**
+**平台推荐 · 首页推荐**
 
-<p><img width="100%" src="./doc/images/app.png" alt="企鹅音乐首页推荐：猜你喜欢、今日私享、推荐歌单和新歌推荐"></p>
+<p><img width="100%" src="./doc/images/app.png" alt="平台首页推荐：猜你喜欢、今日私享、推荐歌单和新歌推荐，侧栏显示平台别名"></p>
 
 **LX 推荐 · 完整单曲列表**
 
 <p><img width="100%" src="./doc/images/lx-recommendation.png" alt="LX 推荐界面：单列歌曲、参考歌单、探索程度和歌曲推荐理由"></p>
+
+**bili 音乐推荐 · 热门合集**
+
+<p><img width="100%" src="./doc/images/bilibili-recommendation.png" alt="B站音乐推荐：热门合集、分类筛选和打开歌单入口"></p>
 
 **听歌档案 · 收听概览**
 

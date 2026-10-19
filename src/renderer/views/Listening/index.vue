@@ -1,12 +1,8 @@
 <template>
   <div :class="$style.page">
-    <header :class="$style.header">
-      <h1>{{ $t('listening__title') }}</h1>
-      <span :class="$style.local">{{ $t('listening__local') }}</span>
-      <button type="button" :class="$style.refresh" :disabled="busy || loading" @click="reload">{{ $t('listening__refresh') }}</button>
-    </header>
     <nav :class="$style.tabs" :aria-label="$t('listening__title')">
       <button v-for="item in tabs" :key="item.id" type="button" :class="{ [$style.selected]: tab == item.id }" :aria-pressed="tab == item.id" @click="switchTab(item.id)">{{ item.name }}</button>
+      <button type="button" :class="$style.refresh" :disabled="busy || loading" @click="reload">{{ $t('listening__refresh') }}</button>
     </nav>
     <main ref="contentElement" :class="[$style.content, 'scroll']" :aria-busy="loading">
       <p v-if="error" :class="$style.notice" role="alert">{{ error }}</p>
@@ -100,6 +96,7 @@ import { computed, onBeforeUnmount, ref, shallowRef, watch } from '@common/utils
 import { listeningDate, listeningTrackKey } from '@common/types/listening'
 import type { ListeningCommand, ListeningOverview, ListeningReport } from '@common/types/listening'
 import { useI18n } from '@renderer/plugins/i18n'
+import { sourceNames } from '@renderer/store'
 import { dialog } from '@renderer/plugins/Dialog'
 import { getListening, getListeningReport } from '@renderer/utils/recommendation/listeningIpc'
 import { changeListening, listeningPreferences as prefs, refreshListening } from '@renderer/store/listening'
@@ -131,8 +128,7 @@ const formatDate = (time: number) => listeningDate(time).replaceAll('-', '.')
 const formatPeriod = (value: string) => value.length == 4 ? t('listening__year_label', { year: value }) : t('listening__month_label', { year: value.slice(0, 4), month: Number(value.slice(5)) })
 const formatBytes = (bytes: number) => bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB'
 const sourceName = (source: string) => {
-  const names: Record<string, string> = { tx: 'QQ音乐', wy: '网易云音乐', bili: 'bilibili', kw: '酷我音乐', kg: '酷狗音乐', mg: '咪咕音乐', local: t('listening__local_source') }
-  return names[source] ?? source
+  return source == 'local' ? t('listening__local_source') : sourceNames.value[source as LX.OnlineSource] ?? source
 }
 const basisName = (basis: PreferenceBasis) => basis == 'complete' ? t('listening__basis_complete') : basis == 'repeat' ? t('listening__basis_repeat') : t('listening__basis_time')
 const favoriteHour = computed(() => report.value ? report.value.hours.indexOf(Math.max(...report.value.hours)) : 0)
@@ -210,9 +206,7 @@ onBeforeUnmount(() => { disposed = true; revision++; snapshot.value = null; tast
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
 .page { display: flex; flex-direction: column; box-sizing: border-box; padding: 10px 24px 0; }
-.header { display: flex; align-items: center; gap: 12px; padding: 4px 0 16px; h1 { font-size: 21px; font-weight: 650; } }
-.local { font-size: 10px; letter-spacing: 1px; color: var(--color-primary); border: 1px solid var(--color-primary-alpha-700); border-radius: 20px; padding: 4px 8px; }
-.refresh { margin-left: auto; color: var(--color-primary); }
+.tabs .refresh { margin-left: auto; color: var(--color-primary); }
 .page button { cursor: pointer; background: none; border: 0; font: inherit; &:disabled { opacity: .45; cursor: default; } &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; } }
 .tabs { display: flex; gap: 26px; border-bottom: 1px solid var(--color-primary-alpha-800); button { padding: 0 0 11px; font-size: 14px; color: var(--color-600); border-bottom: 2px solid transparent; } button.selected { color: var(--color-primary); border-color: var(--color-primary); } }
 .content { overflow-y: auto; min-height: 0; flex: 1; padding: 18px 8px 26px 0; }

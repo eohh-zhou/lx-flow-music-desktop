@@ -1,7 +1,6 @@
 <template>
   <div :class="$style.container">
     <header :class="$style.header">
-      <h1>{{ title }}</h1>
       <base-btn v-if="configured" :class="$style.refreshBtn" outline min :disabled="loading" @click="load()">{{ $t(`${prefix}_refresh`) }}</base-btn>
     </header>
     <main :class="$style.content">
@@ -51,7 +50,6 @@ let requestId = 0
 
 const source = computed<Source>(() => (route.meta.source as Source) ?? 'tx')
 const prefix = computed(() => source.value == 'tx' ? 'qq_music' : 'netease_music')
-const title = computed(() => t(source.value == 'tx' ? 'online_playlists_qq' : 'online_playlists_netease'))
 
 const listInfo = computed<ListInfo>(() => ({
   list: playlists.value.map(item => ({
@@ -150,7 +148,7 @@ onMounted(() => {
 @import '@renderer/assets/styles/layout.less';
 
 .container { height: 100%; display: flex; flex-flow: column nowrap; min-width: 0; }
-.header { flex: none; min-height: 44px; display: flex; align-items: center; border-bottom: var(--color-list-header-border-bottom); h1 { flex: none; padding-left: 15px; font-size: 16px; font-weight: 600; color: var(--color-font); } }
+.header { flex: none; min-height: 44px; display: flex; align-items: center; justify-content: flex-end; border-bottom: var(--color-list-header-border-bottom); }
 .refreshBtn { flex: none; margin-right: 10px; color: var(--color-font); background: none !important; }
 .content { min-height: 0; flex: auto; position: relative; overflow: hidden; }
 .state { position: absolute; inset: 0; display: flex; flex-flow: column nowrap; align-items: center; justify-content: center; gap: 16px; color: var(--color-font-label); p { font-size: 16px; } }

@@ -43,6 +43,29 @@ function loadSource(file, mocks, extra = {}, expose = '') {
   return module.exports
 }
 
+test('QQ system favorites have a stable cover and empty cover fields fall through without extra requests', async() => {
+  const requests = []
+  const subject = loadSource('src/main/modules/winMain/rendererEvent/qqMusic.ts', {
+    electron: { safeStorage: { isEncryptionAvailable: () => true, decryptString: () => 'uin=10001;' } },
+    '@common/ipcNames': {},
+    '@common/mainIpc': {},
+    '@common/constants': { STORE_NAMES: { QQ_MUSIC: 'qq' } },
+    '@main/utils/store': () => ({ get: () => 'mock' }),
+    '@common/utils/request': { request: async url => {
+      requests.push(url)
+      return { statusCode: 200, body: { code: 0, data: url.includes('fcg_user_created_diss') ? { disslist: [
+        { dirid: 201, tid: 11, diss_name: '我喜欢', diss_cover: 'https://invalid.example/missing.jpg' },
+        { dirid: 202, tid: 12, diss_name: 'Created', diss_cover: '', logo: ' //y.gtimg.cn/cover.jpg ' },
+      ] } : { cdlist: [{ dissid: 13, dissname: 'Collected', logo: 'http://y.gtimg.cn/collected.jpg' }] } } }
+    } },
+  }, {}, 'export { getQQMusicAccountPlaylists }')
+  const { list } = await subject.getQQMusicAccountPlaylists()
+  assert.equal(list[0].img, 'https://y.gtimg.cn/mediastyle/y/img/cover_love_300.jpg')
+  assert.equal(list[1].img, 'https://y.gtimg.cn/cover.jpg')
+  assert.equal(list[2].img, 'https://y.gtimg.cn/collected.jpg')
+  assert.equal(requests.length, 2)
+})
+
 function deferred() {
   let resolve, reject
   const promise = new Promise((_resolve, _reject) => { resolve = _resolve; reject = _reject })

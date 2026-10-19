@@ -1,10 +1,10 @@
 <template>
   <div :class="$style.container">
-    <header :class="$style.header">
-      <h1>{{ $t('bili_music') }}</h1>
-      <base-btn outline min @click="visibleOpenSongListModal = true">{{ $t('songlist__import_input_show_btn') }}</base-btn>
-    </header>
-    <BilibiliDiscovery :tag-id="tagId" :sort-id="sortId" :page="page" />
+    <BilibiliDiscovery :tag-id="tagId" :sort-id="sortId" :page="page">
+      <template #actions>
+        <base-btn outline min @click="visibleOpenSongListModal = true">{{ $t('songlist__import_input_show_btn') }}</base-btn>
+      </template>
+    </BilibiliDiscovery>
     <OpenListModal v-model="visibleOpenSongListModal" :source-list="sourceList" default-source="bili" />
   </div>
 </template>
@@ -25,7 +25,7 @@ const sourceList = computed(() => [{ id: 'bili', name: t('source_bili') }])
 const tagId = computed(() => typeof route.query.tagId == 'string' ? route.query.tagId : biliBrowseSession.tagId)
 const sortId = computed(() => {
   const sort = typeof route.query.sortId == 'string' ? route.query.sortId : biliBrowseSession.sortId
-  return ['hot', 'new', 'ai'].includes(sort) ? sort : 'hot'
+  return ['hot', 'new'].includes(sort) ? sort : 'hot'
 })
 const page = computed(() => {
   const value = typeof route.query.page == 'string' ? Number(route.query.page) : biliBrowseSession.page
@@ -41,19 +41,5 @@ setVisibleListDetail(false)
   min-height: 0;
   display: flex;
   flex-direction: column;
-}
-.header {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 36px;
-  padding: 0 12px 5px;
-  h1 {
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--color-font);
-  }
 }
 </style>

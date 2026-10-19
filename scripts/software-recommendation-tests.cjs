@@ -350,6 +350,7 @@ test('Software view cancels outdated requests, keeps results on failure and play
   let unmount
   let resolveArtist
   const module = load(file, {
+    '@renderer/store': { sourceNames: { value: { tx: 'Tencent', wy: 'NetEase', bili: 'bilibili' } } },
     vue,
     './RecommendationList.vue': {},
     '@common/utils/vueTools': { ...vue, onBeforeUnmount(callback) { unmount = callback } },

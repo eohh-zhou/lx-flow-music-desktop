@@ -1,6 +1,6 @@
 {
   "name": "lx-flow-music-desktop",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "LX Flow Music 桌面版，支持 LX 个性化推荐、AI 推荐及 Bilibili 音乐。",
   "main": "./dist/main.js",
   "scripts": {

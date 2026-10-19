@@ -218,6 +218,8 @@
   "nav__my": "My Music",
   "nav__online": "Online Music",
   "nav__music_recommendations": "Music Recommendations",
+  "nav__source_recommendations": "{name} Recommendations",
+  "nav__source_playlists": "{name} Playlists",
   "bili_music": "Bili Music Recommendations",
   "nav__online_playlists": "Online Playlists",
   "online_playlists_qq": "Penguin Music Playlists",

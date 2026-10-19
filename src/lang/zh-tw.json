@@ -218,6 +218,8 @@
   "nav__my": "我的音樂",
   "nav__online": "線上音樂",
   "nav__music_recommendations": "音樂推薦",
+  "nav__source_recommendations": "{name}推薦",
+  "nav__source_playlists": "{name}歌單",
   "bili_music": "bili音樂推薦",
   "nav__online_playlists": "線上歌單",
   "online_playlists_qq": "企鵝音樂歌單",

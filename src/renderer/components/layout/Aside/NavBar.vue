@@ -369,14 +369,14 @@ export default {
         {
           key: 'recommend_qq',
           to: '/qqMusic/recommend',
-          tips: t('qq_music'),
+          tips: appSetting['common.sourceNameType'] == 'alias' ? t('nav__source_recommendations', { name: t('source_alias_tx') }) : t('qq_music'),
           name: 'QQMusicRecommend',
           enable: appSetting['qqMusic.enabled'],
           icon: '#icon-qq-music',
         }, {
           key: 'recommend_netease',
           to: '/neteaseMusic/recommend',
-          tips: t('netease_music'),
+          tips: appSetting['common.sourceNameType'] == 'alias' ? t('nav__source_recommendations', { name: t('source_alias_wy') }) : t('netease_music'),
           name: 'NeteaseMusicRecommend',
           enable: appSetting['neteaseMusic.enabled'],
           icon: '#icon-netease-music',
@@ -421,7 +421,7 @@ export default {
         {
           key: 'online_qq',
           to: '/qqMusic/myPlaylists',
-          tips: t('online_playlists_qq'),
+          tips: appSetting['common.sourceNameType'] == 'alias' ? t('nav__source_playlists', { name: t('source_alias_tx') }) : t('online_playlists_qq'),
           name: 'QQMusicMyPlaylists',
           enable: appSetting['qqMusic.enabled'],
           icon: '#icon-qq-music',
@@ -437,7 +437,7 @@ export default {
         }, {
           key: 'online_netease',
           to: '/neteaseMusic/myPlaylists',
-          tips: t('online_playlists_netease'),
+          tips: appSetting['common.sourceNameType'] == 'alias' ? t('nav__source_playlists', { name: t('source_alias_wy') }) : t('online_playlists_netease'),
           name: 'NeteaseMusicMyPlaylists',
           enable: appSetting['neteaseMusic.enabled'],
           icon: '#icon-netease-music',

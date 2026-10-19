@@ -15,7 +15,7 @@
           <div :class="$style.info">
             <div :class="$style.title">
               <button type="button" :class="$style.name" :title="row.music.name" @click="emit('play', index)">{{ row.music.name }}</button>
-              <small v-if="showSource" :class="$style.source">{{ row.music.source == 'bili' ? 'bilibili' : $t(row.music.source == 'tx' ? 'source_tx' : 'source_wy') }}</small>
+              <small v-if="showSource" :class="$style.source">{{ getSourceName(row.music.source) }}</small>
             </div>
             <p v-if="row.reason" :class="$style.reason" :title="row.reason">{{ row.reason }}</p>
           </div>
@@ -32,9 +32,11 @@
 </template>
 
 <script setup lang="ts">
+import { sourceNames } from '@renderer/store'
 import type { TrackRecommendation } from '@renderer/utils/recommendation/ranking'
 
 defineProps<{ rows: TrackRecommendation[], showSource?: boolean }>()
+const getSourceName = (source: LX.OnlineSource) => sourceNames.value[source]
 const emit = defineEmits<{
   play: [index: number]
   collect: [row: TrackRecommendation]

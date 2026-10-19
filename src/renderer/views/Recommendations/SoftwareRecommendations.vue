@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import { sourceNames } from '@renderer/store'
 import { computed, markRaw, onBeforeUnmount, ref, watch } from '@common/utils/vueTools'
 import RecommendationList from './RecommendationList.vue'
 import { useI18n } from '@renderer/plugins/i18n'
@@ -63,7 +64,7 @@ import type { PreferenceBasis } from '@renderer/utils/recommendation/softwarePro
 
 const t = useI18n()
 const translate = (key: string) => t(key as Parameters<typeof t>[0])
-const sources = computed(() => [{ id: 'all', name: t('software__all_sources') }, { id: 'tx', name: t('source_tx') }, { id: 'wy', name: t('source_wy') }, { id: 'bili', name: 'bilibili' }])
+const sources = computed(() => [{ id: 'all', name: t('software__all_sources') }, { id: 'tx', name: sourceNames.value.tx }, { id: 'wy', name: sourceNames.value.wy }, { id: 'bili', name: 'bilibili' }])
 const varieties = computed(() => (['familiar', 'balanced', 'explore'] as const).map(id => ({ id, name: t(`recommend__variety_${id}`) })))
 const selectedCount = computed(() => userLists.filter(list => prefs.lists?.includes(list.id)).length)
 const feed = computed(() => softwareFeeds[prefs.source])

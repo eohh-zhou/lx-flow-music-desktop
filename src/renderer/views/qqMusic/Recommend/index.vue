@@ -1,7 +1,6 @@
 <template>
   <div :class="$style.container">
     <header :class="$style.header">
-      <h1>{{ $t('qq_music') }}</h1>
       <base-tab v-model="activeTab" :class="$style.tabs" :list="tabs" />
       <base-btn v-if="configured" :class="$style.refreshBtn" outline min :disabled="loading" @click="loadActiveTab(true)">
         {{ $t('qq_music_refresh') }}
@@ -326,20 +325,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   border-bottom: var(--color-list-header-border-bottom);
-
-  h1 {
-    flex: none;
-    padding-left: 15px;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--color-font);
-  }
 }
 
 .tabs {
   flex: auto;
   min-width: 0;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .refreshBtn {
@@ -542,14 +533,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 760px) {
-  .header h1 {
-    display: none;
-  }
-
-  .tabs {
-    justify-content: flex-start;
-  }
-
   .radarGrid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }

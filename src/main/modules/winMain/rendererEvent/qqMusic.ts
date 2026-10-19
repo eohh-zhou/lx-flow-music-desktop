@@ -13,6 +13,7 @@ const QQ_MUSIC_USER_PLAYLISTS_URL = 'https://c.y.qq.com/rsc/fcgi-bin/fcg_user_cr
 const QQ_MUSIC_COLLECTED_PLAYLISTS_URL = 'https://c.y.qq.com/fav/fcgi-bin/fcg_get_profile_order_asset.fcg'
 const QQ_MUSIC_PLAYLIST_MAP_URL = 'https://c.y.qq.com/splcloud/fcgi-bin/fcg_musiclist_getmyfav.fcg'
 const QQ_MUSIC_PLAYLIST_DETAIL_URL = 'https://c.y.qq.com/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
+const QQ_MUSIC_LIKED_COVER_URL = 'https://y.gtimg.cn/mediastyle/y/img/cover_love_300.jpg'
 const COOKIE_KEY = 'cookie'
 const QQ_MUSIC_LOGIN_PARTITION = 'qq-music-login'
 const QQ_MUSIC_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile'
@@ -501,7 +502,23 @@ const getDailyRecommend = async() => {
   } satisfies LX.QQMusic.DailyRecommend
 }
 
-const normalizeImageUrl = (url: unknown) => String(url ?? '').replace(/^http:\/\//, 'https://')
+const normalizeImageUrl = (url: unknown) => {
+  if (typeof url != 'string') return ''
+  const value = url.trim().replace(/^http:\/\//i, 'https://').replace(/^\/\//, 'https://')
+  try {
+    const imageUrl = new URL(value)
+    return imageUrl.protocol == 'https:' ? imageUrl.href : ''
+  } catch {
+    return ''
+  }
+}
+const getPlaylistCover = (...urls: unknown[]) => {
+  for (const url of urls) {
+    const image = normalizeImageUrl(url)
+    if (image) return image
+  }
+  return ''
+}
 
 const getRadarList = async() => {
   const cookie = getRequiredCookie()
@@ -696,7 +713,7 @@ const getQQMusicAccountPlaylists = async() => {
       tid,
       name: String(item.diss_name ?? item.dissname ?? item.name ?? item.title ?? ''),
       author: String(item.hostname ?? item.nick ?? creator.nick ?? creator.name ?? '企鹅音乐'),
-      img: normalizeImageUrl(item.diss_cover ?? item.logo ?? item.picurl ?? item.cover),
+      img: !subscribed && dirId == '201' ? QQ_MUSIC_LIKED_COVER_URL : getPlaylistCover(item.diss_cover, item.logo, item.picurl, item.cover),
       desc: String(item.desc ?? item.description ?? item.introduction ?? ''),
       playCount: Number(item.listen_num ?? item.visitnum ?? item.play_count ?? 0),
       trackCount: Number(item.song_cnt ?? item.songnum ?? item.total_song_num ?? item.song_count ?? 0),
@@ -774,7 +791,7 @@ const getQQMusicAccountPlaylistDetail = async(requestInfo: LX.QQMusic.AccountPla
       info: {
         name: String(info.dissname ?? info.title ?? info.name ?? '企鹅音乐歌单'),
         desc: String(info.desc ?? info.description ?? ''),
-        img: normalizeImageUrl(info.picurl ?? info.logo ?? info.diss_cover ?? bestSongs[0]?.img),
+        img: dirId == '201' ? QQ_MUSIC_LIKED_COVER_URL : getPlaylistCover(info.picurl, info.logo, info.diss_cover, bestSongs[0]?.img),
         author: String(info.nickname ?? info.nick ?? info.hostname ?? '企鹅音乐'),
         playCount: Number(info.visitnum ?? info.listen_num ?? info.play_count ?? 0),
       },
@@ -814,7 +831,7 @@ const getQQMusicAccountPlaylistDetail = async(requestInfo: LX.QQMusic.AccountPla
       info: {
         name: String(detail.dissname ?? detail.name ?? '企鹅音乐歌单'),
         desc: String(detail.desc ?? detail.description ?? ''),
-        img: normalizeImageUrl(detail.logo ?? detail.diss_cover ?? songs[0]?.img),
+        img: dirId == '201' ? QQ_MUSIC_LIKED_COVER_URL : getPlaylistCover(detail.logo, detail.diss_cover, songs[0]?.img),
         author: String(detail.nickname ?? detail.nick ?? '企鹅音乐'),
         playCount: Number(detail.visitnum ?? detail.listen_num ?? 0),
       },

@@ -54,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import { sourceNames } from '@renderer/store'
 import { computed, markRaw, onBeforeUnmount, ref, watch } from '@common/utils/vueTools'
 import RecommendationList from './RecommendationList.vue'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
@@ -91,8 +92,8 @@ const showCollect = ref(false)
 const selectedMusic = ref<LX.Music.MusicInfoOnline | null>(null)
 const resultsContainer = ref<HTMLElement | null>(null)
 const platforms = computed(() => [
-  { id: 'tx' as const, label: t('source_tx'), icon: '#icon-qq-music', viewBox: '0 0 1024 1024' },
-  { id: 'wy' as const, label: t('source_wy'), icon: '#icon-netease-music', viewBox: '0 0 1024 1024' },
+  { id: 'tx' as const, label: sourceNames.value.tx, icon: '#icon-qq-music', viewBox: '0 0 1024 1024' },
+  { id: 'wy' as const, label: sourceNames.value.wy, icon: '#icon-netease-music', viewBox: '0 0 1024 1024' },
   { id: 'bili' as const, label: 'bilibili', icon: '#icon-bilibili-fill', viewBox: '0 0 1024 1024' },
 ])
 const varieties = computed(() => (['familiar', 'balanced', 'explore'] as const).map(id => ({ id, name: t(`recommend__variety_${id}`) })))

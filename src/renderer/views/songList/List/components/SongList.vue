@@ -4,7 +4,8 @@
       <ul>
         <li v-for="item in props.listInfo.list" :key="item.id" :class="$style.item" @click="toDetail(item)">
           <div :class="$style.image">
-            <img :class="$style.img" loading="lazy" decoding="async" :src="item.img">
+            <svg :class="$style.placeholder" :viewBox="isLikedPlaylist(item) ? '0 0 444.87 391.18' : '0 0 425.2 425.2'" aria-hidden="true"><use :xlink:href="isLikedPlaylist(item) ? '#icon-love' : '#icon-album'" /></svg>
+            <img v-if="item.img && failedImages.get(item.id) != item.img" :key="item.img" :class="$style.img" loading="lazy" decoding="async" :src="item.img" alt="" @error="failedImages.set(item.id, item.img)">
             <div v-if="item.play_count != null" :class="$style.playCount">
               <svg-icon name="headphones" />
               <span>{{ item.play_count }}</span>
@@ -33,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from '@common/utils/vueTools'
+import { ref, shallowReactive, watch } from '@common/utils/vueTools'
 import type { ListInfo, ListInfoItem } from '@renderer/store/songList/state'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
 
@@ -51,6 +52,9 @@ const router = useRouter()
 const route = useRoute()
 
 const dom_list_ref = ref<HTMLElement | null>(null)
+const failedImages = shallowReactive(new Map<string, string>())
+const isLikedPlaylist = (item: ListInfoItem) => item.source == 'tx' && item.id.startsWith('qqaccount_201_')
+watch(() => props.listInfo.list, () => { failedImages.clear() })
 
 const emit = defineEmits(['toggle-page'])
 
@@ -129,7 +133,10 @@ defineExpose({
   box-shadow: var(--shadow-card);
   transition: transform @transition-normal, box-shadow @transition-normal;
 }
+.placeholder { position: absolute; inset: 32%; width: 36%; height: 36%; fill: currentColor; color: var(--color-font-label); opacity: .5; }
 .img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;

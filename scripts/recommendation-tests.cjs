@@ -669,6 +669,7 @@ test('Recommendation view cancels stale platform jobs and retains cached songs o
   const ownedKeys = new Set()
   let configResponse = async() => ({ configured: true })
   const module = load(file, {
+    '@renderer/store': { sourceNames: { value: { tx: 'Tencent', wy: 'NetEase', bili: 'bilibili' } } },
     vue,
     './RecommendationList.vue': {},
     '@common/utils/vueTools': { ...vue, onBeforeUnmount() {} },

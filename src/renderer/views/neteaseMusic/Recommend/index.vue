@@ -1,7 +1,6 @@
 <template>
   <div :class="$style.container">
     <header :class="$style.header">
-      <h1>{{ $t('netease_music') }}</h1>
       <base-tab v-model="activeTab" :class="$style.tabs" :list="tabs" />
       <base-btn v-if="configured" :class="$style.refreshBtn" outline min :disabled="loading" @click="loadActiveTab(true)">{{ $t('netease_music_refresh') }}</base-btn>
     </header>
@@ -112,8 +111,8 @@ onBeforeUnmount(() => { if (dailyRefreshTimer) clearInterval(dailyRefreshTimer);
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
 .container { height: 100%; display: flex; flex-flow: column nowrap; min-width: 0; }
-.header { flex: none; min-height: 44px; display: flex; align-items: center; border-bottom: var(--color-list-header-border-bottom); h1 { flex: none; padding-left: 15px; font-size: 16px; font-weight: 600; color: var(--color-font); } }
-.tabs { flex: auto; min-width: 0; justify-content: center; }
+.header { flex: none; min-height: 44px; display: flex; align-items: center; border-bottom: var(--color-list-header-border-bottom); }
+.tabs { flex: auto; min-width: 0; justify-content: flex-start; }
 .refreshBtn { flex: none; margin-right: 10px; color: var(--color-font); background: none !important; }
 .content { min-height: 0; flex: auto; position: relative; overflow: hidden; }
 .state { position: absolute; inset: 0; display: flex; flex-flow: column nowrap; align-items: center; justify-content: center; gap: 16px; color: var(--color-font-label); p { font-size: 16px; } }
@@ -123,5 +122,4 @@ onBeforeUnmount(() => { if (dailyRefreshTimer) clearInterval(dailyRefreshTimer);
 .cover { flex: none; width: 92px; height: 92px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 6px; background-color: var(--color-button-background); box-shadow: 0 0 2px rgba(0, 0, 0, .18); img { width: 100%; height: 100%; object-fit: cover; } svg { width: 30%; height: 30%; color: var(--color-font-label); } }
 .homeText { min-width: 0; flex: auto; display: flex; flex-flow: column nowrap; strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 17px; } small { margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-font-label); font-size: 12px; } }
 .arrow { flex: none; width: 10px; color: var(--color-font-label); }
-@media (max-width: 760px) { .header h1 { display: none; } .tabs { justify-content: flex-start; } }
 </style>

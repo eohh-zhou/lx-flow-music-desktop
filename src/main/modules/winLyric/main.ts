@@ -14,6 +14,7 @@ let isLyricOverlayOpen = false
 let overlayOriginBounds: Electron.Rectangle | null = null
 const LYRIC_STRIP_HEIGHT = 120
 const LYRIC_OVERLAY_HEIGHT = 400
+let contentHeight = LYRIC_STRIP_HEIGHT
 
 const saveBoundsConfig = debounce((window: Electron.BrowserWindow, config: Partial<LX.AppSetting>) => {
   if (browserWindow !== window) return
@@ -25,6 +26,7 @@ const resetWindowState = () => {
   isWinBoundsUpdateing = false
   isLyricOverlayOpen = false
   overlayOriginBounds = null
+  contentHeight = LYRIC_STRIP_HEIGHT
 }
 
 const winEvent = () => {
@@ -56,7 +58,7 @@ const winEvent = () => {
           'desktopLyric.x': bounds.x,
           'desktopLyric.y': bounds.y,
           'desktopLyric.width': bounds.width,
-          'desktopLyric.height': bounds.height,
+          'desktopLyric.height': LYRIC_STRIP_HEIGHT,
         })
       }
     } else if (isWin && !isLyricOverlayOpen) { // Linux 不允许将窗口设置出屏幕之外，MacOS未知，故只在Windows下执行强制设置
@@ -65,7 +67,7 @@ const winEvent = () => {
         x: global.lx.appSetting['desktopLyric.x'] ?? 0,
         y: global.lx.appSetting['desktopLyric.y'] ?? 0,
         width: global.lx.appSetting['desktopLyric.width'],
-        height: global.lx.appSetting['desktopLyric.height'],
+        height: contentHeight,
       })
     }
   })
@@ -76,9 +78,8 @@ const winEvent = () => {
     // console.log(bounds)
     isWinBoundsUpdateing = true
     const bounds = currentWindow.getBounds()
-    if (!isLyricOverlayOpen && bounds.height > 140) {
-      bounds.width = 860
-      bounds.height = LYRIC_STRIP_HEIGHT
+    if (!isLyricOverlayOpen && bounds.height != contentHeight) {
+      bounds.height = contentHeight
       currentWindow.setBounds(bounds)
     }
     if (!isLyricOverlayOpen) {
@@ -86,7 +87,7 @@ const winEvent = () => {
         'desktopLyric.x': bounds.x,
         'desktopLyric.y': bounds.y,
         'desktopLyric.width': bounds.width,
-        'desktopLyric.height': bounds.height,
+        'desktopLyric.height': LYRIC_STRIP_HEIGHT,
       })
     }
   })
@@ -154,7 +155,7 @@ export const createWindow = () => {
     y: winSize.y,
     minWidth,
     minHeight,
-    maxHeight: LYRIC_OVERLAY_HEIGHT,
+    maxHeight: Math.max(LYRIC_OVERLAY_HEIGHT, global.envParams.workAreaSize.height),
     useContentSize: true,
     frame: false,
     transparent: true,
@@ -232,6 +233,20 @@ export const setIgnoreMouseEvents = (ignore: boolean, options?: Electron.IgnoreM
   browserWindow.setIgnoreMouseEvents(ignore, options)
 }
 
+export const setContentHeight = (height: number) => {
+  if (!browserWindow || isLyricOverlayOpen || !Number.isFinite(height)) return
+  const maxHeight = Math.max(LYRIC_STRIP_HEIGHT, Math.min(800, global.envParams.workAreaSize?.height ?? 800))
+  const next = Math.max(LYRIC_STRIP_HEIGHT, Math.min(maxHeight, Math.ceil(height)))
+  if (next == contentHeight) return
+  const bounds = browserWindow.getBounds()
+  const nearTop = bounds.y <= 48
+  const y = Math.max(0, Math.min(nearTop ? bounds.y : bounds.y + bounds.height - next, (global.envParams.workAreaSize?.height ?? 1080) - next))
+  contentHeight = next
+  isWinBoundsUpdateing = true
+  browserWindow.setMaximumSize(Math.max(bounds.width, 860), Math.max(LYRIC_OVERLAY_HEIGHT, next))
+  browserWindow.setBounds({ ...bounds, y, height: next })
+}
+
 export const setLyricOverlay = (open: boolean) => {
   if (!browserWindow) return
   const bounds = browserWindow.getBounds()
@@ -240,14 +255,15 @@ export const setLyricOverlay = (open: boolean) => {
     overlayOriginBounds = { ...bounds }
     isLyricOverlayOpen = true
     isWinBoundsUpdateing = true
-    browserWindow.setMaximumSize(Math.max(bounds.width, 860), LYRIC_OVERLAY_HEIGHT)
-    const extra = LYRIC_OVERLAY_HEIGHT - bounds.height
+    const height = Math.max(LYRIC_OVERLAY_HEIGHT, contentHeight)
+    browserWindow.setMaximumSize(Math.max(bounds.width, 860), height)
+    const extra = height - bounds.height
     const nearTop = bounds.y <= 48
     browserWindow.setBounds({
       x: bounds.x,
       y: nearTop ? bounds.y : Math.max(0, bounds.y - extra),
       width: bounds.width,
-      height: LYRIC_OVERLAY_HEIGHT,
+      height,
     })
     return
   }
@@ -256,12 +272,12 @@ export const setLyricOverlay = (open: boolean) => {
   isWinBoundsUpdateing = true
   const origin = overlayOriginBounds ?? {
     x: bounds.x,
-    y: bounds.y + (LYRIC_OVERLAY_HEIGHT - LYRIC_STRIP_HEIGHT),
+    y: bounds.y + (Math.max(LYRIC_OVERLAY_HEIGHT, contentHeight) - contentHeight),
     width: 860,
-    height: LYRIC_STRIP_HEIGHT,
+    height: contentHeight,
   }
   overlayOriginBounds = null
-  browserWindow.setMaximumSize(Math.max(origin.width, 860), 140)
+  browserWindow.setMaximumSize(Math.max(origin.width, 860), Math.max(LYRIC_OVERLAY_HEIGHT, contentHeight))
   browserWindow.setBounds(origin)
 }
 

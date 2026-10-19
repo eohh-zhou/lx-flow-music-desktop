@@ -1,8 +1,8 @@
 <template>
   <div id="container" :class="[{ lock: setting['desktopLyric.isLock'] }, { hide: isHide || isHoverHide }]">
     <div id="main" :class="{ 'bar-below': isLyricBarBelow }">
-      <div class="lyric-stack" data-lyric-hit>
-        <div class="control-bar" :class="{ visible: !setting['desktopLyric.isLock'] || isLyricMenuOpen, 'menu-open': isLyricMenuOpen, below: isLyricBarBelow }">
+      <div ref="lyricStack" class="lyric-stack" data-lyric-hit>
+        <div ref="controlBar" class="control-bar" :class="{ visible: !setting['desktopLyric.isLock'] || isLyricMenuOpen, 'menu-open': isLyricMenuOpen, below: isLyricBarBelow }">
           <layout-control-bar />
         </div>
         <layout-lyric-horizontal />
@@ -28,7 +28,7 @@
 <script setup>
 import useWindowSize from '@lyric/useApp/useWindowSize'
 import useHoverHide from '@lyric/useApp/useHoverHide'
-import { onMounted, onBeforeUnmount } from '@common/utils/vueTools'
+import { onMounted, onBeforeUnmount, ref } from '@common/utils/vueTools'
 import { isLyricBarBelow, isLyricMenuOpen, setting } from '@lyric/store/state'
 import { sendConnectMainWindowEvent, updateSetting, setIgnoreMouseEvents } from '@lyric/utils/ipc'
 import { syncLyricBarSide } from '@lyric/utils/lyricBarSide'
@@ -37,8 +37,12 @@ import useLyric from '@lyric/useApp/useLyric'
 import useTheme from '@lyric/useApp/useTheme'
 import { init as initLyricPlayer } from '@lyric/core/lyric'
 import usePauseHide from '@lyric/useApp/usePauseHide'
+import useContentSize from '@lyric/useApp/useContentSize'
 
 const isShowResize = false
+const lyricStack = ref(null)
+const controlBar = ref(null)
+useContentSize(lyricStack, controlBar)
 useCommon()
 const { handleMouseDown, handleTouchDown } = useWindowSize()
 const isHoverHide = useHoverHide()
@@ -113,21 +117,22 @@ onBeforeUnmount(() => {
 @import './assets/styles/index.less';
 @import './assets/styles/layout.less';
 
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 body {
   user-select: none;
-  height: 100vh;
   box-sizing: border-box;
   color: #fff;
   opacity: 1;
 }
-
-body {
-  user-select: none;
-  height: 100vh;
-  box-sizing: border-box;
-}
 #root {
+  width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 html, body, #root, #container, #main {
@@ -253,6 +258,8 @@ html, body, #root, #container, #main {
   align-items: center;
   width: fit-content;
   max-width: min(100%, 720px);
+  min-width: 0;
+  flex: none;
   height: auto;
   pointer-events: auto;
   padding: 4px 14px;

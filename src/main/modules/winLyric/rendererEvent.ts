@@ -3,7 +3,7 @@ import { mainOn, mainHandle } from '@common/mainIpc'
 import { WIN_LYRIC_RENDERER_EVENT_NAME } from '@common/ipcNames'
 import { buildLyricConfig, getLyricWindowBounds } from './utils'
 import { sendNewDesktopLyricClient } from '@main/modules/winMain'
-import { getBounds, getMainFrame, sendEvent, setBounds, setIgnoreMouseEvents, setLyricOverlay, setResizeable } from './main'
+import { getBounds, getMainFrame, sendEvent, setBounds, setIgnoreMouseEvents, setLyricOverlay, setContentHeight, setResizeable } from './main'
 import { MessageChannelMain } from 'electron'
 import { mouseCheckTools } from './mouseCheckTools'
 
@@ -41,6 +41,10 @@ export default () => {
 
   mainOn<boolean>(WIN_LYRIC_RENDERER_EVENT_NAME.set_win_overlay, ({ params: open }) => {
     setLyricOverlay(open)
+  })
+  mainOn<number>(WIN_LYRIC_RENDERER_EVENT_NAME.set_content_height, ({ event, params: height }) => {
+    if (event.senderFrame !== getMainFrame()) return
+    setContentHeight(height)
   })
 
   mainOn(WIN_LYRIC_RENDERER_EVENT_NAME.request_main_window_channel, ({ event }) => {

@@ -1,5 +1,11 @@
 # lx-music-desktop change log
 
+## 未发布
+
+### 修复
+
+- 修复桌面歌词启用翻译、罗马音或使用较大字号时出现右侧滚动条、歌词和工具栏被截断的问题；窗口会按实际内容调整高度，关闭菜单后恢复合适大小。([#2](https://github.com/eohh-zhou/lx-flow-music-desktop/issues/2))
+
 ## [3.3.0](https://github.com/eohh-zhou/lx-flow-music-desktop/compare/v3.2.1...v3.3.0) - 2026-10-19
 
 ### 图标侧栏

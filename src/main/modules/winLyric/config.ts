@@ -80,7 +80,6 @@ export const setLrcConfig = (keys: Array<keyof LX.AppSetting>, setting: Partial<
     }
     const bounds = getBounds()
     const needCollapse = !isCollapsingLyricWindow && !isLyricMenuOverlayOpen() && (
-      (bounds != null && bounds.height > 140) ||
       global.lx.appSetting['desktopLyric.height'] > 140 ||
       global.lx.appSetting['desktopLyric.height'] < 110 ||
       global.lx.appSetting['desktopLyric.direction'] != 'horizontal'

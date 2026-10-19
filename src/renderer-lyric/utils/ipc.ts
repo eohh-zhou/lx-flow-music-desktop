@@ -27,6 +27,9 @@ export const setIgnoreMouseEvents = (ignore: boolean, forward = true) => {
 export const setWinOverlay = (open: boolean) => {
   rendererSend<boolean>(WIN_LYRIC_RENDERER_EVENT_NAME.set_win_overlay, open)
 }
+export const setContentHeight = (height: number) => {
+  rendererSend<number>(WIN_LYRIC_RENDERER_EVENT_NAME.set_content_height, height)
+}
 let previousResizable: boolean | null = null
 export const setWindowResizeable = (resizable: boolean) => {
   if (previousResizable === resizable) return

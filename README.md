@@ -92,4 +92,16 @@
 
 ## 用户界面
 
-<p><img width="100%" src="./doc/images/app.png" alt="LX Flow Music 界面预览"></p>
+以下为当前界面的实机截图，使用演示歌单与模拟收听数据。
+
+**LX 推荐 · 完整单曲列表**
+
+<p><img width="100%" src="./doc/images/app.png" alt="LX 推荐界面：单列歌曲、参考歌单和探索程度设置"></p>
+
+**图标侧栏 · 收起后继续导航**
+
+<p><img width="100%" src="./doc/images/sidebar-collapsed.png" alt="收起后的侧栏保留搜索、推荐、歌单和听歌档案等可点击图标"></p>
+
+**听歌档案 · 月度与年度音乐报告**
+
+<p><img width="100%" src="./doc/images/listening-report.png" alt="年度音乐报告：实际收听时长、有效收听、完播、连续收听天数和常听歌曲"></p>

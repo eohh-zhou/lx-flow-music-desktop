@@ -542,7 +542,7 @@ async function createSyncHarness() {
       ? `ws://127.0.0.1:${entryPort}${request.url}`
       : url.pathname.startsWith('/entry/')
         ? `/hop/socket${url.search}`
-        : `ws://127.0.0.1:${targetPort}/target/socket${url.search}`
+        : `${url.pathname.startsWith('/http-entry/') ? 'http' : 'ws'}://127.0.0.1:${targetPort}/target/socket${url.search}`
     socket.end(`HTTP/1.1 307 Temporary Redirect\r\nLocation: ${location}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`)
   })
   target.on('upgrade', (request, socket, head) => {
@@ -621,4 +621,97 @@ test('Sync fails a redirect loop after five redirects', async() => {
   } finally {
     await harness.dispose()
   }
+})
+
+test('Sync accepts HTTP Location URLs from a reverse proxy and retains authentication query parameters', async() => {
+  const harness = await createSyncHarness()
+  try {
+    await harness.connect('http-entry')
+    assert.equal(harness.redirects(), 1)
+    assert.equal(harness.reached[0].pathname, '/target/socket')
+    assert.equal(harness.reached[0].searchParams.get('i'), 'synthetic-client')
+    assert.equal(harness.reached[0].searchParams.get('t'), 'synthetic-ticket')
+    await harness.disconnect()
+  } finally { await harness.dispose() }
+})
+
+test('Lyric content fitting preserves the bottom anchor, ignores invalid sizes and restores its fitted height after menus', () => {
+  const { subject, config, flush } = createLyricHarness()
+  subject.createWindow()
+  subject.setBounds({ x: 450, y: 500, width: 860, height: 120 })
+  subject.setContentHeight(210)
+  assert.equal(subject.getBounds().height, 210)
+  assert.equal(subject.getBounds().y, 410)
+  flush()
+  assert.equal(config['desktopLyric.height'], 120, 'Runtime content height must not overwrite the saved strip setting')
+  subject.setContentHeight(NaN)
+  assert.equal(subject.getBounds().height, 210)
+  subject.setLyricOverlay(true)
+  assert.equal(subject.getBounds().height, 400)
+  subject.setContentHeight(600)
+  assert.equal(subject.getBounds().height, 400)
+  subject.setLyricOverlay(false)
+  assert.equal(subject.getBounds().height, 210)
+  assert.equal(subject.getBounds().y, 410)
+  subject.setContentHeight(120)
+  assert.equal(subject.getBounds().height, 120)
+  assert.equal(subject.getBounds().y, 500)
+  subject.closeWindow()
+})
+
+test('Large two-line lyrics remain on screen and closing a menu restores their height without clipping', () => {
+  const { subject } = createLyricHarness()
+  subject.createWindow()
+  subject.setContentHeight(650)
+  assert.equal(subject.getBounds().y, 8)
+  assert.equal(subject.getBounds().height, 650)
+  subject.setLyricOverlay(true)
+  assert.equal(subject.getBounds().height, 650)
+  subject.setLyricOverlay(false)
+  assert.equal(subject.getBounds().height, 650)
+  subject.setContentHeight(10000)
+  assert.equal(subject.getBounds().height, 800)
+  subject.createWindow()
+  assert.equal(subject.getBounds().height, 120)
+  subject.closeWindow()
+})
+
+test('Lyric measurement coalesces resize events, reserves the toolbar and disconnects when unmounted', () => {
+  let unmount, menuWatch, observer
+  const frames = new Map()
+  const sent = []
+  const stack = { value: { offsetHeight: 134 } }
+  const bar = { value: { offsetHeight: 38 } }
+  const menu = { value: false }
+  let frameId = 0
+  class Observer {
+    constructor(callback) { this.callback = callback; this.elements = []; observer = this }
+    observe(element) { this.elements.push(element) }
+    disconnect() { this.elements = [] }
+  }
+  const subject = loadSource('src/renderer-lyric/useApp/useContentSize.ts', {
+    '@common/utils/vueTools': { onMounted: fn => fn(), onBeforeUnmount: fn => { unmount = fn }, watch: (_ref, callback) => { menuWatch = callback; return () => { menuWatch = null } } },
+    '@lyric/store/state': { isLyricMenuOpen: menu },
+    '@lyric/utils/ipc': { setContentHeight: height => sent.push(height) },
+  }, { ResizeObserver: Observer, window: { requestAnimationFrame: fn => { frames.set(++frameId, fn); return frameId }, cancelAnimationFrame: id => frames.delete(id) } }).default
+  const flush = () => { const pending = [...frames.values()]; frames.clear(); for (const fn of pending) fn() }
+  subject(stack, bar)
+  observer.callback(); observer.callback()
+  assert.equal(frames.size, 1)
+  flush()
+  assert.equal(sent[0], 200)
+  observer.callback(); flush()
+  assert.equal(sent.length, 1, 'An unchanged lyric must not trigger another IPC or resize')
+  menu.value = true
+  stack.value.offsetHeight = 220
+  menuWatch(); observer.callback(); flush()
+  assert.equal(sent.length, 1)
+  menu.value = false
+  menuWatch(); flush()
+  assert.equal(sent.at(-1), 286)
+  observer.callback()
+  unmount()
+  assert.equal(frames.size, 0)
+  assert.equal(observer.elements.length, 0)
+  assert.equal(menuWatch, null)
 })

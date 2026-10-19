@@ -295,6 +295,7 @@ export default {
   padding: 4px 10px;
   box-sizing: border-box;
   cursor: move;
+  > div { min-width: 0; max-width: 100%; }
 }
 .placeholder {
   width: auto;
@@ -395,10 +396,7 @@ export default {
         animation: lrc-line-in .32s ease;
         white-space: nowrap;
 
-      .extended {
-        display: none;
-      }
-      .line {
+      .line, .extended {
         max-width: 100%;
       }
       .font-lrc, .shadow {

@@ -1,6 +1,7 @@
-import { onBeforeUnmount } from '@common/utils/vueTools'
+import { onBeforeUnmount, watch } from '@common/utils/vueTools'
 import { getCurrentTime, getDuration, getPlaybackRate, onTimeupdate } from '@renderer/plugins/player'
-import { playMusicInfo } from '@renderer/store/player/state'
+import { isPlay, playMusicInfo } from '@renderer/store/player/state'
+import { listeningPreferences, listeningReady, refreshListening } from '@renderer/store/listening'
 import { ListeningSession } from '@renderer/utils/recommendation/listening'
 import { saveListening } from '@renderer/utils/recommendation/listeningIpc'
 import type { ListeningCheckpoint } from '@common/types/listening'
@@ -10,6 +11,8 @@ export default () => {
   let manualSkipAt = -Infinity
   let lastCheckpoint = 0
   let saving = false
+  let disposed = false
+  let monthTimer: ReturnType<typeof setTimeout> | undefined
   const pending = new Map<string, ListeningCheckpoint>()
   const currentTrack = () => {
     const current = playMusicInfo.musicInfo
@@ -37,9 +40,10 @@ export default () => {
   }
   const tick = () => session?.update(getCurrentTime(), getDuration(), performance.now(), getPlaybackRate())
   const playing = () => {
+    if (!listeningReady.value || !listeningPreferences.recording) return
     const track = currentTrack()
     if (!track) return
-    session ??= new ListeningSession({ id: track.id, source: track.source, name: track.name, singer: track.singer })
+    session ??= new ListeningSession({ id: track.id, source: track.source, name: track.name, singer: track.singer }, Math.max(Date.now(), listeningPreferences.recordingSince + 1))
     session.resume()
     tick()
   }
@@ -62,6 +66,25 @@ export default () => {
     }
   }
 
+  // One calendar wake-up (at most two per month), rather than a polling loop.
+  // Opening the app also catches up on reports missed while it was closed.
+  const scheduleReports = () => {
+    if (disposed) return
+    const now = new Date()
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime()
+    monthTimer = setTimeout(() => {
+      void refreshListening().catch(() => {}).finally(scheduleReports)
+    }, Math.min(next - now.getTime() + 1000, 2147483647))
+  }
+  void refreshListening().catch(() => {}).finally(scheduleReports)
+  const stopPreferences = watch(() => [listeningReady.value, listeningPreferences.recording, listeningPreferences.recordingSince], () => {
+    // Discard old queued checkpoints on pause/clear; the worker enforces the same cutoff.
+    pending.clear()
+    session = null
+    manualSkipAt = -Infinity
+    if (isPlay.value) playing()
+  })
+
   window.app_event.on('playerPlaying', playing)
   window.app_event.on('playerPause', pause)
   window.app_event.on('playerWaiting', pause)
@@ -81,6 +104,9 @@ export default () => {
     if (performance.now() - lastCheckpoint >= 30000) flush()
   })
   onBeforeUnmount(() => {
+    disposed = true
+    if (monthTimer) clearTimeout(monthTimer)
+    stopPreferences()
     flush()
     removeTime()
     window.removeEventListener('beforeunload', flush)

@@ -1,5 +1,5 @@
 <template>
-  <div :class="$style.menu">
+  <div :class="[$style.menu, { [$style.compact]: appSetting['common.sidebarCollapsed'] }]">
     <ul :class="$style.list" role="toolbar">
       <li v-for="group in menuGroups" :key="group.label" :class="$style.navGroup" role="presentation">
         <div :class="$style.groupLabel">{{ group.label }}</div>
@@ -9,8 +9,8 @@
               <div :class="$style.groupRow" @contextmenu="handleGroupContextMenu($event, item)">
                 <button
                   type="button" :class="[$style.link, {[$style.active]: isGroupActive(item)}]" role="tab"
-                  :aria-selected="isGroupActive(item)" :aria-expanded="expandedGroups[item.name]" :aria-label="item.tips"
-                  @click="toggleExpand(item)"
+                  :aria-selected="isGroupActive(item)" :aria-expanded="appSetting['common.sidebarCollapsed'] ? compactGroup == item.name && showCompactMenu : expandedGroups[item.name]" :aria-label="item.tips"
+                  @click.stop="toggleExpand(item, $event)"
                 >
                   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="item.iconSize" :height="item.size" :width="item.size" space="preserve">
                     <use :xlink:href="item.icon" />
@@ -22,7 +22,7 @@
                 </button>
               </div>
               <ul
-                v-show="expandedGroups[item.name]" :ref="item.name == 'List' ? setLocalListRef : undefined"
+                v-if="!appSetting['common.sidebarCollapsed']" v-show="expandedGroups[item.name]" :ref="item.name == 'List' ? setLocalListRef : undefined"
                 :class="[$style.subList, { [$style.sortable]: item.name == 'List' && isModDown }]"
               >
                   <li
@@ -66,6 +66,7 @@
         </ul>
       </li>
     </ul>
+    <base-menu v-if="showCompactMenu" v-model="showCompactMenu" :menus="compactMenus" :xy="compactLocation" item-name="name" @menu-click="handleCompactClick" @keydown.esc="showCompactMenu = false" />
     <base-menu v-model="isShowLocalListMenu" :menus="activeLocalListMenus" :xy="localListMenuLocation" item-name="name" @menu-click="handleLocalListMenuClick" />
     <DuplicateMusicModal v-model:visible="isShowDuplicateMusicModal" :list-info="duplicateListInfo" />
     <ListSortModal v-model:visible="isShowListSortModal" :list-info="sortListInfo" />
@@ -78,7 +79,7 @@
 <script lang="ts">
 import { openUrl } from '@common/utils/electron'
 import { LIST_IDS } from '@common/constants'
-import { appSetting } from '@renderer/store/setting'
+import { appSetting, updateSetting } from '@renderer/store/setting'
 import { useI18n } from '@root/lang'
 import { computed, nextTick, reactive, ref, watch } from '@common/utils/vueTools'
 import { useRouter } from '@common/utils/vueRouter'
@@ -127,7 +128,18 @@ export default {
       List: localStorage.getItem(`${EXPAND_STORAGE_KEY}List`) !== 'false',
       OnlinePlaylists: localStorage.getItem(`${EXPAND_STORAGE_KEY}OnlinePlaylists`) !== 'false',
     })
-    const toggleExpand = (item: { name: string }) => {
+    const compactGroup = ref('')
+    const showCompactMenu = ref(false)
+    const compactLocation = reactive({ x: 0, y: 0 })
+    const toggleExpand = (item: { name: string }, event: MouseEvent) => {
+      if (appSetting['common.sidebarCollapsed']) {
+        const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+        compactLocation.x = rect.right + 8
+        compactLocation.y = rect.top
+        showCompactMenu.value = compactGroup.value != item.name || !showCompactMenu.value
+        compactGroup.value = item.name
+        return
+      }
       expandedGroups[item.name] = !expandedGroups[item.name]
       localStorage.setItem(`${EXPAND_STORAGE_KEY}${item.name}`, String(expandedGroups[item.name]))
     }
@@ -174,6 +186,10 @@ export default {
       })
     }
     const startCreateList = () => {
+      if (appSetting['common.sidebarCollapsed']) {
+        appSetting['common.sidebarCollapsed'] = false
+        updateSetting({ 'common.sidebarCollapsed': false })
+      }
       expandedGroups.List = true
       localStorage.setItem(`${EXPAND_STORAGE_KEY}List`, 'true')
       isShowNewList.value = true
@@ -271,6 +287,7 @@ export default {
       if (item.name != 'List') return
       event.preventDefault()
       event.stopPropagation()
+      showCompactMenu.value = false
       localListMenuTarget.value = 'group'
       rightClickItemIndex.value = -10
       localListMenuLocation.x = event.clientX
@@ -503,6 +520,15 @@ export default {
           children: onlinePlaylistChildren,
         },
         {
+          to: '/listening',
+          tips: t('listening__title'),
+          icon: '#icon-listening',
+          iconSize: '0 0 24 24',
+          size,
+          name: 'Listening',
+          enable: true,
+        },
+        {
           to: '/download',
           tips: t('download'),
           icon: '#icon-download-2',
@@ -528,7 +554,7 @@ export default {
       return [
         { label: t('nav__online'), items: all.filter(m => m.enable && ['Search', 'SongList', 'MusicRecommendations', 'Recommendations', 'Leaderboard'].includes(m.name)) },
         // 设置入口在侧边栏左下角，不在导航列表中
-        { label: t('nav__my'), items: all.filter(m => m.enable && ['List', 'OnlinePlaylists', 'Download'].includes(m.name)) },
+        { label: t('nav__my'), items: all.filter(m => m.enable && ['List', 'OnlinePlaylists', 'Listening', 'Download'].includes(m.name)) },
       ].filter(g => g.items.length)
     })
 
@@ -548,7 +574,20 @@ export default {
       : isMenuActive(child.name)
     const isPlayingList = (listId?: string) => !!listId && playMusicInfo.listId == listId
     const isGroupActive = (item: { children: Array<{ name: string, listId?: string }> }) => item.children.some(isChildActive)
+    const compactMenus = computed(() => (menus.value.find(item => item.name == compactGroup.value)?.children ?? []).map(child => ({ name: child.tips, action: child.key, child })))
+    const handleCompactClick = (item: typeof compactMenus.value[number]) => {
+      showCompactMenu.value = false
+      handleNavClick(item.child)
+      void router.push(item.child.to)
+    }
+    watch(() => appSetting['common.sidebarCollapsed'], () => { showCompactMenu.value = false })
+    watch(() => currentRoute.value.fullPath, () => { showCompactMenu.value = false })
     return {
+      compactGroup,
+      showCompactMenu,
+      compactLocation,
+      compactMenus,
+      handleCompactClick,
       appSetting,
       fetchingListStatus,
       menuGroups,
@@ -613,6 +652,16 @@ export default {
   display: flex;
   flex-flow: column nowrap;
   padding: 0 12px;
+}
+
+.compact {
+  .list { padding: 0 8px; }
+  .groupLabel, .label, .chevron { display: none; }
+  .groupList { gap: 6px; }
+  .navGroup + .navGroup { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-primary-alpha-800); }
+  .link { height: 40px; padding: 0; justify-content: center; }
+  .groupRow .link.active { color: var(--color-primary); background-color: var(--color-primary-alpha-900); }
+  .link:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 }
 
 .navGroup {

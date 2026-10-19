@@ -47,6 +47,9 @@ const modules = {
   winMain: {
     listening_save: 'listening_save',
     listening_get: 'listening_get',
+    listening_overview: 'listening_overview',
+    listening_report: 'listening_report',
+    listening_manage: 'listening_manage',
     focus: 'focus',
     close: 'close',
     min: 'min',

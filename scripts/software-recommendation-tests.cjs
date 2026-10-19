@@ -87,9 +87,10 @@ test('Player integration persists one session across buffering, marks manual ski
   let timeUpdate
   let unmount
   const subject = load('src/renderer/core/useApp/usePlayer/useListeningHistory.ts', {
-    '@common/utils/vueTools': { onBeforeUnmount: callback => { unmount = callback } },
+    '@common/utils/vueTools': { onBeforeUnmount: callback => { unmount = callback }, watch: () => () => {} },
     '@renderer/plugins/player': { getCurrentTime: () => position, getDuration: () => 180, getPlaybackRate: () => 1, onTimeupdate: callback => { timeUpdate = callback; return () => { timeUpdate = null } } },
-    '@renderer/store/player/state': { playMusicInfo: state },
+    '@renderer/store/player/state': { playMusicInfo: state, isPlay: { value: false } },
+    '@renderer/store/listening': { listeningReady: { value: true }, listeningPreferences: { recording: true, recordingSince: 0 }, refreshListening: async() => {} },
     '@renderer/utils/recommendation/listening': { ListeningSession },
     '@renderer/utils/recommendation/listeningIpc': { saveListening: async value => saved.push(value) },
   }, { window: { app_event: events, addEventListener: (name, cb) => listeners.set(name, cb), removeEventListener: name => listeners.delete(name) }, performance: { now: () => clock } })
@@ -118,14 +119,14 @@ test('Database upgrade adds listening storage and preserves existing playlists a
   const tables = load('src/main/worker/dbService/tables.ts')
   const db = new DatabaseSync(':memory:')
   db.transaction = fn => (...args) => { db.exec('BEGIN'); try { const result = fn(...args); db.exec('COMMIT'); return result } catch (error) { db.exec('ROLLBACK'); throw error } }
-  for (const [name, sql] of tables.default) if (!name.includes('listening_session')) db.exec(sql)
+  for (const [name, sql] of tables.default) if (!name.includes('listening_')) db.exec(sql)
   db.prepare('INSERT INTO db_info (field_name, field_value) VALUES (?, ?)').run('version', '2')
   db.prepare('INSERT INTO my_list (id, name, position) VALUES (?, ?, ?)').run('mine', 'My songs', 0)
   db.prepare('INSERT INTO my_list_music_info (id, listId, name, singer, source, meta) VALUES (?, ?, ?, ?, ?, ?)').run('tx_1', 'mine', 'Saved song', 'Artist', 'tx', '{}')
   const migrate = load('src/main/worker/dbService/migrate.ts', { './tables': tables }).default
   migrate(db)
   migrate(db)
-  assert.equal(db.prepare('SELECT field_value FROM db_info WHERE field_name=?').get('version').field_value, '3')
+  assert.equal(db.prepare('SELECT field_value FROM db_info WHERE field_name=?').get('version').field_value, '4')
   assert.equal(db.prepare('SELECT name FROM my_list').get().name, 'My songs')
   assert.equal(db.prepare('SELECT name FROM my_list_music_info').get().name, 'Saved song')
   const verify = load('src/main/worker/dbService/verifyDB.ts', { './tables': tables }).default
@@ -136,9 +137,10 @@ test('Database upgrade adds listening storage and preserves existing playlists a
 test('Listening checkpoints are idempotent and store only bounded preference metadata', () => {
   const tables = load('src/main/worker/dbService/tables.ts')
   const db = new DatabaseSync(':memory:')
-  db.exec(tables.default.get('listening_session'))
-  db.exec(tables.default.get('index_listening_session_time'))
-  const subject = load('src/main/worker/dbService/modules/listening/index.ts', { '../../db': { getDB: () => db } })
+  db.transaction = fn => () => { db.exec('BEGIN'); try { const value = fn(); db.exec('COMMIT'); return value } catch (error) { db.exec('ROLLBACK'); throw error } }
+  for (const [name, sql] of tables.default) if (name.includes('listening_')) db.exec(sql)
+  const reports = load('src/main/worker/dbService/modules/listening/reports.ts', { '@common/types/listening': listeningTypes })
+  const subject = load('src/main/worker/dbService/modules/listening/index.ts', { '../../db': { getDB: () => db }, '@common/types/listening': listeningTypes, './reports': reports })
   const value = checkpoint(song('1'), { apiKey: 'do-not-save', track: { ...song('1'), meta: { audioUrl: 'private' } } })
   subject.listeningSave(value)
   subject.listeningSave({ ...value, revision: 2, listened: 150, coverage: 150 })

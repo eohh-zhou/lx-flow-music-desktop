@@ -115,6 +115,9 @@ type Tables = 'db_info'
 | 'dislike_list'
 | 'listening_session'
 | 'index_listening_session_time'
+| 'listening_rollup'
+| 'listening_report'
+| 'listening_state'
 
 const tables = new Map<Tables, string>()
 
@@ -240,6 +243,28 @@ tables.set('index_listening_session_time', `
   CREATE INDEX "index_listening_session_time" ON "listening_session" ("updated_at");
 `)
 
+tables.set('listening_rollup', `
+  CREATE TABLE "listening_rollup" (
+    "period" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "item" TEXT NOT NULL,
+    "data" TEXT NOT NULL,
+    PRIMARY KEY("period", "kind", "item")
+  );
+`)
+tables.set('listening_report', `
+  CREATE TABLE "listening_report" (
+    "period" TEXT NOT NULL PRIMARY KEY,
+    "data" TEXT NOT NULL
+  );
+`)
+tables.set('listening_state', `
+  CREATE TABLE "listening_state" (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "data" TEXT NOT NULL
+  );
+`)
+
 export default tables
 
-export const DB_VERSION = '3'
+export const DB_VERSION = '4'

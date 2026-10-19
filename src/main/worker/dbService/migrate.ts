@@ -40,11 +40,16 @@ export default (db: Database.Database) => {
   // console.log(db.prepare('PRAGMA user_version').get().user_version)
   // https://github.com/WiseLibs/better-sqlite3/issues/668#issuecomment-1145285728
   const version = (db.prepare<[string]>('SELECT "field_value" FROM "main"."db_info" WHERE "field_name" = ?').get('version') as { field_value: string }).field_value
-  if (version == '1' || version == '2') {
+  if (['1', '2', '3'].includes(version)) {
     db.transaction(() => {
       if (version == '1') migrateV1(db)
-      db.exec(tables.get('listening_session')!)
-      db.exec(tables.get('index_listening_session_time')!)
+      if (version != '3') {
+        db.exec(tables.get('listening_session')!)
+        db.exec(tables.get('index_listening_session_time')!)
+      }
+      db.exec(tables.get('listening_rollup')!)
+      db.exec(tables.get('listening_report')!)
+      db.exec(tables.get('listening_state')!)
       db.prepare('UPDATE "main"."db_info" SET "field_value"=@value WHERE "field_name"=@name').run({ name: 'version', value: DB_VERSION })
     })()
   }

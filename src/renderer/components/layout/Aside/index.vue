@@ -1,6 +1,6 @@
 <template>
-  <div :class="[$style.aside, { [$style.fullscreen]: isFullscreen }]">
-    <ControlBtns v-if="appSetting['common.controlBtnPosition'] == 'left'" />
+  <div :class="[$style.aside, { [$style.fullscreen]: isFullscreen, [$style.compact]: appSetting['common.sidebarCollapsed'] }]">
+    <ControlBtns v-if="appSetting['common.controlBtnPosition'] == 'left' && !appSetting['common.sidebarCollapsed']" />
     <div v-else :class="$style.logo">
       <div :class="$style.logoMark">LX</div>
       <span>LX MUSIC</span>
@@ -69,6 +69,12 @@ import NavBar from './NavBar.vue'
   justify-content: center;
   box-shadow: 0 2px 6px var(--color-primary-alpha-600);
   user-select: none;
+}
+
+.compact .logo {
+  padding: 0;
+  justify-content: center;
+  span { display: none; }
 }
 
 </style>

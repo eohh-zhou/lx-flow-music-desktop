@@ -100,6 +100,12 @@ const router = createRouter({
       },
     },
     {
+      path: '/listening',
+      name: 'Listening',
+      component: require('./views/Listening/index.vue').default,
+      meta: { name: 'Listening' },
+    },
+    {
       path: '/download',
       name: 'Download',
       component: require('./views/Download/index.vue').default,

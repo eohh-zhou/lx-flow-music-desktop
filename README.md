@@ -7,16 +7,17 @@
   <a href="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml"><img src="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml/badge.svg" alt="Build status"></a>
 </p>
 
-<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.2.1。支持 LX个性化推荐、AI推荐、Bilibili 音乐，以及企鹅音乐与网易云音乐的账号推荐和歌单联动。</p>
+<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.3.0。支持 LX个性化推荐、AI推荐、Bilibili 音乐，以及企鹅音乐与网易云音乐的账号推荐和歌单联动。</p>
 
-## v3.2.1 更新亮点
+## v3.3.0 更新亮点
 
-- **侧栏一键收起**：点击顶部返回按钮左边的开关，为歌曲列表腾出更多空间；下次启动会记住展开或收起状态。
-- **推荐结果完整展示**：LX推荐和 AI推荐改为一首一行，本次推荐一次列出，移除「换一批」。
-- **AI推荐更贴合需求**：结合多个搜索方向筛选真实歌曲，加强重复、已有歌曲和不符合需求结果的过滤。
-- **减少额外内存占用**：精简歌单封面和推荐所需的数据读取，限制浏览与音效缓存增长，窗口隐藏时暂停频谱绘制。
+- **图标侧栏**：收起后保留可点击的导航图标，歌单和平台推荐通过弹出列表选择。
+- **本地听歌档案**：查看实际收听时长、有效收听、完播、主动快跳、常听歌曲与歌手。
+- **月度与年度报告**：月底和年底自动整理，软件关闭期间错过的报告会在下次打开时补生成。
+- **偏好管理**：暂停记录、选择是否用听歌习惯推荐、忽略或恢复单曲偏好，也可保留档案并重新学习口味。
+- **精简存储**：明细保留最多 90 天、5,000 条，月报保留 36 个月，年报保留 10 年；只保存文字和数字，不额外保存音频、歌词、封面或报告图片。
 
-查看[完整更新公告](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.2.1)。
+查看[完整更新公告](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.3.0)及[听歌档案说明](doc/listening.md)。
 
 ## 个人使用版说明
 
@@ -33,6 +34,13 @@
 - AI推荐可配置兼容模型接口，先规划多个搜索方向，再从真实曲库候选中筛选与排序；候选不足时适量补充检索，避免用不符合需求的歌曲凑数。可自行选择是否使用个人听歌偏好。
 - 两种推荐均以单列歌曲列表展示本次全部合格结果，支持直接播放、加入歌单和不感兴趣反馈。
 - 收听统计保存在本机；LX推荐不调用模型 API，AI推荐仅在手动生成时调用，打开页面和切换平台读取缓存。
+
+### 听歌档案与音乐报告
+
+- 在「我的音乐 → 听歌档案」查看本月或本年的收听时长、常听歌曲、常听歌手及收听节奏。
+- 月报、年报自动归档，也能提前查看当前月份和年份的总结。
+- 可暂停记录、调整收听偏好是否参与推荐、忽略单曲偏好或重置学习；统计与报告独立保留。
+- 数据保存在本机，自动清理过期明细与报告，不额外缓存音频或报告图片。详见[听歌档案说明](doc/listening.md)。
 
 ### Bilibili 音乐
 
@@ -55,7 +63,7 @@
 
 ### 界面与播放
 
-- 左侧导航栏支持一键收起和展开，并记住上次状态；收起后搜索、设置及窗口控制按钮仍可使用。
+- 左侧导航栏支持一键收起为可点击的图标栏，并记住上次状态；歌单和平台推荐可从弹出列表选择。
 - 工具栏换肤按钮可立即切换当前皮肤，点哪个就用哪个；皮肤弹窗可单独调整左侧栏透明度、右侧栏透明度，以及左侧栏、右侧栏各自的毛玻璃强度。
 - 提供多套纯色主题，以及雨天、黄昏海、极光、山湖、手绘原野、乡云等图片主题；壁纸会透过侧栏和列表，并保留可读的半透明底与较轻的毛玻璃。
 - 搜索支持歌曲、歌单、歌手、专辑；可打开歌手详情查看歌曲和专辑。
@@ -73,12 +81,12 @@
 
 ## 下载与更新
 
-请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.2.1](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.2.1)。
+请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.3.0](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.3.0)。
 
 | 包类型 | 文件名示例 | 适用场景 |
 | --- | --- | --- |
-| Setup 安装版 | `LXFlowMusic-v3.2.1-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
-| 绿色免安装版 | `LXFlowMusic-v3.2.1-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
+| Setup 安装版 | `LXFlowMusic-v3.3.0-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
+| 绿色免安装版 | `LXFlowMusic-v3.3.0-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
 
 从绿色版迁移到支持自动更新的版本时，只需安装一次 Setup 安装版。
 

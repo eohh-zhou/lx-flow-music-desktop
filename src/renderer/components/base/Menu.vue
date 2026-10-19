@@ -12,6 +12,7 @@
         ignore-tip
         :disabled="item.disabled ? true : null"
         @click="menuClick(item)"
+        @keydown.enter.space.stop.prevent="menuClick(item)"
       >
         {{ item[itemName] }}
       </li>

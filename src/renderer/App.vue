@@ -1,7 +1,7 @@
 <template>
   <div id="container" class="view-container">
     <div id="main" :class="{ 'sidebar-collapsed': appSetting['common.sidebarCollapsed'] }">
-      <layout-aside v-show="!appSetting['common.sidebarCollapsed']" id="left" />
+      <layout-aside id="left" />
       <div id="right">
         <layout-toolbar id="toolbar" />
         <layout-view id="view" />
@@ -176,10 +176,7 @@ html.has-wallpaper.fullscreen {
   overflow: hidden;
   box-shadow: -1px 0 0 var(--color-100), 0 2px 16px rgba(0, 0, 0, 0.05);
 }
-.sidebar-collapsed #right {
-  border-top-left-radius: 0;
-  box-shadow: none;
-}
+.sidebar-collapsed #left { width: 56px; }
 #toolbar, #player {
   flex: none;
 }

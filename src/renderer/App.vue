@@ -1,13 +1,13 @@
 <template>
-  <div id="container" class="view-container">
+  <div id="container" class="view-container" :class="{ 'settings-open': isSettingsView }">
     <div id="main" :class="{ 'sidebar-collapsed': appSetting['common.sidebarCollapsed'] }">
-      <layout-aside id="left" />
+      <layout-aside v-show="!isSettingsView" id="left" />
       <div id="right">
-        <layout-toolbar id="toolbar" />
+        <layout-toolbar v-show="!isSettingsView" id="toolbar" />
         <layout-view id="view" />
       </div>
     </div>
-    <layout-play-bar id="player" />
+    <layout-play-bar v-show="!isSettingsView" id="player" />
     <layout-icons />
     <layout-change-log-modal />
     <layout-update-modal />
@@ -19,11 +19,15 @@
 </template>
 
 <script setup>
-import { onMounted } from '@common/utils/vueTools'
+import { computed, onMounted } from '@common/utils/vueTools'
+import { useRoute } from '@common/utils/vueRouter'
 // import BubbleCursor from '@common/utils/effects/cursor-effects/bubbleCursor'
 // import '@common/utils/effects/snow.min'
 import useApp from '@renderer/core/useApp'
 import { appSetting } from '@renderer/store/setting'
+
+const route = useRoute()
+const isSettingsView = computed(() => route.name == 'Setting')
 
 useApp()
 
@@ -177,6 +181,10 @@ html.has-wallpaper.fullscreen {
   box-shadow: -1px 0 0 var(--color-100), 0 2px 16px rgba(0, 0, 0, 0.05);
 }
 .sidebar-collapsed #left { width: 56px; }
+.settings-open #right {
+  border-radius: 0;
+  box-shadow: none;
+}
 #toolbar, #player {
   flex: none;
 }

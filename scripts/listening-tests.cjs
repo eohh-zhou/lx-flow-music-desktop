@@ -7,6 +7,8 @@ const assert = require('node:assert/strict')
 const ts = require('typescript')
 const vue = require('vue')
 const { EventEmitter } = require('node:events')
+const shareReport = 'src/renderer/views/Listening/report.ts'
+const shareExport = 'src/renderer/views/Listening/shareExport.ts'
 
 function load(file, mocks = {}, globals = {}) {
   const module = { exports: {} }
@@ -14,6 +16,96 @@ function load(file, mocks = {}, globals = {}) {
   vm.runInNewContext(code, { module, exports: module.exports, console, require(name) { if (Object.hasOwn(mocks, name)) return mocks[name]; throw new Error('Unmocked: ' + name) }, ...globals })
   return module.exports
 }
+
+test('Listening hours keep short sessions visible and use fractional hours consistently', () => {
+  const { formatListeningHours: hours, listeningHourRange } = load(shareReport)
+  assert.equal(hours(0), '0')
+  assert.equal(hours(1), '<0.01')
+  assert.equal(hours(36), '0.01')
+  assert.equal(hours(1800), '0.5')
+  assert.equal(hours(5400), '1.5')
+  assert.equal(hours(-1), '0')
+  assert.equal(hours(NaN), '0')
+  assert.equal(listeningHourRange([]), '—')
+  assert.equal(listeningHourRange(Array(24).fill(0)), '—')
+  assert.equal(listeningHourRange([...Array(23).fill(0), 60]), '23:00 — 00:00')
+})
+
+test('Share cards preserve report totals, handle partial archives, and remove all song and artist names on request', () => {
+  const { buildListeningShareModel } = load(shareReport)
+  const report = {
+    period: '2026-09', seconds: 5400, activeDays: 2, uniqueTracks: 4, plays: 7, streak: 2,
+    archived: true, partial: true, limited: true, hours: [...Array(23).fill(0), 5400],
+    tracks: Array.from({ length: 4 }, (_, index) => ({ track: { name: 'Private song ' + index, singer: 'Private artist' }, plays: 4 - index })),
+    artists: [{ name: 'Private artist', seconds: 5400 }],
+    days: [{ date: '2026-09-01', seconds: 1800 }, { date: '2026-09-02', seconds: 3600 }],
+  }
+  const before = JSON.stringify(report)
+  const t = (key, args) => key + (args ? JSON.stringify(args) : '')
+  const shown = buildListeningShareModel(report, t, true)
+  assert.equal(shown.hours, '1.5')
+  assert.equal(shown.period, '2026.09')
+  assert.equal(shown.title, 'listening__monthly_card')
+  assert.equal(shown.status, 'listening__archived')
+  assert.equal(shown.metrics[1].value, '4+')
+  assert.equal(shown.tracks.length, 3)
+  assert.equal(shown.tracks[0].title, 'Private song 0')
+  assert.equal(shown.insights[1].detail, '1.5 listening__hours')
+  assert.equal(shown.footer.length, 3)
+  const hidden = buildListeningShareModel(report, t, false)
+  assert.equal(JSON.stringify(hidden).includes('Private'), false)
+  assert.equal(hidden.tracks.length, 0)
+  assert.equal(hidden.insights[1].value, '2026.09.02')
+  assert.equal(JSON.stringify(report), before, 'Preparing a share card must not mutate statistics')
+  const annual = buildListeningShareModel({ ...report, period: '2026', archived: false, tracks: [], artists: [], hours: [], days: [] }, t, true)
+  assert.equal(annual.title, 'listening__annual_card')
+  assert.equal(annual.status, 'listening__ongoing')
+  assert.equal(annual.emptyTracks, 'listening__no_qualified')
+  assert.equal(annual.insights[0].value, '—')
+  assert.equal(annual.insights[1].value, '—')
+})
+
+test('Share export writes the displayed PNG, honors cancellation, and propagates disk failures', async() => {
+  const png = Buffer.from('89504e470d0a1a0a', 'hex')
+  const dataUrl = 'data:image/png;base64,' + png.toString('base64')
+  const writes = []
+  const dialogs = []
+  let answer = { canceled: true }
+  let failure = false
+  const subject = load(shareExport, {
+    'node:fs': { promises: { writeFile: async(file, data) => { if (failure) throw new Error('Disk full'); writes.push({ file, data }) } } },
+    electron: {},
+    '@renderer/utils/ipc': { openSaveDir: async options => { dialogs.push(options); return answer } },
+  }, { Buffer })
+  assert.equal(await subject.saveListeningShareImage(dataUrl, '2026-09', 'Save'), false)
+  assert.equal(writes.length, 0)
+  answer = { canceled: false }
+  assert.equal(await subject.saveListeningShareImage(dataUrl, '2026-09', 'Save'), false)
+  answer = { canceled: false, filePath: 'chosen.png' }
+  assert.equal(await subject.saveListeningShareImage(dataUrl, '2026-09', 'Save'), true)
+  assert.equal(writes[0].file, 'chosen.png')
+  assert.deepEqual(writes[0].data, png)
+  assert.equal(dialogs.at(-1).defaultPath, 'LX-Flow-2026-09.png')
+  failure = true
+  await assert.rejects(subject.saveListeningShareImage(dataUrl, '2026', 'Save'), /Disk full/)
+  await assert.rejects(subject.saveListeningShareImage('data:text/plain;base64,aaa', '2026', 'Save'), /Invalid share image/)
+})
+
+test('Share copy writes a native image and rejects failed image decoding', () => {
+  const copied = []
+  let invalid = false
+  const image = { isEmpty: () => invalid }
+  const subject = load(shareExport, {
+    'node:fs': { promises: {} },
+    electron: { nativeImage: { createFromDataURL: value => { assert.equal(value, 'preview'); return image } }, clipboard: { writeImage: value => copied.push(value) } },
+    '@renderer/utils/ipc': {},
+  })
+  subject.copyListeningShareImage('preview')
+  assert.equal(copied[0], image)
+  invalid = true
+  assert.throws(() => subject.copyListeningShareImage('preview'), /Invalid share image/)
+  assert.equal(copied.length, 1)
+})
 const local = (year, month, day, hour = 12, minute = 0, second = 0) => new Date(year, month - 1, day, hour, minute, second).getTime()
 const tables = load('src/main/worker/dbService/tables.ts')
 const types = load('src/common/types/listening.ts')

@@ -10,7 +10,7 @@ dd.gap-top
       | {{ $t('setting__open_api_address') }}
       span.select {{ openAPI.address }}
     .p.small(v-if="openAPI.message") {{ openAPI.message }}
-    .p
+    .p#open_api_port
       .p.small {{ $t('setting__open_api_port') }}
       div
         base-input.gap-left(:class="$style.portInput" :model-value="appSetting['openAPI.port']" type="number" :placeholder="$t('setting__open_api_port_tip')" @update:model-value="setPort")

@@ -7,16 +7,16 @@
   <a href="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml"><img src="https://github.com/eohh-zhou/lx-flow-music-desktop/actions/workflows/release.yml/badge.svg" alt="Build status"></a>
 </p>
 
-<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.3.3。支持 LX个性化推荐、AI推荐、Bilibili 音乐，以及企鹅音乐与网易云音乐的账号推荐和歌单联动。</p>
+<p align="center">基于 LX Music Desktop 的个人使用修改版，当前最新版本为 3.4.0。支持 LX个性化推荐、AI推荐、Bilibili 音乐，以及企鹅音乐与网易云音乐的账号推荐和歌单联动。</p>
 
-## v3.3.3 更新亮点
+## v3.4.0 更新亮点
 
-- **名称统一**：侧栏、推荐曲库、歌曲来源和 AI推荐平台名称跟随原名或别名设置，切换后立即更新。
-- **页面精简**：移除与侧栏重复的页标题，B站 AI推荐统一从「为你推荐」进入。
-- **歌单封面**：修复企鹅音乐「我喜欢」封面，并为加载失败的封面提供默认图标。
-- **界面截图**：更新企鹅音乐推荐、LX推荐和听歌档案的实机展示。
+- **设置搜索**：按名称、描述或常用关键词查找设置，选择结果后直接定位并高亮对应选项，支持键盘操作。
+- **全页设置**：设置覆盖整个应用内容区域，提供分类导航、返回与完成按钮，打开设置时音乐继续播放。
+- **音乐分享图**：月度、年度报告支持预览、保存 PNG 和复制图片，可选择隐藏歌曲与歌手名称。
+- **统计更清晰**：收听时长统一以小时显示；收听概览保留详细趋势与排行榜，音乐报告专注摘要和分享卡。
 
-查看[完整更新公告](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.3.3)及[听歌档案说明](doc/listening.md)。
+查看[完整更新公告](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.4.0)及[听歌档案说明](doc/listening.md)。
 
 ## 个人使用版说明
 
@@ -36,8 +36,9 @@
 
 ### 听歌档案与音乐报告
 
-- 在「我的音乐 → 听歌档案」查看本月或本年的收听时长、常听歌曲、常听歌手及收听节奏。
+- 在「我的音乐 → 听歌档案」查看本月或本年的收听小时数、常听歌曲、常听歌手及收听节奏。
 - 月报、年报自动归档，也能提前查看当前月份和年份的总结。
+- 音乐报告提供 1080 × 1440 分享卡，可保存为 PNG 或复制图片，支持隐藏歌曲与歌手名称；详细趋势和完整排行榜在收听概览查看。
 - 可暂停记录、调整收听偏好是否参与推荐、忽略单曲偏好或重置学习；统计与报告独立保留。
 - 数据保存在本机，自动清理过期明细与报告，不额外缓存音频或报告图片。详见[听歌档案说明](doc/listening.md)。
 
@@ -62,6 +63,7 @@
 
 ### 界面与播放
 
+- 设置采用覆盖整个应用内容区的页面布局，支持跨分类搜索、关键词匹配和结果定位高亮，可用方向键、Enter 与 Esc 操作。
 - 左侧导航栏支持一键收起为可点击的图标栏，并记住上次状态；歌单和平台推荐可从弹出列表选择。
 - 工具栏换肤按钮可立即切换当前皮肤，点哪个就用哪个；皮肤弹窗可单独调整左侧栏透明度、右侧栏透明度，以及左侧栏、右侧栏各自的毛玻璃强度。
 - 提供多套纯色主题，以及雨天、黄昏海、极光、山湖、手绘原野、乡云等图片主题；壁纸会透过侧栏和列表，并保留可读的半透明底与较轻的毛玻璃。
@@ -80,12 +82,12 @@
 
 ## 下载与更新
 
-请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.3.3](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.3.3)。
+请从 [GitHub Releases](https://github.com/eohh-zhou/lx-flow-music-desktop/releases) 下载 Windows x64 版本。当前发布版本：[v3.4.0](https://github.com/eohh-zhou/lx-flow-music-desktop/releases/tag/v3.4.0)。
 
 | 包类型 | 文件名示例 | 适用场景 |
 | --- | --- | --- |
-| Setup 安装版 | `LXFlowMusic-v3.3.3-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
-| 绿色免安装版 | `LXFlowMusic-v3.3.3-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
+| Setup 安装版 | `LXFlowMusic-v3.4.0-x64-Setup.exe` | 推荐。安装后可在软件内完成后续更新。 |
+| 绿色免安装版 | `LXFlowMusic-v3.4.0-win_x64-green.7z` | 解压后直接运行 `LXFlowMusic.exe`。不支持自动安装更新。 |
 
 从绿色版迁移到支持自动更新的版本时，只需安装一次 Setup 安装版。
 
@@ -107,4 +109,14 @@
 
 **听歌档案 · 收听概览**
 
-<p><img width="100%" src="./doc/images/listening-report.png" alt="听歌档案月度收听概览：收听时长、连续收听天数、有效收听次数、听过的歌曲、完整听完和主动快跳"></p>
+以下听歌档案与分享图界面使用演示数据。
+
+<p><img width="100%" src="./doc/images/listening-report.png" alt="听歌档案月度收听概览：收听小时数、连续收听天数、有效收听次数、听过的歌曲、完整听完和主动快跳"></p>
+
+**音乐报告 · 分享图**
+
+<p><img width="100%" src="./doc/images/music-share.png" alt="音乐报告分享卡预览，可保存 PNG、复制图片或隐藏歌曲与歌手名称"></p>
+
+**全页设置 · 搜索与分类导航**
+
+<p><img width="100%" src="./doc/images/settings-full-page.png" alt="覆盖应用内容区的设置页面，顶部设置搜索、左侧分类导航和返回按钮"></p>

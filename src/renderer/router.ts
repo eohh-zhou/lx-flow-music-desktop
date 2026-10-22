@@ -128,4 +128,14 @@ const router = createRouter({
 })
 
 
+let settingsReturnPath = '/search'
+router.afterEach((to, from) => {
+  if (to.name == 'Setting' && from.name && from.name != 'Setting') settingsReturnPath = from.fullPath
+})
+
+export const closeSettings = () => {
+  if (router.options.history.state.back == settingsReturnPath) router.back()
+  else void router.replace(settingsReturnPath)
+}
+
 export default router
